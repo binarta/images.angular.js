@@ -1,5 +1,5 @@
 {
-  "name": "images.angular.js",
+  "name": "binarta.images.angular",
   "version": "0.0.0",
   "main": "./src/main/js/images.js",
   "dependencies":{
