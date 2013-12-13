@@ -13,12 +13,11 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
             imageClass: '@'
         },
         link: function (scope, element, attrs, controller) {
-            function isImageCacheEnabled() {
-                return config.image && config.image.cache;
-            }
+
+            scope.cacheEnabled = false;
 
             function toQueryString() {
-                return isImageCacheEnabled() ? '' : '?' + new Date().getTime();
+                return scope.cacheEnabled ? '' : '?' + new Date().getTime();
             }
 
             function toUri() {
@@ -28,6 +27,17 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
             function toImageSource() {
                 return toUri() + toQueryString();
             }
+
+            topicRegistry.subscribe('app.start', function () {
+                activeUserHasPermission({
+                    no: function () {
+                        scope.cacheEnabled = config.image && config.image.cache;
+                    },
+                    yes: function () {
+                        scope.cacheEnabled = false;
+                    }
+                }, 'image.upload');
+            });
 
             scope.$watch('path', function () {
                 scope.imageSource = toImageSource();

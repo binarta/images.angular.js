@@ -180,6 +180,7 @@ describe('image-management', function () {
         describe('with path attribute watcher', function () {
             beforeEach(function () {
                 link();
+                registry['app.start']();
                 scope.path = 'path';
             });
 
@@ -199,6 +200,20 @@ describe('image-management', function () {
             it('the image source is not cached by default by adding a random query string', function () {
                 triggerWatch();
                 expect(scope.imageSource).toMatch(/.*\?\d+/);
+            });
+
+            it('the image source is not cached when active user has permission', function () {
+                permitter.yes();
+                triggerWatch();
+                expect(scope.imageSource).toMatch(/.*\?\d+/);
+            });
+
+            it('the image source is cached when cache enabled and active user has no image.upload permission', function () {
+                config.image = {cache: true};
+                permitter.no();
+                triggerWatch();
+
+                expect(scope.imageSource).toEqual('base/path');
             });
 
             it('configure to use the browsers standard image cache mechanism', function () {
