@@ -1,7 +1,29 @@
 angular.module('image-management', [])
-    .directive('imageShow', ImageShowDirectiveFactory);
+    .directive('imageShow', ['config', 'topicRegistry', 'activeUserHasPermission', 'topicMessageDispatcher', ImageShowDirectiveFactory])
+    .run(function($rootScope, $location, topicRegistry, topicMessageDispatcher){
+        var imageCount = 0;
 
-function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission) {
+        $rootScope.$watch(function () {
+            return $location.path();
+        }, function () {
+            imageCount = 0;
+        });
+
+        topicRegistry.subscribe('image.loading', function (topic) {
+            if(topic == 'loading') {
+                imageCount++;
+            } else {
+                if (imageCount > 0) reduceImageCount();
+            }
+        });
+
+        function reduceImageCount() {
+            imageCount--;
+            if (imageCount == 0) topicMessageDispatcher.fire('images.loaded', 'ok');
+        }
+    });
+
+function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, topicMessageDispatcher) {
     return {
         restrict: 'E',
         controller: ['$scope', 'uploader', 'config', '$templateCache', ImageController],
@@ -13,6 +35,26 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
             imageClass: '@'
         },
         link: function (scope, element, attrs, controller) {
+
+            topicMessageDispatcher.fire('image.loading', 'loading');
+
+            element.find('img').first().bind('load', function() {
+                topicMessageDispatcher.fire('image.loading', 'loaded');
+            });
+
+            element.find('img').first().bind('error', function() {
+                topicMessageDispatcher.fire('image.loading', 'error');
+                imageNotFound();
+            });
+
+            element.find('img').first().bind('abort', function() {
+                topicMessageDispatcher.fire('image.loading', 'abort');
+                imageNotFound();
+            });
+
+            function imageNotFound() {
+                scope.$apply(scope.notFound = true);
+            }
 
             scope.cacheEnabled = false;
 
@@ -76,7 +118,7 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
     }
 }
 
-function ImageController($scope, uploader, config, $templateCache) {
+function ImageController($scope, uploader, config) {
     var init = function () {
         $scope.imageSource = config.awsPath;
         $scope.temp = [];

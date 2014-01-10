@@ -14,17 +14,13 @@ describe('image-management', function () {
     beforeEach(module('image-management'));
     beforeEach(module('permissions'));
     beforeEach(module('cache.control'));
+    beforeEach(module('notifications'));
     beforeEach(inject(function ($injector, $rootScope) {
         rest = {service: function (it) {
             rest.ctx = it;
         }};
         scope = $rootScope.$new();
         $httpBackend = $injector.get('$httpBackend');
-        notifications = {
-            subscribe: function (topic, callback) {
-                notifications[topic] = callback;
-            }
-        };
     }));
     afterEach(function () {
         $httpBackend.verifyNoOutstandingExpectation();
@@ -32,9 +28,9 @@ describe('image-management', function () {
     });
 
     describe('image show directive', function () {
-        var registry, element, attrs, permitter;
+        var registry, element, attrs, permitter, dispatcher, topics, imageEvent, loadHandler, errorHandler, abortHandler;
 
-        beforeEach(inject(function (activeUserHasPermission, activeUserHasPermissionHelper) {
+        beforeEach(inject(function (activeUserHasPermission, activeUserHasPermissionHelper, topicMessageDispatcher, topicMessageDispatcherMock) {
             permitter = activeUserHasPermissionHelper;
             scope = {
                 watches: {},
@@ -42,7 +38,8 @@ describe('image-management', function () {
                     this.watches[expression] = {};
                     this.watches[expression].callback = callback;
                     this.watches[expression].weirdBoolean = b;
-                }
+                },
+                $apply: function(arg){}
             };
             ctrl = {
                 add: function (data, path) {
@@ -59,10 +56,22 @@ describe('image-management', function () {
                     return {
                         click: function () {
                             element.clicked = true;
+                        },
+                        first: function () {
+                            element.first = true;
+                             return {
+                                 bind: function(event, handler){
+                                     imageEvent = event;
+                                     if (event == 'load') loadHandler = handler;
+                                     if (event == 'error') errorHandler = handler;
+                                     if (event == 'abort') abortHandler = handler;
+                                 }
+                             }
                         }
                     };
                 }
             };
+
             attrs = {};
             registry = {
                 subscribe: function (topic, callback) {
@@ -70,7 +79,9 @@ describe('image-management', function () {
                 }
             };
             config = {awsPath: 'base/'};
-            directive = ImageShowDirectiveFactory(config, registry, activeUserHasPermission);
+            dispatcher = topicMessageDispatcher;
+            topics = topicMessageDispatcherMock;
+            directive = ImageShowDirectiveFactory(config, registry, activeUserHasPermission, dispatcher);
         }));
 
         it('restrict', function () {
@@ -97,6 +108,100 @@ describe('image-management', function () {
         var link = function () {
             directive.link(scope, element, attrs, ctrl);
         };
+
+        describe('fire image events', function () {
+            beforeEach(function() {
+                loadHandler = undefined;
+                errorHandler = undefined;
+                abortHandler = undefined;
+                link();
+            });
+
+            it('fires image.loading notification', function () {
+                expect(topics['image.loading']).toEqual('loading');
+            });
+
+            it('and first img receives load event', function () {
+                loadHandler();
+
+                expect(element.expression).toEqual('img');
+                expect(element.first).toEqual(true);
+                expect(topics['image.loading']).toEqual('loaded');
+                expect(scope.notFound).toBeUndefined;
+            });
+
+            it('and first img receives error event', function () {
+                errorHandler();
+
+                expect(element.expression).toEqual('img');
+                expect(element.first).toEqual(true);
+                expect(topics['image.loading']).toEqual('error');
+                expect(scope.notFound).toEqual(true);
+            });
+
+            it('and first img receives abort event', function () {
+                abortHandler();
+
+                expect(element.expression).toEqual('img');
+                expect(element.first).toEqual(true);
+                expect(topics['image.loading']).toEqual('abort');
+                expect(scope.notFound).toEqual(true);
+            });
+
+            describe('testing run method', function () {
+
+                var rootScope, location, path;
+                rootScope = {
+                    watches: {},
+                    $watch: function (expression, callback) {
+                        this.watches.expression = expression;
+                        this.watches.callback = callback;
+                    }
+                };
+                location = {
+                    path: function(){
+                        return path;
+                    }
+                };
+
+                beforeEach(function () {
+                    angular.module('image-management')._runBlocks[0](rootScope, location, registry, dispatcher);
+                });
+
+                it('when all images are loaded fire images.loaded notification', function () {
+                    registry['image.loading']('loading');
+                    registry['image.loading']('loading');
+                    registry['image.loading']('loading');
+                    registry['image.loading']('loading');
+                    registry['image.loading']('loading');
+
+                    expect(topics['images.loaded']).toBeUndefined();
+                    registry['image.loading']('loaded');
+                    expect(topics['images.loaded']).toBeUndefined();
+                    registry['image.loading']('loaded');
+                    expect(topics['images.loaded']).toBeUndefined();
+                    registry['image.loading']('error');
+                    expect(topics['images.loaded']).toBeUndefined();
+                    registry['image.loading']('abort');
+                    expect(topics['images.loaded']).toBeUndefined();
+                    registry['image.loading']('loaded');
+                    expect(topics['images.loaded']).toEqual('ok');
+                });
+
+                it('reset image count on path change', function () {
+                    registry['image.loading']('loading');
+                    registry['image.loading']('loading');
+                    path = 'path';
+                    rootScope.watches.callback();
+                    registry['image.loading']('loaded');
+                    registry['image.loading']('loading');
+                    registry['image.loading']('loaded');
+
+                    expect(rootScope.watches.expression()).toEqual(path);
+                    expect(topics['images.loaded']).toEqual('ok');
+                });
+            });
+        });
 
         it('on edit mode true and active user has permission editing true', function () {
             link();

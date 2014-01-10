@@ -6,6 +6,7 @@ files = [
     'bower_components/angular/angular.js',
     'bower_components/angular-mocks/angular-mocks.js',
     'bower_components/thk-cache-control-mock/src/cache.control.mock.js',
+    'bower_components/thk-notifications-mock/src/notifications.mock.js',
     'src/main/js/**/*.js',
     'src/test/js/**/*.js'
 ];
