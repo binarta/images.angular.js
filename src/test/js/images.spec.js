@@ -267,6 +267,7 @@ describe('image-management', function () {
             expect(input.value).toEqual('file-name');
             expect(ctrl.data).toEqual(data);
             expect(ctrl.path).toEqual(scope.path);
+            expect(scope.notFound).toEqual(false);
         });
 
         it('linker exposes open function on scope', function () {

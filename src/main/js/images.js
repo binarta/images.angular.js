@@ -109,6 +109,7 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
                 add: function (e, data) {
                     e.value = data.files[0].name;
                     controller.add(data, scope.path);
+                    scope.notFound = false;
                 }
             });
             scope.open = function () {
