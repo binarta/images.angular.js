@@ -110,6 +110,8 @@ describe('image-management', function () {
         };
 
         describe('fire image events', function () {
+            var placeholderImage = 'http://cdn.binarta.com/image/placeholder.png';
+
             beforeEach(function() {
                 loadHandler = undefined;
                 errorHandler = undefined;
@@ -137,6 +139,7 @@ describe('image-management', function () {
                 expect(element.first).toEqual(true);
                 expect(topics['image.loading']).toEqual('error');
                 expect(scope.notFound).toEqual(true);
+                expect(scope.imageSource).toEqual(placeholderImage);
             });
 
             it('and first img receives abort event', function () {
@@ -146,6 +149,7 @@ describe('image-management', function () {
                 expect(element.first).toEqual(true);
                 expect(topics['image.loading']).toEqual('abort');
                 expect(scope.notFound).toEqual(true);
+                expect(scope.imageSource).toEqual(placeholderImage);
             });
 
             describe('testing run method', function () {

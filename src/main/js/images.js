@@ -53,6 +53,7 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
             });
 
             function imageNotFound() {
+                scope.imageSource = 'http://cdn.binarta.com/image/placeholder.png';
                 scope.$apply(scope.notFound = true);
             }
 
