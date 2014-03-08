@@ -123,13 +123,29 @@ describe('image-management', function () {
                 expect(topics['image.loading']).toEqual('loading');
             });
 
-            it('and first img receives load event', function () {
-                loadHandler();
+            describe('and first img receives load event', function () {
+                it('fires loaded notification', function () {
+                    loadHandler();
 
-                expect(element.expression).toEqual('img');
-                expect(element.first).toEqual(true);
-                expect(topics['image.loading']).toEqual('loaded');
-                expect(scope.notFound).toBeUndefined;
+                    expect(element.expression).toEqual('img');
+                    expect(element.first).toEqual(true);
+                    expect(topics['image.loading']).toEqual('loaded');
+                });
+
+                it('and image is the placeholder image is not found', function () {
+                    scope.imageSource = placeholderImage;
+                    scope.notFound = true;
+                    loadHandler();
+
+                    expect(scope.notFound).toEqual(true);
+                });
+
+                it('and image is the placeholder image is not found', function () {
+                    scope.imageSource = 'another-source';
+                    loadHandler();
+
+                    expect(scope.notFound).toEqual(false);
+                });
             });
 
             it('and first img receives error event', function () {
@@ -271,7 +287,6 @@ describe('image-management', function () {
             expect(input.value).toEqual('file-name');
             expect(ctrl.data).toEqual(data);
             expect(ctrl.path).toEqual(scope.path);
-            expect(scope.notFound).toEqual(false);
         });
 
         it('linker exposes open function on scope', function () {

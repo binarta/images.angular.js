@@ -36,9 +36,12 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
         },
         link: function (scope, element, attrs, controller) {
 
+            var placeholderImage = 'http://cdn.binarta.com/image/placeholder.png';
+
             topicMessageDispatcher.fire('image.loading', 'loading');
 
             element.find('img').first().bind('load', function() {
+                if(scope.imageSource != placeholderImage) scope.$apply(scope.notFound = false);
                 topicMessageDispatcher.fire('image.loading', 'loaded');
             });
 
@@ -53,7 +56,7 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
             });
 
             function imageNotFound() {
-                scope.imageSource = 'http://cdn.binarta.com/image/placeholder.png';
+                scope.imageSource = placeholderImage;
                 scope.$apply(scope.notFound = true);
             }
 
@@ -110,7 +113,6 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
                 add: function (e, data) {
                     e.value = data.files[0].name;
                     controller.add(data, scope.path);
-                    scope.notFound = false;
                 }
             });
             scope.open = function () {
