@@ -173,6 +173,7 @@ function ImageController($scope, uploader, config) {
         $scope.loading = false;
         $scope.status = 201;
         $scope.name = '';
+        $scope.selecting = false;
     }
 
     var onError = function () {

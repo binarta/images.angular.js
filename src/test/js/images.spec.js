@@ -496,6 +496,7 @@ describe('image-management', function () {
 
         describe('on upload success', function () {
             beforeEach(function () {
+                scope.selecting = true;
                 ctrl.add(file, path);
                 scope.upload();
                 uploader.handlers.success('payload', 201);
@@ -505,7 +506,8 @@ describe('image-management', function () {
                 expect(scope.name).toEqual('');
                 expect(scope.imageSource).toContain(awsPath + uploader.path + "?");
                 expect(scope.error).toEqual({});
-                expect(scope.status).toEqual(201)
+                expect(scope.status).toEqual(201);
+                expect(scope.selecting).toEqual(false);
             });
 
         });
