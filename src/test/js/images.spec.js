@@ -30,7 +30,7 @@ describe('image-management', function () {
     describe('image show directive', function () {
         var registry, element, attrs, permitter, dispatcher, topics, imageEvent, loadHandler, errorHandler, abortHandler;
 
-        beforeEach(inject(function (activeUserHasPermission, activeUserHasPermissionHelper, topicMessageDispatcher, topicMessageDispatcherMock) {
+        beforeEach(inject(function (activeUserHasPermission, activeUserHasPermissionHelper, topicMessageDispatcher, topicMessageDispatcherMock, $timeout) {
             permitter = activeUserHasPermissionHelper;
             scope = {
                 watches: {},
@@ -81,7 +81,7 @@ describe('image-management', function () {
             config = {awsPath: 'base/'};
             dispatcher = topicMessageDispatcher;
             topics = topicMessageDispatcherMock;
-            directive = ImageShowDirectiveFactory(config, registry, activeUserHasPermission, dispatcher);
+            directive = ImageShowDirectiveFactory(config, registry, activeUserHasPermission, dispatcher, $timeout);
         }));
 
         it('restrict', function () {
@@ -123,6 +123,35 @@ describe('image-management', function () {
                 expect(topics['image.loading']).toEqual('loading');
             });
 
+            describe('after interval has passed', function () {
+
+                var waitFor;
+
+                beforeEach(inject(function ($timeout) {
+                    waitFor = function(ms) {
+                        $timeout.flush(ms);
+                    };
+                }));
+
+                describe('and working state is still undefined', function () {
+                    it('should enable working state after delay', function () {
+                        scope.working = undefined;
+                        waitFor(1000);
+
+                        expect(scope.working).toEqual(true);
+                    });
+                });
+
+                describe('and working state is disabled', function () {
+                    it('should do nothing', function () {
+                        scope.working = false;
+                        waitFor(1000);
+
+                        expect(scope.working).toEqual(false);
+                    });
+                });
+            });
+
             describe('and first img receives load event', function () {
                 it('fires loaded notification', function () {
                     loadHandler();
@@ -130,6 +159,12 @@ describe('image-management', function () {
                     expect(element.expression).toEqual('img');
                     expect(element.first).toEqual(true);
                     expect(topics['image.loading']).toEqual('loaded');
+                });
+
+                it('disables working state', function () {
+                    loadHandler();
+
+                    expect(scope.working).toEqual(false);
                 });
 
                 it('and image is the placeholder image is not found', function () {

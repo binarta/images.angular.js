@@ -1,5 +1,5 @@
 angular.module('image-management', [])
-    .directive('imageShow', ['config', 'topicRegistry', 'activeUserHasPermission', 'topicMessageDispatcher', ImageShowDirectiveFactory])
+    .directive('imageShow', ['config', 'topicRegistry', 'activeUserHasPermission', 'topicMessageDispatcher', '$timeout', ImageShowDirectiveFactory])
     .run(function($rootScope, $location, topicRegistry, topicMessageDispatcher){
         var imageCount = 0;
 
@@ -23,7 +23,7 @@ angular.module('image-management', [])
         }
     });
 
-function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, topicMessageDispatcher) {
+function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, topicMessageDispatcher, $timeout) {
     return {
         restrict: 'E',
         controller: ['$scope', 'uploader', 'config', '$templateCache', ImageController],
@@ -40,8 +40,13 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
 
             topicMessageDispatcher.fire('image.loading', 'loading');
 
+            $timeout(function () {
+                if(scope.working != false) scope.working = true;
+            }, 1000);
+
             element.find('img').first().bind('load', function() {
                 if(scope.imageSource != placeholderImage) scope.$apply(scope.notFound = false);
+                scope.$apply(scope.working = false);
                 topicMessageDispatcher.fire('image.loading', 'loaded');
             });
 
