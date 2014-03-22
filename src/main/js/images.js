@@ -1,5 +1,5 @@
 angular.module('image-management', [])
-    .directive('imageShow', ['config', 'topicRegistry', 'activeUserHasPermission', 'topicMessageDispatcher', '$timeout', ImageShowDirectiveFactory])
+    .directive('imageShow', ['config', 'topicRegistry', 'activeUserHasPermission', 'topicMessageDispatcher', '$timeout', '$rootScope', ImageShowDirectiveFactory])
     .run(function($rootScope, $location, topicRegistry, topicMessageDispatcher){
         var imageCount = 0;
 
@@ -23,11 +23,13 @@ angular.module('image-management', [])
         }
     });
 
-function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, topicMessageDispatcher, $timeout) {
+function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, topicMessageDispatcher, $timeout, $rootScope) {
     return {
         restrict: 'E',
         controller: ['$scope', 'uploader', 'config', '$templateCache', ImageController],
-        templateUrl: 'app/partials/image/show.html',
+        templateUrl: function() {
+            return $rootScope.imageShowTemplateUrl ? $rootScope.imageShowTemplateUrl : 'app/partials/image/show.html';
+        },
         scope: {
             path: '@',
             link: '@',

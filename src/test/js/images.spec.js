@@ -30,7 +30,7 @@ describe('image-management', function () {
     describe('image show directive', function () {
         var registry, element, attrs, permitter, dispatcher, topics, imageEvent, loadHandler, errorHandler, abortHandler;
 
-        beforeEach(inject(function (activeUserHasPermission, activeUserHasPermissionHelper, topicMessageDispatcher, topicMessageDispatcherMock, $timeout) {
+        beforeEach(inject(function (activeUserHasPermission, activeUserHasPermissionHelper, topicMessageDispatcher, topicMessageDispatcherMock, $timeout, $rootScope) {
             permitter = activeUserHasPermissionHelper;
             scope = {
                 watches: {},
@@ -81,7 +81,7 @@ describe('image-management', function () {
             config = {awsPath: 'base/'};
             dispatcher = topicMessageDispatcher;
             topics = topicMessageDispatcherMock;
-            directive = ImageShowDirectiveFactory(config, registry, activeUserHasPermission, dispatcher, $timeout);
+            directive = ImageShowDirectiveFactory(config, registry, activeUserHasPermission, dispatcher, $timeout, $rootScope);
         }));
 
         it('restrict', function () {
@@ -93,8 +93,14 @@ describe('image-management', function () {
         });
 
         it('template url', function () {
-            expect(directive.templateUrl).toEqual('app/partials/image/show.html');
+            expect(directive.templateUrl()).toEqual('app/partials/image/show.html');
         });
+
+        it('template url can be overridden by rootScope', inject(function ($rootScope) {
+            $rootScope.imageShowTemplateUrl = 'overridden-template.html';
+
+            expect(directive.templateUrl()).toEqual('overridden-template.html');
+        }));
 
         it('scope', function () {
             expect(directive.scope).toEqual({
