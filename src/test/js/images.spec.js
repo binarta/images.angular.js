@@ -83,7 +83,7 @@ describe('image-management', function () {
         });
 
         it('controller', function () {
-            expect(directive.controller).toEqual(['$scope', 'uploader', 'config', '$templateCache', ImageController]);
+            expect(directive.controller).toEqual(['$scope', 'uploader', 'config', ImageController]);
         });
 
         it('template url', function () {

@@ -26,7 +26,7 @@ angular.module('image-management', [])
 function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, topicMessageDispatcher, $timeout, $rootScope) {
     return {
         restrict: 'E',
-        controller: ['$scope', 'uploader', 'config', '$templateCache', ImageController],
+        controller: ['$scope', 'uploader', 'config', ImageController],
         templateUrl: function() {
             return $rootScope.imageShowTemplateUrl ? $rootScope.imageShowTemplateUrl : 'app/partials/image/show.html';
         },
@@ -180,7 +180,6 @@ function ImageController($scope, uploader, config) {
     };
 
     var onSuccess = function () {
-//        $templateCache.removeAll();
         $scope.imageSource = config.awsPath + uploader.path + "?" + new Date().getTime();
         $scope.loading = false;
         $scope.status = 201;

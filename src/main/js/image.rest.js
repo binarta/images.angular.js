@@ -1,5 +1,5 @@
 angular.module('image.rest', [])
-    .factory('uploader', ['restServiceHandler', 'config', ImageUploaderFactory])
+    .factory('uploader', ['restServiceHandler', 'config', ImageUploaderFactory]);
 
 function ImageUploaderFactory(restServiceHandler, config) {
     return new function () {
