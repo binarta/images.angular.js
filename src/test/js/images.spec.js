@@ -469,7 +469,6 @@ describe('image-management', function () {
         }));
 
         it('init', function () {
-            expect(scope.imageSource).toEqual(awsPath);
             expect(scope.error).toBeFalsy();
             expect(scope.selecting).toEqual(false);
             expect(scope.hasError).toEqual(false);

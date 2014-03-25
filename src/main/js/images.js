@@ -141,7 +141,6 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
 
 function ImageController($scope, uploader, config) {
     var init = function () {
-        $scope.imageSource = config.awsPath;
         $scope.temp = [];
         $scope.selecting = false;
         $scope.hasError = false;
