@@ -6,10 +6,10 @@ describe('image.rest', function () {
         size: 1,
         type: 'type',
         name: 'name'
-    }
+    };
     var file = {
         files: [_file]
-    }
+    };
 
     beforeEach(module('image.rest'));
     beforeEach(inject(function ($injector, $rootScope) {
@@ -39,10 +39,10 @@ describe('image.rest', function () {
         }));
 
         it('add a file', function () {
-            uploader.add(file, 'path')
+            uploader.add(file, 'path');
 
-            expect(uploader.file).toEqual(_file)
-            expect(uploader.path).toEqual('path')
+            expect(uploader.file).toEqual(_file);
+            expect(uploader.path).toEqual('path');
         });
 
         it('upload a file', function () {

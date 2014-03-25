@@ -33,6 +33,7 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
         scope: {
             path: '@',
             link: '@',
+            target: '@',
             alt: '@',
             imageClass: '@'
         },
@@ -81,17 +82,6 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
                 return toUri() + toQueryString();
             }
 
-            topicRegistry.subscribe('app.start', function () {
-                activeUserHasPermission({
-                    no: function () {
-                        scope.cacheEnabled = config.image && config.image.cache;
-                    },
-                    yes: function () {
-                        scope.cacheEnabled = false;
-                    }
-                }, 'image.upload');
-            });
-
             scope.$watch('path', function () {
                 scope.imageSource = toImageSource();
             }, true);
@@ -104,17 +94,6 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
             }, true);
             scope.editing = false;
 
-            topicRegistry.subscribe('edit.mode', function (editMode) {
-                activeUserHasPermission({
-                    no: function () {
-                        scope.editing = false;
-                    },
-                    yes: function () {
-                        scope.editing = editMode;
-                    }
-                }, 'image.upload');
-            });
-
             element.fileupload({
                 dataType: 'text',
                 add: function (e, data) {
@@ -125,6 +104,37 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
             scope.open = function () {
                 element.find("input[type='file']").click();
             };
+
+            var putCacheEnabledOnScope = function () {
+                activeUserHasPermission({
+                    no: function () {
+                        scope.cacheEnabled = config.image && config.image.cache;
+                    },
+                    yes: function () {
+                        scope.cacheEnabled = false;
+                    }
+                }, 'image.upload');
+            };
+
+            topicRegistry.subscribe('app.start', putCacheEnabledOnScope);
+
+            var putEditingOnScope = function (editMode) {
+                activeUserHasPermission({
+                    no: function () {
+                        scope.editing = false;
+                    },
+                    yes: function () {
+                        scope.editing = editMode;
+                    }
+                }, 'image.upload');
+            };
+
+            topicRegistry.subscribe('edit.mode', putEditingOnScope);
+
+            scope.$on('$destroy', function () {
+                topicRegistry.unsubscribe('edit.mode', putEditingOnScope);
+                topicRegistry.unsubscribe('app.start', putCacheEnabledOnScope);
+            });
         }
     }
 }
@@ -135,7 +145,7 @@ function ImageController($scope, uploader, config) {
         $scope.temp = [];
         $scope.selecting = false;
         $scope.hasError = false;
-    }
+    };
     init();
 
     $scope.select = function () {
@@ -165,9 +175,9 @@ function ImageController($scope, uploader, config) {
             $scope.error[key].forEach(function (violation) {
                 list.push({'key': key, 'violation': violation})
             })
-        })
+        });
         return list
-    }
+    };
 
     var onSuccess = function () {
 //        $templateCache.removeAll();
@@ -176,13 +186,13 @@ function ImageController($scope, uploader, config) {
         $scope.status = 201;
         $scope.name = '';
         $scope.selecting = false;
-    }
+    };
 
     var onError = function () {
         $scope.loading = false;
         $scope.status = 500;
         $scope.error = 'Error communicating with filestore';
-    }
+    };
 
     var onRejected = function (violations) {
         $scope.loading = false;

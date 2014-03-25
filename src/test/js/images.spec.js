@@ -6,10 +6,10 @@ describe('image-management', function () {
         size: 1,
         type: 'type',
         name: 'name'
-    }
+    };
     var file = {
         files: [_file]
-    }
+    };
 
     beforeEach(module('image-management'));
     beforeEach(module('permissions'));
@@ -30,16 +30,14 @@ describe('image-management', function () {
     describe('image show directive', function () {
         var registry, element, attrs, permitter, dispatcher, topics, imageEvent, loadHandler, errorHandler, abortHandler;
 
-        beforeEach(inject(function (activeUserHasPermission, activeUserHasPermissionHelper, topicMessageDispatcher, topicMessageDispatcherMock, $timeout, $rootScope) {
+        beforeEach(inject(function (activeUserHasPermission, activeUserHasPermissionHelper, topicMessageDispatcher, topicMessageDispatcherMock, $timeout, $rootScope, topicRegistryMock, topicRegistry) {
             permitter = activeUserHasPermissionHelper;
-            scope = {
-                watches: {},
-                $watch: function (expression, callback, b) {
-                    this.watches[expression] = {};
-                    this.watches[expression].callback = callback;
-                    this.watches[expression].weirdBoolean = b;
-                },
-                $apply: function(arg){}
+            scope = $rootScope.$new();
+            scope.watches = {};
+            scope.$watch = function (expression, callback, b) {
+                this.watches[expression] = {};
+                this.watches[expression].callback = callback;
+                this.watches[expression].weirdBoolean = b;
             };
             ctrl = {
                 add: function (data, path) {
@@ -73,15 +71,11 @@ describe('image-management', function () {
             };
 
             attrs = {};
-            registry = {
-                subscribe: function (topic, callback) {
-                    registry[topic] = callback;
-                }
-            };
+            registry = topicRegistryMock;
             config = {awsPath: 'base/'};
             dispatcher = topicMessageDispatcher;
             topics = topicMessageDispatcherMock;
-            directive = ImageShowDirectiveFactory(config, registry, activeUserHasPermission, dispatcher, $timeout, $rootScope);
+            directive = ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, dispatcher, $timeout, $rootScope);
         }));
 
         it('restrict', function () {
@@ -106,6 +100,7 @@ describe('image-management', function () {
             expect(directive.scope).toEqual({
                 path: '@',
                 link: '@',
+                target: '@',
                 alt: '@',
                 imageClass: '@'
             });
@@ -225,9 +220,9 @@ describe('image-management', function () {
                     }
                 };
 
-                beforeEach(function () {
-                    angular.module('image-management')._runBlocks[0](rootScope, location, registry, dispatcher);
-                });
+                beforeEach(inject(function (topicRegistry) {
+                    angular.module('image-management')._runBlocks[0](rootScope, location, topicRegistry, dispatcher);
+                }));
 
                 it('when all images are loaded fire images.loaded notification', function () {
                     registry['image.loading']('loading');
@@ -423,6 +418,21 @@ describe('image-management', function () {
                 });
             });
         });
+
+        describe('when scope is destroyed', function() {
+            beforeEach(function () {
+                link();
+                scope.$destroy();
+            });
+
+            it('unsubscribe edit.mode', function () {
+                expect(registry['edit.mode']).toBeUndefined();
+            });
+
+            it('unsubscribe app.start', function () {
+                expect(registry['app.start']).toBeUndefined();
+            });
+        });
     });
 
     describe('ImageController', function () {
@@ -554,6 +564,6 @@ describe('image-management', function () {
                 {'key': 'contentType', 'violation': 'violation1'},
                 {'key': 'contentType', 'violation': 'violation2'}
             ])
-        })
-    })
+        });
+    });
 });
