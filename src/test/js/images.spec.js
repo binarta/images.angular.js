@@ -28,10 +28,11 @@ describe('image-management', function () {
     });
 
     describe('image show directive', function () {
-        var registry, element, attrs, permitter, dispatcher, topics, imageEvent, loadHandler, errorHandler, abortHandler;
+        var registry, element, attrs, permitter, dispatcher, topics, imageEvent, loadHandler, errorHandler, abortHandler, rootScope;
 
         beforeEach(inject(function (activeUserHasPermission, activeUserHasPermissionHelper, topicMessageDispatcher, topicMessageDispatcherMock, $timeout, $rootScope, topicRegistryMock, topicRegistry) {
             permitter = activeUserHasPermissionHelper;
+            rootScope = $rootScope;
             scope = $rootScope.$new();
             scope.watches = {};
             scope.$watch = function (expression, callback, b) {
@@ -83,7 +84,7 @@ describe('image-management', function () {
         });
 
         it('controller', function () {
-            expect(directive.controller).toEqual(['$scope', 'uploader', 'config', ImageController]);
+            expect(directive.controller).toEqual(['$scope', 'uploader', 'config', '$rootScope', ImageController]);
         });
 
         it('template url', function () {
@@ -359,14 +360,18 @@ describe('image-management', function () {
             });
 
             it('the image source is not cached by default by adding a random query string', function () {
+                rootScope.image.defaultTimeStamp = 'defaultTimeStamp';
                 triggerWatch();
-                expect(scope.imageSource).toMatch(/.*\?\d+/);
+
+                expect(scope.imageSource).toEqual('base/path?defaultTimeStamp');
             });
 
             it('the image source is not cached when active user has permission', function () {
+                rootScope.image.defaultTimeStamp = 'defaultTimeStamp';
                 permitter.yes();
                 triggerWatch();
-                expect(scope.imageSource).toMatch(/.*\?\d+/);
+
+                expect(scope.imageSource).toEqual('base/path?defaultTimeStamp');
             });
 
             it('the image source is cached when cache enabled and active user has no image.upload permission', function () {
@@ -375,6 +380,15 @@ describe('image-management', function () {
                 triggerWatch();
 
                 expect(scope.imageSource).toEqual('base/path');
+            });
+
+            it('the image source is not cached when cache enabled and active user has image.upload permission and image is newly uploaded', function () {
+                config.image = {cache: true};
+                permitter.yes();
+                rootScope.image.uploaded['path'] = 'timestamp';
+                triggerWatch();
+
+                expect(scope.imageSource).toEqual('base/path?timestamp');
             });
 
             it('configure to use the browsers standard image cache mechanism', function () {
@@ -438,8 +452,10 @@ describe('image-management', function () {
     describe('ImageController', function () {
         var awsPath = 'path';
         var path = 'path';
+        var rootScope;
 
         beforeEach(inject(function ($rootScope, $controller, cacheControl) {
+            rootScope = $rootScope;
             uploader = {
                 add: function (file, path) {
                     uploader.file = file.files[0];
@@ -525,6 +541,9 @@ describe('image-management', function () {
                 expect(scope.selecting).toEqual(false);
             });
 
+            it('keep reference of newly uploaded image on rootScope', function () {
+                expect(rootScope.image.uploaded[uploader.path]).toMatch(/\d+/);
+            });
         });
 
         it('upload with error', function () {

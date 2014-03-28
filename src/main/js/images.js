@@ -21,12 +21,17 @@ angular.module('image-management', [])
             imageCount--;
             if (imageCount == 0) topicMessageDispatcher.fire('images.loaded', 'ok');
         }
+
+        $rootScope.image = {
+            uploaded: [],
+            defaultTimeStamp: new Date().getTime()
+        };
     });
 
 function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, topicMessageDispatcher, $timeout, $rootScope) {
     return {
         restrict: 'E',
-        controller: ['$scope', 'uploader', 'config', ImageController],
+        controller: ['$scope', 'uploader', 'config', '$rootScope', ImageController],
         templateUrl: function() {
             return $rootScope.imageShowTemplateUrl ? $rootScope.imageShowTemplateUrl : 'app/partials/image/show.html';
         },
@@ -70,8 +75,15 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
 
             scope.cacheEnabled = false;
 
+            function getTimeStamp() {
+                var img = $rootScope.image;
+                return img.uploaded[scope.path] ? img.uploaded[scope.path] : img.defaultTimeStamp;
+            }
+
             function toQueryString() {
-                return scope.cacheEnabled ? '' : '?' + new Date().getTime();
+                if (!scope.cacheEnabled || $rootScope.image.uploaded[scope.path])
+                    return '?' + getTimeStamp();
+                return '';
             }
 
             function toUri() {
@@ -139,7 +151,7 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
     }
 }
 
-function ImageController($scope, uploader, config) {
+function ImageController($scope, uploader, config, $rootScope) {
     var init = function () {
         $scope.temp = [];
         $scope.selecting = false;
@@ -179,7 +191,9 @@ function ImageController($scope, uploader, config) {
     };
 
     var onSuccess = function () {
-        $scope.imageSource = config.awsPath + uploader.path + "?" + new Date().getTime();
+        var newTimeStamp = new Date().getTime();
+        $rootScope.image.uploaded[uploader.path] = newTimeStamp;
+        $scope.imageSource = config.awsPath + uploader.path + "?" + newTimeStamp;
         $scope.loading = false;
         $scope.status = 201;
         $scope.name = '';
