@@ -52,18 +52,21 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
                 if(scope.working != false) scope.working = true;
             }, 1000);
 
-            element.find('img').first().bind('load', function() {
+            var img = element.find('img').first();
+
+            img.bind('load', function() {
                 if(scope.imageSource != placeholderImage) scope.$apply(scope.notFound = false);
+                img.removeClass('working');
                 scope.$apply(scope.working = false);
                 topicMessageDispatcher.fire('image.loading', 'loaded');
             });
 
-            element.find('img').first().bind('error', function() {
+            img.bind('error', function() {
                 topicMessageDispatcher.fire('image.loading', 'error');
                 imageNotFound();
             });
 
-            element.find('img').first().bind('abort', function() {
+            img.bind('abort', function() {
                 topicMessageDispatcher.fire('image.loading', 'abort');
                 imageNotFound();
             });
@@ -71,6 +74,7 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
             function imageNotFound() {
                 scope.imageSource = placeholderImage;
                 scope.$apply(scope.notFound = true);
+                img.addClass('not-found');
             }
 
             scope.cacheEnabled = false;

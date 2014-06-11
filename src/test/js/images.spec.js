@@ -29,6 +29,7 @@ describe('image-management', function () {
 
     describe('image show directive', function () {
         var registry, element, attrs, permitter, dispatcher, topics, imageEvent, loadHandler, errorHandler, abortHandler, rootScope;
+        var removedClass, addedClass;
 
         beforeEach(inject(function (activeUserHasPermission, activeUserHasPermissionHelper, topicMessageDispatcher, topicMessageDispatcherMock, $timeout, $rootScope, topicRegistryMock, topicRegistry) {
             permitter = activeUserHasPermissionHelper;
@@ -64,6 +65,12 @@ describe('image-management', function () {
                                      if (event == 'load') loadHandler = handler;
                                      if (event == 'error') errorHandler = handler;
                                      if (event == 'abort') abortHandler = handler;
+                                 },
+                                 removeClass: function(className) {
+                                     removedClass = className;
+                                 },
+                                 addClass: function(className) {
+                                     addedClass = className;
                                  }
                              }
                         }
@@ -169,6 +176,12 @@ describe('image-management', function () {
                     expect(scope.working).toEqual(false);
                 });
 
+                it('removes working class from img', function () {
+                    loadHandler();
+
+                    expect(removedClass).toEqual('working');
+                });
+
                 it('and image is the placeholder image is not found', function () {
                     scope.imageSource = placeholderImage;
                     scope.notFound = true;
@@ -192,6 +205,7 @@ describe('image-management', function () {
                 expect(element.first).toEqual(true);
                 expect(topics['image.loading']).toEqual('error');
                 expect(scope.notFound).toEqual(true);
+                expect(addedClass).toEqual('not-found');
                 expect(scope.imageSource).toEqual(placeholderImage);
             });
 
@@ -202,6 +216,7 @@ describe('image-management', function () {
                 expect(element.first).toEqual(true);
                 expect(topics['image.loading']).toEqual('abort');
                 expect(scope.notFound).toEqual(true);
+                expect(addedClass).toEqual('not-found');
                 expect(scope.imageSource).toEqual(placeholderImage);
             });
 
