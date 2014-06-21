@@ -55,21 +55,28 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
             var img = element.find('img').first();
 
             img.bind('load', function() {
-                if(scope.imageSource != placeholderImage) scope.$apply(scope.notFound = false);
-                img.removeClass('working');
-                scope.$apply(scope.working = false);
+                imageFound();
                 topicMessageDispatcher.fire('image.loading', 'loaded');
             });
 
             img.bind('error', function() {
-                topicMessageDispatcher.fire('image.loading', 'error');
                 imageNotFound();
+                topicMessageDispatcher.fire('image.loading', 'error');
             });
 
             img.bind('abort', function() {
-                topicMessageDispatcher.fire('image.loading', 'abort');
                 imageNotFound();
+                topicMessageDispatcher.fire('image.loading', 'abort');
             });
+
+            function imageFound() {
+                if(scope.imageSource != placeholderImage) {
+                    scope.$apply(scope.notFound = false);
+                    img.removeClass('not-found');
+                }
+                scope.$apply(scope.working = false);
+                img.removeClass('working');
+            }
 
             function imageNotFound() {
                 scope.imageSource = placeholderImage;

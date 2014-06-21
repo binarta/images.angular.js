@@ -36,6 +36,7 @@ describe('image-management', function () {
             rootScope = $rootScope;
             scope = $rootScope.$new();
             scope.watches = {};
+            removedClass = [];
             scope.$watch = function (expression, callback, b) {
                 this.watches[expression] = {};
                 this.watches[expression].callback = callback;
@@ -67,7 +68,7 @@ describe('image-management', function () {
                                      if (event == 'abort') abortHandler = handler;
                                  },
                                  removeClass: function(className) {
-                                     removedClass = className;
+                                     removedClass.push(className);
                                  },
                                  addClass: function(className) {
                                      addedClass = className;
@@ -179,22 +180,23 @@ describe('image-management', function () {
                 it('removes working class from img', function () {
                     loadHandler();
 
-                    expect(removedClass).toEqual('working');
+                    expect(removedClass).toContain('working');
                 });
 
-                it('and image is the placeholder image is not found', function () {
+                it('and image is the placeholder, image is not found', function () {
                     scope.imageSource = placeholderImage;
-                    scope.notFound = true;
                     loadHandler();
 
-                    expect(scope.notFound).toEqual(true);
+                    expect(scope.notFound).toBeUndefined();
                 });
 
-                it('and image is the placeholder image is not found', function () {
+                it('and image is not the placeholder, image is found', function () {
                     scope.imageSource = 'another-source';
                     loadHandler();
 
                     expect(scope.notFound).toEqual(false);
+                    expect(removedClass).toContain('working');
+                    expect(removedClass).toContain('not-found');
                 });
             });
 
