@@ -610,7 +610,7 @@ describe('image-management', function () {
         it('open dialog', inject(function($modal) {
             ctrl.open();
             $modal.opened.once();
-            $modal.opened.template('partials/image/upload.modal.html');
+            $modal.opened.templateUrl('partials/image/upload.modal.html');
             $modal.opened.backdrop('static');
             $modal.opened.scope(scope);
         }));

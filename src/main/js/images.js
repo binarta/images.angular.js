@@ -240,7 +240,7 @@ function ImageUploadDialogController($scope, $modal) {
     this.open = function (connector) {
         self.connector = connector;
         $modal.open({
-            template: 'partials/image/upload.modal.html',
+            templateUrl: 'partials/image/upload.modal.html',
             backdrop: 'static',
             scope: $scope
         });
