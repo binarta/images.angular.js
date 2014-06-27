@@ -627,10 +627,22 @@ describe('image-management', function () {
             expect(scope.imgSrc).toEqual('s');
         }));
 
+        it('remove anchors when sourcing an image', inject(function(config) {
+            ctrl.open();
+            ctrl.source(config.awsPath + 's#anchor');
+            expect(scope.imgSrc).toEqual('s');
+        }));
+
+        it('remove query params when sourcing an image', inject(function(config) {
+            ctrl.open();
+            ctrl.source(config.awsPath + 's?params');
+            expect(scope.imgSrc).toEqual('s');
+        }));
+
         it('accepting an image', inject(function(config) {
             ctrl.open({
                 accept:function(src) {
-                    expect(src).toEqual(config.awsPath + scope.imgSrc);
+                    expect(src.replace(/\?.*/, '')).toEqual(config.awsPath + scope.imgSrc);
                 }
             });
             scope.accept();
@@ -640,7 +652,7 @@ describe('image-management', function () {
             ctrl.source('s');
             ctrl.open({
                 accept:function(src) {
-                    expect(src).toEqual(config.awsPath + 's');
+                    expect(src.replace(/\?.*/, '')).toEqual(config.awsPath + 's');
                 }
             });
             scope.accept();

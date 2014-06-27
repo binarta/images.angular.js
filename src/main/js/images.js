@@ -248,10 +248,10 @@ function ImageUploadDialogController($scope, $modal, config) {
     };
 
     this.source = function (src) {
-        $scope.imgSrc = src.replace(config.awsPath, '');
+        $scope.imgSrc = src.replace(config.awsPath, '').replace(/[#\?].*/, '');
     };
 
     $scope.accept = function () {
-        self.connector.accept(config.awsPath + $scope.imgSrc);
+        self.connector.accept(config.awsPath + $scope.imgSrc + '?' + new Date().getTime());
     };
 }
