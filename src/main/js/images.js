@@ -1,6 +1,6 @@
-angular.module('image-management', ['ui.bootstrap.modal'])
+angular.module('image-management', ['ui.bootstrap.modal', 'config'])
     .directive('imageShow', ['config', 'topicRegistry', 'activeUserHasPermission', 'topicMessageDispatcher', '$timeout', '$rootScope', ImageShowDirectiveFactory])
-    .controller('ImageUploadDialogController', ['$scope', '$modal', ImageUploadDialogController])
+    .controller('ImageUploadDialogController', ['$scope', '$modal', 'config', ImageUploadDialogController])
     .run(function ($rootScope, $location, topicRegistry, topicMessageDispatcher) {
         var imageCount = 0;
 
@@ -234,11 +234,12 @@ function ImageController($scope, uploader, config, $rootScope) {
     }
 }
 
-function ImageUploadDialogController($scope, $modal) {
+function ImageUploadDialogController($scope, $modal, config) {
     var self = this;
 
     this.open = function (connector) {
         self.connector = connector;
+        if(!$scope.imgSrc) $scope.imgSrc = config.awsPath + 'images/redacted/' + uuid.v4() + '.img';
         $modal.open({
             templateUrl: 'partials/image/upload.modal.html',
             backdrop: 'static',
@@ -247,12 +248,10 @@ function ImageUploadDialogController($scope, $modal) {
     };
 
     this.source = function (src) {
-        $scope.imgSrc = src;
+        $scope.imgSrc = src.replace(config.awsPath, '');
     };
 
     $scope.accept = function () {
-        self.connector.accept($scope.imgSrc);
+        self.connector.accept(config.awsPath + $scope.imgSrc);
     };
-
-    $scope.imgSrc = 'images/redacted/' + uuid.v4() + '.img';
 }

@@ -603,7 +603,8 @@ describe('image-management', function () {
     });
 
     describe('ImageUploadDialogController', function() {
-        beforeEach(inject(function($controller) {
+        beforeEach(inject(function($controller, config) {
+            config.awsPath = 'http://aws/';
             ctrl = $controller(ImageUploadDialogController, {$scope:scope});
         }));
 
@@ -615,32 +616,34 @@ describe('image-management', function () {
             $modal.opened.scope(scope);
         }));
 
-        it('an initial image source is generated', function() {
-            expect(scope.imgSrc).toEqual('images/redacted/v4-uuid.img');
-        });
+        it('an initial image source is generated', inject(function(config) {
+            ctrl.open();
+            expect(scope.imgSrc).toEqual(config.awsPath + 'images/redacted/v4-uuid.img');
+        }));
 
-        it('set image source', function() {
-            ctrl.source('s');
+        it('set image source', inject(function(config) {
+            ctrl.open();
+            ctrl.source(config.awsPath + 's');
             expect(scope.imgSrc).toEqual('s');
-        });
+        }));
 
-        it('accepting an image', function() {
+        it('accepting an image', inject(function(config) {
             ctrl.open({
                 accept:function(src) {
-                    expect(src).toEqual(scope.imgSrc);
+                    expect(src).toEqual(config.awsPath + scope.imgSrc);
                 }
             });
             scope.accept();
-        });
+        }));
 
-        it('accepting an existing image', function() {
+        it('accepting an existing image', inject(function(config) {
             ctrl.source('s');
             ctrl.open({
                 accept:function(src) {
-                    expect(src).toEqual('s');
+                    expect(src).toEqual(config.awsPath + 's');
                 }
             });
             scope.accept();
-        });
+        }));
     });
 });

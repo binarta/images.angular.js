@@ -9,6 +9,7 @@
         "angular-mocks": "1.2.5",
         "thk-cache-control-mock": "0.0.*",
         "thk-notifications-mock": "0.0.*",
+        "thk-config-mock": "0.0.*",
         "thinkerit.angularx.bootstrap.mocks": "0.0.*"
     },
     "ignore": [
