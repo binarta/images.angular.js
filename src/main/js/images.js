@@ -1,6 +1,7 @@
-angular.module('image-management', [])
+angular.module('image-management', ['ui.bootstrap.modal'])
     .directive('imageShow', ['config', 'topicRegistry', 'activeUserHasPermission', 'topicMessageDispatcher', '$timeout', '$rootScope', ImageShowDirectiveFactory])
-    .run(function($rootScope, $location, topicRegistry, topicMessageDispatcher){
+    .controller('ImageUploadDialogController', ['$scope', '$modal', ImageUploadDialogController])
+    .run(function ($rootScope, $location, topicRegistry, topicMessageDispatcher) {
         var imageCount = 0;
 
         $rootScope.$watch(function () {
@@ -10,7 +11,7 @@ angular.module('image-management', [])
         });
 
         topicRegistry.subscribe('image.loading', function (topic) {
-            if(topic == 'loading') {
+            if (topic == 'loading') {
                 imageCount++;
             } else {
                 if (imageCount > 0) reduceImageCount();
@@ -32,7 +33,7 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
     return {
         restrict: 'E',
         controller: ['$scope', 'uploader', 'config', '$rootScope', ImageController],
-        templateUrl: function() {
+        templateUrl: function () {
             return $rootScope.imageShowTemplateUrl ? $rootScope.imageShowTemplateUrl : 'app/partials/image/show.html';
         },
         scope: {
@@ -49,28 +50,28 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
             topicMessageDispatcher.fire('image.loading', 'loading');
 
             $timeout(function () {
-                if(scope.working != false) scope.working = true;
+                if (scope.working != false) scope.working = true;
             }, 1000);
 
             var img = element.find('img').first();
 
-            img.bind('load', function() {
+            img.bind('load', function () {
                 imageFound();
                 topicMessageDispatcher.fire('image.loading', 'loaded');
             });
 
-            img.bind('error', function() {
+            img.bind('error', function () {
                 imageNotFound();
                 topicMessageDispatcher.fire('image.loading', 'error');
             });
 
-            img.bind('abort', function() {
+            img.bind('abort', function () {
                 imageNotFound();
                 topicMessageDispatcher.fire('image.loading', 'abort');
             });
 
             function imageFound() {
-                if(scope.imageSource != placeholderImage) {
+                if (scope.imageSource != placeholderImage) {
                     scope.$apply(scope.notFound = false);
                     img.removeClass('not-found');
                 }
@@ -112,7 +113,7 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
                 scope.linkProvided = scope.link != undefined;
             });
             scope.imgClass = attrs.class;
-            scope.$watch('imageClass', function() {
+            scope.$watch('imageClass', function () {
                 scope.imgClass = scope.imgClass ? attrs.class + ' ' + scope.imageClass : scope.imageClass;
             }, true);
             scope.editing = false;
@@ -231,4 +232,27 @@ function ImageController($scope, uploader, config, $rootScope) {
         $scope.canUpload = true;
         $scope.$apply();
     }
+}
+
+function ImageUploadDialogController($scope, $modal) {
+    var self = this;
+
+    this.open = function (connector) {
+        self.connector = connector;
+        $modal.open({
+            template: 'partials/image/upload.modal.html',
+            backdrop: 'static',
+            scope: $scope
+        });
+    };
+
+    this.source = function (src) {
+        $scope.imgSrc = src;
+    };
+
+    $scope.accept = function () {
+        self.connector.accept($scope.imgSrc);
+    };
+
+    $scope.imgSrc = 'images/redacted/' + uuid.v4() + '.img';
 }

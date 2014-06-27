@@ -601,4 +601,46 @@ describe('image-management', function () {
             ])
         });
     });
+
+    describe('ImageUploadDialogController', function() {
+        beforeEach(inject(function($controller) {
+            ctrl = $controller(ImageUploadDialogController, {$scope:scope});
+        }));
+
+        it('open dialog', inject(function($modal) {
+            ctrl.open();
+            $modal.opened.once();
+            $modal.opened.template('partials/image/upload.modal.html');
+            $modal.opened.backdrop('static');
+            $modal.opened.scope(scope);
+        }));
+
+        it('an initial image source is generated', function() {
+            expect(scope.imgSrc).toEqual('images/redacted/v4-uuid.img');
+        });
+
+        it('set image source', function() {
+            ctrl.source('s');
+            expect(scope.imgSrc).toEqual('s');
+        });
+
+        it('accepting an image', function() {
+            ctrl.open({
+                accept:function(src) {
+                    expect(src).toEqual(scope.imgSrc);
+                }
+            });
+            scope.accept();
+        });
+
+        it('accepting an existing image', function() {
+            ctrl.source('s');
+            ctrl.open({
+                accept:function(src) {
+                    expect(src).toEqual('s');
+                }
+            });
+            scope.accept();
+        });
+    });
 });

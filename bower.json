@@ -1,19 +1,21 @@
 {
-  "name": "binarta.images.angular",
-  "main": "./src/main/js/images.js",
-  "dependencies": {
-    "angular": "1.2.5"
-  },
-  "devDependencies": {
-    "angular-mocks": "1.2.5",
-    "thk-cache-control-mock": "0.0.*",
-    "thk-notifications-mock": "0.0.*"
-  },
-  "ignore": [
-    "**/.*",
-    "node_modules",
-    "bower_components",
-    "test",
-    "tests"
-  ]
+    "name": "binarta.images.angular",
+    "main": "./src/main/js/images.js",
+    "dependencies": {
+        "angular": "1.2.5",
+        "node-uuid":"1.4.1"
+    },
+    "devDependencies": {
+        "angular-mocks": "1.2.5",
+        "thk-cache-control-mock": "0.0.*",
+        "thk-notifications-mock": "0.0.*",
+        "thinkerit.angularx.bootstrap.mocks": "0.0.*"
+    },
+    "ignore": [
+        "**/.*",
+        "node_modules",
+        "bower_components",
+        "test",
+        "tests"
+    ]
 }
