@@ -472,6 +472,7 @@ describe('image-management', function () {
         var rootScope;
 
         beforeEach(inject(function ($rootScope, $controller, cacheControl) {
+            config = {awsPath: awsPath};
             rootScope = $rootScope;
             uploader = {
                 add: function (file, path) {
@@ -493,7 +494,7 @@ describe('image-management', function () {
             };
             ctrl = $controller(ImageController, {
                 $scope: scope,
-                config: {awsPath: awsPath},
+                config: config,
                 uploader: uploader,
                 $templateCache: {removeAll: function () {
                     cacheControl.cleared = true;
@@ -540,6 +541,18 @@ describe('image-management', function () {
         it('can upload is disabled when on submit', function () {
             scope.upload();
             expect(scope.canUpload).toEqual(false);
+        });
+
+        describe('', function() {
+            beforeEach(function() {
+                config.autoUpload = true;
+                scope.selecting = true;
+                ctrl.add(file, path);
+            });
+
+            it('test', function() {
+                expect(uploader.handlers).toBeDefined();
+            })
         });
 
         describe('on upload success', function () {

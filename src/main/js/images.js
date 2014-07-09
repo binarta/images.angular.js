@@ -231,6 +231,7 @@ function ImageController($scope, uploader, config, $rootScope) {
         $scope.name = file.files[0].name;
         $scope.canUpload = true;
         $scope.$apply();
+        if (config.autoUpload) $scope.upload();
     }
 }
 
