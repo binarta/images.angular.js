@@ -618,7 +618,7 @@ describe('image-management', function () {
 
         it('an initial image source is generated', inject(function(config) {
             ctrl.open();
-            expect(scope.imgSrc).toEqual(config.awsPath + 'images/redacted/v4-uuid.img');
+            expect(scope.imgSrc).toEqual('images/redacted/v4-uuid.img');
         }));
 
         it('set image source', inject(function(config) {

@@ -239,7 +239,7 @@ function ImageUploadDialogController($scope, $modal, config) {
 
     this.open = function (connector) {
         self.connector = connector;
-        if(!$scope.imgSrc) $scope.imgSrc = config.awsPath + 'images/redacted/' + uuid.v4() + '.img';
+        if(!$scope.imgSrc) $scope.imgSrc = 'images/redacted/' + uuid.v4() + '.img';
         $modal.open({
             templateUrl: 'partials/image/upload.modal.html',
             backdrop: 'static',
