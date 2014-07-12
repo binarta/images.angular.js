@@ -32,7 +32,7 @@ angular.module('image-management', ['ui.bootstrap.modal', 'config'])
 function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, topicMessageDispatcher, $timeout, $rootScope) {
     return {
         restrict: 'E',
-        controller: ['$scope', 'uploader', 'config', '$rootScope', ImageController],
+        controller: ['$scope', 'uploader', 'config', '$rootScope', 'topicMessageDispatcher', ImageController],
         templateUrl: function () {
             return $rootScope.imageShowTemplateUrl ? $rootScope.imageShowTemplateUrl : 'app/partials/image/show.html';
         },
@@ -163,7 +163,7 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
     }
 }
 
-function ImageController($scope, uploader, config, $rootScope) {
+function ImageController($scope, uploader, config, $rootScope, topicMessageDispatcher) {
     var init = function () {
         $scope.temp = [];
         $scope.selecting = false;
@@ -183,23 +183,11 @@ function ImageController($scope, uploader, config, $rootScope) {
         $scope.temp = [];
         $scope.loading = true;
         $scope.hasError = false;
-        $scope.error = {};
         $scope.canUpload = false;
         uploader.upload({
             success: onSuccess,
-            error: onError,
             rejected: onRejected
         });
-    };
-
-    $scope.toViolationList = function () {
-        var list = [];
-        Object.keys($scope.error).forEach(function (key) {
-            $scope.error[key].forEach(function (violation) {
-                list.push({'key': key, 'violation': violation})
-            })
-        });
-        return list
     };
 
     var onSuccess = function () {
@@ -212,18 +200,18 @@ function ImageController($scope, uploader, config, $rootScope) {
         $scope.selecting = false;
     };
 
-    var onError = function () {
-        $scope.loading = false;
-        $scope.status = 500;
-        $scope.error = 'Error communicating with filestore';
-    };
-
     var onRejected = function (violations) {
         $scope.loading = false;
         $scope.status = 412;
         $scope.hasError = true;
-        $scope.error = violations;
-        $scope.violationList = $scope.toViolationList();
+        Object.keys(violations).forEach(function (key) {
+            violations[key].forEach(function (violation) {
+                topicMessageDispatcher.fire('system.warning', {
+                    code: key + '.' + violation,
+                    default: key + '.' + violation
+                });
+            });
+        });
     };
 
     this.add = function (file, path) {

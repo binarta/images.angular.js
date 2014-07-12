@@ -60,20 +60,20 @@ describe('image-management', function () {
                         },
                         first: function () {
                             element.first = true;
-                             return {
-                                 bind: function(event, handler){
-                                     imageEvent = event;
-                                     if (event == 'load') loadHandler = handler;
-                                     if (event == 'error') errorHandler = handler;
-                                     if (event == 'abort') abortHandler = handler;
-                                 },
-                                 removeClass: function(className) {
-                                     removedClass.push(className);
-                                 },
-                                 addClass: function(className) {
-                                     addedClass = className;
-                                 }
-                             }
+                            return {
+                                bind: function (event, handler) {
+                                    imageEvent = event;
+                                    if (event == 'load') loadHandler = handler;
+                                    if (event == 'error') errorHandler = handler;
+                                    if (event == 'abort') abortHandler = handler;
+                                },
+                                removeClass: function (className) {
+                                    removedClass.push(className);
+                                },
+                                addClass: function (className) {
+                                    addedClass = className;
+                                }
+                            }
                         }
                     };
                 }
@@ -92,7 +92,7 @@ describe('image-management', function () {
         });
 
         it('controller', function () {
-            expect(directive.controller).toEqual(['$scope', 'uploader', 'config', '$rootScope', ImageController]);
+            expect(directive.controller).toEqual(['$scope', 'uploader', 'config', '$rootScope', 'topicMessageDispatcher', ImageController]);
         });
 
         it('template url', function () {
@@ -122,7 +122,7 @@ describe('image-management', function () {
         describe('fire image events', function () {
             var placeholderImage = 'http://cdn.binarta.com/image/placeholder.png';
 
-            beforeEach(function() {
+            beforeEach(function () {
                 loadHandler = undefined;
                 errorHandler = undefined;
                 abortHandler = undefined;
@@ -138,7 +138,7 @@ describe('image-management', function () {
                 var waitFor;
 
                 beforeEach(inject(function ($timeout) {
-                    waitFor = function(ms) {
+                    waitFor = function (ms) {
                         $timeout.flush(ms);
                     };
                 }));
@@ -233,7 +233,7 @@ describe('image-management', function () {
                     }
                 };
                 location = {
-                    path: function(){
+                    path: function () {
                         return path;
                     }
                 };
@@ -415,13 +415,13 @@ describe('image-management', function () {
             });
         });
 
-        describe('with img-class attribute watcher', function() {
+        describe('with img-class attribute watcher', function () {
             function triggerWatch() {
                 scope.watches['imageClass'].callback();
             }
 
-            describe('and no class attribute', function() {
-                beforeEach(function() {
+            describe('and no class attribute', function () {
+                beforeEach(function () {
                     link();
                     scope.imageClass = 'img-class';
                 });
@@ -436,9 +436,9 @@ describe('image-management', function () {
                 });
             });
 
-            describe('and class attribute', function() {
-                beforeEach(function() {
-                    attrs.class="legacy-class";
+            describe('and class attribute', function () {
+                beforeEach(function () {
+                    attrs.class = "legacy-class";
                     link();
                     scope.imageClass = 'img-class';
                 });
@@ -450,7 +450,7 @@ describe('image-management', function () {
             });
         });
 
-        describe('when scope is destroyed', function() {
+        describe('when scope is destroyed', function () {
             beforeEach(function () {
                 link();
                 scope.$destroy();
@@ -469,11 +469,17 @@ describe('image-management', function () {
     describe('ImageController', function () {
         var awsPath = 'path';
         var path = 'path';
-        var rootScope;
+        var rootScope, dispatcherMock, topics;
 
         beforeEach(inject(function ($rootScope, $controller, cacheControl) {
             config = {awsPath: awsPath};
             rootScope = $rootScope;
+            dispatcherMock = {
+                fire: function (topic, message) {
+                    topics.push({topic: topic, message: message});
+                }
+            };
+            topics = [];
             uploader = {
                 add: function (file, path) {
                     uploader.file = file.files[0];
@@ -498,7 +504,8 @@ describe('image-management', function () {
                 uploader: uploader,
                 $templateCache: {removeAll: function () {
                     cacheControl.cleared = true;
-                }}
+                }},
+                topicMessageDispatcher: dispatcherMock
             })
         }));
 
@@ -543,14 +550,14 @@ describe('image-management', function () {
             expect(scope.canUpload).toEqual(false);
         });
 
-        describe('', function() {
-            beforeEach(function() {
+        describe('', function () {
+            beforeEach(function () {
                 config.autoUpload = true;
                 scope.selecting = true;
                 ctrl.add(file, path);
             });
 
-            it('test', function() {
+            it('test', function () {
                 expect(uploader.handlers).toBeDefined();
             })
         });
@@ -566,7 +573,6 @@ describe('image-management', function () {
             it('refresh image source', function () {
                 expect(scope.name).toEqual('');
                 expect(scope.imageSource).toContain(awsPath + uploader.path + "?");
-                expect(scope.error).toEqual({});
                 expect(scope.status).toEqual(201);
                 expect(scope.selecting).toEqual(false);
             });
@@ -574,17 +580,6 @@ describe('image-management', function () {
             it('keep reference of newly uploaded image on rootScope', function () {
                 expect(rootScope.image.uploaded[uploader.path]).toMatch(/\d+/);
             });
-        });
-
-        it('upload with error', function () {
-            ctrl.add(file, path);
-
-            scope.upload();
-            uploader.handlers.error('body', 500);
-
-            expect(scope.loading).toBeFalsy();
-            expect(scope.error).toEqual('Error communicating with filestore');
-            expect(scope.status).toEqual(500)
         });
 
         it('upload with rejected', function () {
@@ -595,7 +590,6 @@ describe('image-management', function () {
 
             expect(scope.loading).toBeFalsy();
             expect(scope.hasError).toEqual(true);
-            expect(scope.error).toEqual({"contentType": ['whitelist']})
         });
 
         it('reset violations on submit', function () {
@@ -604,24 +598,35 @@ describe('image-management', function () {
             expect(scope.hasError).toEqual(false);
         });
 
-        it('tranform violations into easy to render format', function () {
+        it('fires violation notifications', function () {
             scope.upload();
             uploader.handlers.rejected({"contentType": ['violation1', 'violation2']});
 
-            expect(scope.violationList).toEqual([
-                {'key': 'contentType', 'violation': 'violation1'},
-                {'key': 'contentType', 'violation': 'violation2'}
-            ])
+            expect(topics).toEqual([
+                {
+                    topic: 'system.warning',
+                    message: {
+                        code: 'contentType.violation1',
+                        default: 'contentType.violation1'
+                    }
+                }, {
+                    topic: 'system.warning',
+                    message: {
+                        code: 'contentType.violation2',
+                        default: 'contentType.violation2'
+                    }
+                }
+            ]);
         });
     });
 
-    describe('ImageUploadDialogController', function() {
-        beforeEach(inject(function($controller, config) {
+    describe('ImageUploadDialogController', function () {
+        beforeEach(inject(function ($controller, config) {
             config.awsPath = 'http://aws/';
-            ctrl = $controller(ImageUploadDialogController, {$scope:scope});
+            ctrl = $controller(ImageUploadDialogController, {$scope: scope});
         }));
 
-        it('open dialog', inject(function($modal) {
+        it('open dialog', inject(function ($modal) {
             ctrl.open();
             $modal.opened.once();
             $modal.opened.templateUrl('partials/image/upload.modal.html');
@@ -629,42 +634,42 @@ describe('image-management', function () {
             $modal.opened.scope(scope);
         }));
 
-        it('an initial image source is generated', inject(function(config) {
+        it('an initial image source is generated', inject(function (config) {
             ctrl.open();
             expect(scope.imgSrc).toEqual('images/redacted/v4-uuid.img');
         }));
 
-        it('set image source', inject(function(config) {
+        it('set image source', inject(function (config) {
             ctrl.open();
             ctrl.source(config.awsPath + 's');
             expect(scope.imgSrc).toEqual('s');
         }));
 
-        it('remove anchors when sourcing an image', inject(function(config) {
+        it('remove anchors when sourcing an image', inject(function (config) {
             ctrl.open();
             ctrl.source(config.awsPath + 's#anchor');
             expect(scope.imgSrc).toEqual('s');
         }));
 
-        it('remove query params when sourcing an image', inject(function(config) {
+        it('remove query params when sourcing an image', inject(function (config) {
             ctrl.open();
             ctrl.source(config.awsPath + 's?params');
             expect(scope.imgSrc).toEqual('s');
         }));
 
-        it('accepting an image', inject(function(config) {
+        it('accepting an image', inject(function (config) {
             ctrl.open({
-                accept:function(src) {
+                accept: function (src) {
                     expect(src.replace(/\?.*/, '')).toEqual(config.awsPath + scope.imgSrc);
                 }
             });
             scope.accept();
         }));
 
-        it('accepting an existing image', inject(function(config) {
+        it('accepting an existing image', inject(function (config) {
             ctrl.source('s');
             ctrl.open({
-                accept:function(src) {
+                accept: function (src) {
                     expect(src.replace(/\?.*/, '')).toEqual(config.awsPath + 's');
                 }
             });
