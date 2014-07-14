@@ -114,7 +114,7 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
             });
             scope.imgClass = attrs.class;
             scope.$watch('imageClass', function () {
-                scope.imgClass = scope.imgClass ? attrs.class + ' ' + scope.imageClass : scope.imageClass;
+                if (scope.imageClass) scope.imgClass = scope.imgClass ? attrs.class + ' ' + scope.imageClass : scope.imageClass;
             }, true);
             scope.editing = false;
 

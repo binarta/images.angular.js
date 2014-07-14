@@ -447,6 +447,19 @@ describe('image-management', function () {
                     triggerWatch();
                     expect(scope.imgClass).toEqual('legacy-class img-class');
                 });
+
+                describe('and no image-class', function () {
+                    beforeEach(function () {
+                        attrs.class = "legacy-class";
+                        link();
+                        scope.imageClass = undefined;
+                    });
+
+                    it('watch appends image class', function () {
+                        triggerWatch();
+                        expect(scope.imgClass).toEqual('legacy-class');
+                    });
+                });
             });
         });
 
