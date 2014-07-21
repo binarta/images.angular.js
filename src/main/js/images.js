@@ -1,5 +1,5 @@
 angular.module('image-management', ['ui.bootstrap.modal', 'config'])
-    .directive('imageShow', ['config', 'topicRegistry', 'activeUserHasPermission', 'topicMessageDispatcher', '$timeout', '$rootScope', ImageShowDirectiveFactory])
+    .directive('imageShow', ['config', 'topicRegistry', 'activeUserHasPermission', 'topicMessageDispatcher', '$timeout', '$rootScope', '$route', ImageShowDirectiveFactory])
     .controller('ImageUploadDialogController', ['$scope', '$modal', 'config', ImageUploadDialogController])
     .run(function ($rootScope, $location, topicRegistry, topicMessageDispatcher) {
         var imageCount = 0;
