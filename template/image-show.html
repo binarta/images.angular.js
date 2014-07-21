@@ -1,0 +1,15 @@
+<div class="binarta-editable">
+    <div class="binarta-editable-overflow" ng-class="{'selected': selecting, 'loading':loading}"
+         ng-click="select(); open();" ng-if="editing"></div>
+
+    <div class="binarta-editable-working" ng-show="working || loading">
+        <div class="vertical-align-helper"></div>
+        <i class="fa fa-refresh fa-spin fa-2x" ng-class="{'working':working || loading}"></i>
+    </div>
+
+    <a ng-href="{{link}}" target="{{target}}">
+        <img ng-src="{{imageSource}}" class="working {{imgClass}}" alt="">
+    </a>
+
+    <input type="file" class="hidden">
+</div>

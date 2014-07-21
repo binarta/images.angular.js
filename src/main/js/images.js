@@ -29,13 +29,11 @@ angular.module('image-management', ['ui.bootstrap.modal', 'config'])
         };
     });
 
-function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, topicMessageDispatcher, $timeout, $rootScope) {
+function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, topicMessageDispatcher, $timeout, $rootScope, $route) {
     return {
         restrict: 'E',
         controller: ['$scope', 'uploader', 'config', '$rootScope', 'topicMessageDispatcher', ImageController],
-        templateUrl: function () {
-            return $rootScope.imageShowTemplateUrl ? $rootScope.imageShowTemplateUrl : 'app/partials/image/show.html';
-        },
+        templateUrl: $route.routes['/template/image-show'].templateUrl,
         scope: {
             path: '@',
             link: '@',
