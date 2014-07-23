@@ -31,7 +31,7 @@ describe('image-management', function () {
         var registry, element, attrs, permitter, dispatcher, topics, imageEvent, loadHandler, errorHandler, abortHandler, rootScope, route;
         var removedClass, addedClass;
 
-        beforeEach(inject(function (activeUserHasPermission, activeUserHasPermissionHelper, topicMessageDispatcher, topicMessageDispatcherMock, $timeout, $rootScope, topicRegistryMock, topicRegistry) {
+        beforeEach(inject(function (activeUserHasPermission, activeUserHasPermissionHelper, topicMessageDispatcher, topicMessageDispatcherMock, $timeout, $rootScope, topicRegistryMock, topicRegistry, imagePathBuilder) {
             permitter = activeUserHasPermissionHelper;
             rootScope = $rootScope;
             scope = $rootScope.$new();
@@ -88,7 +88,13 @@ describe('image-management', function () {
             route.routes['/template/image-show'] = {
                 templateUrl: 'image-show.html'
             };
-            directive = ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, dispatcher, $timeout, $rootScope, route);
+            directive = ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, dispatcher, $timeout, $rootScope, route, function(args) {
+                var path = '';
+                path += args.cache ? 'cache' : 'no-cache';
+                path += ':';
+                path += args.path;
+                return path;
+            });
         }));
 
         it('restrict', function () {
@@ -96,7 +102,7 @@ describe('image-management', function () {
         });
 
         it('controller', function () {
-            expect(directive.controller).toEqual(['$scope', 'uploader', 'config', '$rootScope', 'topicMessageDispatcher', ImageController]);
+            expect(directive.controller).toEqual(['$scope', 'uploader', 'config', '$rootScope', 'topicMessageDispatcher', 'imagePathBuilder', ImageController]);
         });
 
         it('template url', function () {
@@ -282,6 +288,15 @@ describe('image-management', function () {
 
             expect(scope.editing).toEqual(true);
         });
+
+        it('default value is cache config', function() {
+            config.image = {cache:true};
+
+            link();
+
+            expect(scope.cacheEnabled).toBeTruthy();
+        });
+
         it('on edit mode true and active user has permission image.upload editing true', function () {
             link();
             registry['edit.mode'](true);
@@ -371,45 +386,39 @@ describe('image-management', function () {
 
             it('watch installs image source', function () {
                 triggerWatch();
-                expect(scope.imageSource).toMatch(/base\/path/);
+                expect(scope.imageSource).toEqual('base/no-cache:path');
             });
 
-            it('the image source is not cached by default by adding a random query string', function () {
-                rootScope.image.defaultTimeStamp = 'defaultTimeStamp';
-                triggerWatch();
-
-                expect(scope.imageSource).toEqual('base/path?defaultTimeStamp');
-            });
-
-            it('the image source is not cached when active user has permission', function () {
+            it('cache is disabled when active user has permission', function () {
                 rootScope.image.defaultTimeStamp = 'defaultTimeStamp';
                 permitter.yes();
                 triggerWatch();
 
-                expect(scope.imageSource).toEqual('base/path?defaultTimeStamp');
+                expect(scope.imageSource).toEqual('base/no-cache:path');
             });
 
-            it('the image source is cached when cache enabled and active user has no image.upload permission', function () {
+            it('cache is enabled when active has no permission', function () {
                 config.image = {cache: true};
                 permitter.no();
                 triggerWatch();
 
-                expect(scope.imageSource).toEqual('base/path');
+                expect(scope.imageSource).toEqual('base/cache:path');
             });
 
-            it('the image source is not cached when cache enabled and active user has image.upload permission and image is newly uploaded', function () {
+            it('cache is enabled when cache enabled flag is on and user has permission and image is newly uploaded', function () {
                 config.image = {cache: true};
                 permitter.yes();
                 rootScope.image.uploaded['path'] = 'timestamp';
                 triggerWatch();
 
-                expect(scope.imageSource).toEqual('base/path?timestamp');
+                expect(scope.imageSource).toEqual('base/no-cache:path');
             });
 
             it('configure to use the browsers standard image cache mechanism', function () {
                 config.image = {cache: true};
+                permitter.no();
                 triggerWatch();
-                expect(scope.imageSource).toMatch(/.*(?!\?.*)/);
+                expect(scope.imageSource).toEqual('base/cache:path');
             });
         });
 
@@ -477,6 +486,92 @@ describe('image-management', function () {
         });
     });
 
+    describe('ImagePathBuilder', function() {
+        var builder;
+        var args = {};
+
+        beforeEach(inject(function(imagePathBuilder, $rootScope) {
+            builder = imagePathBuilder;
+            args.path = 'P';
+            $rootScope.image = {uploaded:{}, defaultTimeStamp:'D'};
+        }));
+
+        describe('with cache enabled', function() {
+            beforeEach(function() {
+                args.cache = true;
+            });
+
+            it('then path is same as input', function() {
+                var path = builder(args);
+
+                expect(path).toEqual(args.path);
+            });
+
+            describe('and image was uploaded', function() {
+                beforeEach(inject(function($rootScope) {
+                    $rootScope.image.uploaded[args.path] = 'T';
+                }));
+
+                it('then image timestamp gets appended', function() {
+                    var path = builder(args);
+
+                    expect(path).toEqual(args.path + '?T');
+                });
+
+                it('and path contains query string', inject(function($rootScope) {
+                    args.path = 'P?width=100';
+                    $rootScope.image.uploaded[args.path] = 'T';
+
+                    var path = builder(args);
+
+                    expect(path).toEqual(args.path + '&T')
+                }))
+            });
+        });
+
+        describe('with cache disabled', function() {
+            beforeEach(function() {
+                args.cache = false;
+            });
+            
+            describe('and no image uploaded', function() {
+                it('then use default timestamp', function() {
+                    var path = builder(args);
+
+                    expect(path).toEqual(args.path + '?D');
+                });
+
+                it('and path contains query string', inject(function($rootScope) {
+                    args.path = 'P?width=100';
+
+                    var path = builder(args);
+
+                    expect(path).toEqual(args.path + '&D')
+                }))
+            });
+
+            describe('and image uploaded', function() {
+                it('then use image timestamp', inject(function($rootScope) {
+                    $rootScope.image.uploaded[args.path] = 'TT';
+
+                    var path = builder(args);
+
+                    expect(path).toEqual(args.path + '?TT');
+                }));
+
+                it('and path contains query string', inject(function($rootScope) {
+                    args.path = 'P?width=100';
+                    $rootScope.image.uploaded[args.path] = 'T';
+
+                    var path = builder(args);
+
+                    expect(path).toEqual(args.path + '&T')
+                }))
+            });
+
+        });
+    });
+
     describe('ImageController', function () {
         var awsPath = 'path';
         var path = 'path';
@@ -516,7 +611,10 @@ describe('image-management', function () {
                 $templateCache: {removeAll: function () {
                     cacheControl.cleared = true;
                 }},
-                topicMessageDispatcher: dispatcherMock
+                topicMessageDispatcher: dispatcherMock,
+                imagePathBuilder : function() {
+                    return rootScope.image.uploaded[uploader.path];
+                }
             })
         }));
 
@@ -583,7 +681,7 @@ describe('image-management', function () {
 
             it('refresh image source', function () {
                 expect(scope.name).toEqual('');
-                expect(scope.imageSource).toContain(awsPath + uploader.path + "?");
+                expect(scope.imageSource).toContain(awsPath + rootScope.image.uploaded[uploader.path]);
                 expect(scope.status).toEqual(201);
                 expect(scope.selecting).toEqual(false);
             });

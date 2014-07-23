@@ -1,6 +1,8 @@
 angular.module('image-management', ['ui.bootstrap.modal', 'config'])
-    .directive('imageShow', ['config', 'topicRegistry', 'activeUserHasPermission', 'topicMessageDispatcher', '$timeout', '$rootScope', '$route', ImageShowDirectiveFactory])
+    .directive('imageShow', ['config', 'topicRegistry', 'activeUserHasPermission', 'topicMessageDispatcher', '$timeout', '$rootScope', '$route', 'imagePathBuilder', ImageShowDirectiveFactory])
+    .factory('imagePathBuilder', ['$rootScope', ImagePathBuilderFactory])
     .controller('ImageUploadDialogController', ['$scope', '$modal', 'config', ImageUploadDialogController])
+    .controller('ImageController', ['$scope', 'uploader', 'config', '$rootScope', 'topicMessageDispatcher', 'imagePathBuilder', ImageController])
     .run(function ($rootScope, $location, topicRegistry, topicMessageDispatcher) {
         var imageCount = 0;
 
@@ -29,10 +31,10 @@ angular.module('image-management', ['ui.bootstrap.modal', 'config'])
         };
     });
 
-function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, topicMessageDispatcher, $timeout, $rootScope, $route) {
+function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, topicMessageDispatcher, $timeout, $rootScope, $route, imagePathBuilder) {
     return {
         restrict: 'E',
-        controller: ['$scope', 'uploader', 'config', '$rootScope', 'topicMessageDispatcher', ImageController],
+        controller: ['$scope', 'uploader', 'config', '$rootScope', 'topicMessageDispatcher', 'imagePathBuilder', ImageController],
         templateUrl: $route.routes['/template/image-show'].templateUrl,
         scope: {
             path: '@',
@@ -83,25 +85,10 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
                 img.addClass('not-found');
             }
 
-            scope.cacheEnabled = false;
-
-            function getTimeStamp() {
-                var img = $rootScope.image;
-                return img.uploaded[scope.path] ? img.uploaded[scope.path] : img.defaultTimeStamp;
-            }
-
-            function toQueryString() {
-                if (!scope.cacheEnabled || $rootScope.image.uploaded[scope.path])
-                    return '?' + getTimeStamp();
-                return '';
-            }
-
-            function toUri() {
-                return config.awsPath + scope.path;
-            }
+            scope.cacheEnabled = config.image && config.image.cache;
 
             function toImageSource() {
-                return toUri() + toQueryString();
+                return config.awsPath + imagePathBuilder({cache: scope.cacheEnabled, path: scope.path});
             }
 
             scope.$watch('path', function () {
@@ -161,7 +148,7 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
     }
 }
 
-function ImageController($scope, uploader, config, $rootScope, topicMessageDispatcher) {
+function ImageController($scope, uploader, config, $rootScope, topicMessageDispatcher, imagePathBuilder) {
     var init = function () {
         $scope.temp = [];
         $scope.selecting = false;
@@ -189,9 +176,8 @@ function ImageController($scope, uploader, config, $rootScope, topicMessageDispa
     };
 
     var onSuccess = function () {
-        var newTimeStamp = new Date().getTime();
-        $rootScope.image.uploaded[uploader.path] = newTimeStamp;
-        $scope.imageSource = config.awsPath + uploader.path + "?" + newTimeStamp;
+        $rootScope.image.uploaded[uploader.path] = new Date().getTime();
+        $scope.imageSource = config.awsPath + imagePathBuilder({cache:false, path: uploader.path});
         $scope.loading = false;
         $scope.status = 201;
         $scope.name = '';
@@ -241,4 +227,36 @@ function ImageUploadDialogController($scope, $modal, config) {
     $scope.accept = function () {
         self.connector.accept(config.awsPath + $scope.imgSrc + '?' + new Date().getTime());
     };
+}
+
+function ImagePathBuilderFactory($rootScope) {
+    return function(args) {
+        if (requiresTimestampedUrl())
+            return args.path + getSeparator() + getTimeStamp();
+        return args.path;
+
+        function requiresTimestampedUrl() {
+            return isCacheDisabled() || hasImageBeenUploaded();
+        }
+
+        function isCacheDisabled() {
+            return !args.cache;
+        }
+
+        function hasImageBeenUploaded() {
+            return $rootScope.image.uploaded[args.path];
+        }
+
+        function getSeparator() {
+            return pathDoesNotContainQueryString() ? '?' : '&';
+        }
+
+        function pathDoesNotContainQueryString() {
+            return args.path.indexOf('?') == -1;
+        }
+
+        function getTimeStamp() {
+            return $rootScope.image.uploaded[args.path] || $rootScope.image.defaultTimeStamp;
+        }
+    }
 }
