@@ -289,14 +289,6 @@ describe('image-management', function () {
             expect(scope.editing).toEqual(true);
         });
 
-        it('default value is cache config', function() {
-            config.image = {cache:true};
-
-            link();
-
-            expect(scope.cacheEnabled).toBeTruthy();
-        });
-
         it('on edit mode true and active user has permission image.upload editing true', function () {
             link();
             registry['edit.mode'](true);

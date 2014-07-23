@@ -85,7 +85,7 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
                 img.addClass('not-found');
             }
 
-            scope.cacheEnabled = config.image && config.image.cache;
+            scope.cacheEnabled = false;
 
             function toImageSource() {
                 return config.awsPath + imagePathBuilder({cache: scope.cacheEnabled, path: scope.path});
