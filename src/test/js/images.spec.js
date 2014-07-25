@@ -361,7 +361,7 @@ describe('image-management', function () {
             expect(scope.imgClass).toEqual(attrs.class);
         });
 
-        describe('with path attribute watcher', function () {
+        describe('with cacheEnabled scope watcher', function () {
             beforeEach(function () {
                 link();
                 registry['app.start']();
@@ -369,12 +369,8 @@ describe('image-management', function () {
             });
 
             function triggerWatch() {
-                scope.watches['path'].callback();
+                scope.watches['cacheEnabled'].callback();
             }
-
-            it("watch is passed a weird boolean I have no idea what it's for", function () {
-                expect(scope.watches['path'].weirdBoolean).toEqual(true);
-            });
 
             it('watch installs image source', function () {
                 triggerWatch();

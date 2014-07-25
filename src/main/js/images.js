@@ -85,15 +85,14 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
                 img.addClass('not-found');
             }
 
-            scope.cacheEnabled = false;
-
             function toImageSource() {
                 return config.awsPath + imagePathBuilder({cache: scope.cacheEnabled, path: scope.path});
             }
 
-            scope.$watch('path', function () {
+            scope.$watch('cacheEnabled', function() {
                 scope.imageSource = toImageSource();
             }, true);
+
             scope.$watch('link', function () {
                 scope.linkProvided = scope.link != undefined;
             });
