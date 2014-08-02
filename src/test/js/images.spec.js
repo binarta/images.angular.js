@@ -29,7 +29,7 @@ describe('image-management', function () {
 
     describe('image show directive', function () {
         var registry, element, attrs, permitter, dispatcher, topics, imageEvent, loadHandler, errorHandler, abortHandler, rootScope, route;
-        var removedClass, addedClass;
+        var removedClass, addedClass, parentWidth;
 
         beforeEach(inject(function (activeUserHasPermission, activeUserHasPermissionHelper, topicMessageDispatcher, topicMessageDispatcherMock, $timeout, $rootScope, topicRegistryMock, topicRegistry, imagePathBuilder) {
             permitter = activeUserHasPermissionHelper;
@@ -76,6 +76,13 @@ describe('image-management', function () {
                             }
                         }
                     };
+                },
+                parent: function () {
+                    return {
+                        width: function () {
+                            parentWidth = 100;
+                        }
+                    }
                 }
             };
 
@@ -93,6 +100,10 @@ describe('image-management', function () {
                 path += args.cache ? 'cache' : 'no-cache';
                 path += ':';
                 path += args.path;
+                if(parentWidth){
+                    path += '?';
+                    path += parentWidth;
+                }
                 return path;
             });
         }));
@@ -374,7 +385,7 @@ describe('image-management', function () {
 
             it('watch installs image source', function () {
                 triggerWatch();
-                expect(scope.imageSource).toEqual('base/no-cache:path');
+                expect(scope.imageSource).toEqual('base/no-cache:path?100');
             });
 
             it('cache is disabled when active user has permission', function () {
@@ -382,7 +393,7 @@ describe('image-management', function () {
                 permitter.yes();
                 triggerWatch();
 
-                expect(scope.imageSource).toEqual('base/no-cache:path');
+                expect(scope.imageSource).toEqual('base/no-cache:path?100');
             });
 
             it('cache is enabled when active has no permission', function () {
@@ -390,7 +401,7 @@ describe('image-management', function () {
                 permitter.no();
                 triggerWatch();
 
-                expect(scope.imageSource).toEqual('base/cache:path');
+                expect(scope.imageSource).toEqual('base/cache:path?100');
             });
 
             it('cache is enabled when cache enabled flag is on and user has permission and image is newly uploaded', function () {
@@ -399,14 +410,14 @@ describe('image-management', function () {
                 rootScope.image.uploaded['path'] = 'timestamp';
                 triggerWatch();
 
-                expect(scope.imageSource).toEqual('base/no-cache:path');
+                expect(scope.imageSource).toEqual('base/no-cache:path?100');
             });
 
             it('configure to use the browsers standard image cache mechanism', function () {
                 config.image = {cache: true};
                 permitter.no();
                 triggerWatch();
-                expect(scope.imageSource).toEqual('base/cache:path');
+                expect(scope.imageSource).toEqual('base/cache:path?100');
             });
         });
 
@@ -484,36 +495,50 @@ describe('image-management', function () {
             $rootScope.image = {uploaded:{}, defaultTimeStamp:'D'};
         }));
 
+        function testImagePath(timestamp) {
+            [
+                {actual:0, expected:60},
+                {actual:1, expected:60},
+                {actual:68, expected:60},
+                {actual:69, expected:160},
+                {actual:195, expected:160},
+                {actual:196, expected:320},
+                {actual:419, expected:320},
+                {actual:420, expected:480},
+                {actual:543, expected:480},
+                {actual:544, expected:640},
+                {actual:767, expected:640},
+                {actual:768, expected:800},
+                {actual:991, expected:800},
+                {actual:992, expected:1024},
+                {actual:1200, expected:1024}
+            ].forEach(function (value) {
+                    describe('and parent width ' + value.actual + ' is given', function () {
+                        it('then width ' + value.expected + ' is appended', function () {
+                            args.parentWidth = value.actual;
+                            var path = builder(args);
+                            var ts = timestamp ? '&' + timestamp : '';
+                            expect(path).toEqual(args.path + '?width=' + value.expected + ts);
+                        });
+                    });
+                });
+        }
+
         describe('with cache enabled', function() {
             beforeEach(function() {
                 args.cache = true;
             });
 
-            it('then path is same as input', function() {
-                var path = builder(args);
+            testImagePath();
 
-                expect(path).toEqual(args.path);
-            });
+            describe('and image was uploaded then image timestamp gets appended', function() {
+                var timestamp = 'T';
 
-            describe('and image was uploaded', function() {
-                beforeEach(inject(function($rootScope) {
-                    $rootScope.image.uploaded[args.path] = 'T';
+                beforeEach(inject(function ($rootScope) {
+                    $rootScope.image.uploaded[args.path] = timestamp;
                 }));
 
-                it('then image timestamp gets appended', function() {
-                    var path = builder(args);
-
-                    expect(path).toEqual(args.path + '?T');
-                });
-
-                it('and path contains query string', inject(function($rootScope) {
-                    args.path = 'P?width=100';
-                    $rootScope.image.uploaded[args.path] = 'T';
-
-                    var path = builder(args);
-
-                    expect(path).toEqual(args.path + '&T')
-                }))
+                testImagePath(timestamp);
             });
         });
 
@@ -522,41 +547,20 @@ describe('image-management', function () {
                 args.cache = false;
             });
             
-            describe('and no image uploaded', function() {
-                it('then use default timestamp', function() {
-                    var path = builder(args);
-
-                    expect(path).toEqual(args.path + '?D');
-                });
-
-                it('and path contains query string', inject(function($rootScope) {
-                    args.path = 'P?width=100';
-
-                    var path = builder(args);
-
-                    expect(path).toEqual(args.path + '&D')
-                }))
+            describe('and no image uploaded then use default timestamp', function() {
+                var timestamp = 'D';
+                testImagePath(timestamp);
             });
 
-            describe('and image uploaded', function() {
-                it('then use image timestamp', inject(function($rootScope) {
-                    $rootScope.image.uploaded[args.path] = 'TT';
+            describe('and image uploaded then use image timestamp', function() {
+                var timestamp = 'TT';
 
-                    var path = builder(args);
-
-                    expect(path).toEqual(args.path + '?TT');
+                beforeEach(inject(function ($rootScope) {
+                    $rootScope.image.uploaded[args.path] = timestamp;
                 }));
 
-                it('and path contains query string', inject(function($rootScope) {
-                    args.path = 'P?width=100';
-                    $rootScope.image.uploaded[args.path] = 'T';
-
-                    var path = builder(args);
-
-                    expect(path).toEqual(args.path + '&T')
-                }))
+                testImagePath(timestamp);
             });
-
         });
     });
 
@@ -591,6 +595,9 @@ describe('image-management', function () {
                     uploader.onError = it;
                     return uploader;
                 }
+            };
+            scope.getParentWidth = function () {
+                return 100;
             };
             ctrl = $controller(ImageController, {
                 $scope: scope,

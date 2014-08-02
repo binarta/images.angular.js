@@ -85,8 +85,16 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
                 img.addClass('not-found');
             }
 
+            scope.getParentWidth = function () {
+                return element.parent().width();
+            };
+
             function toImageSource() {
-                return config.awsPath + imagePathBuilder({cache: scope.cacheEnabled, path: scope.path});
+                return config.awsPath + imagePathBuilder({
+                    cache: scope.cacheEnabled,
+                    path: scope.path,
+                    parentWidth: scope.getParentWidth()
+                });
             }
 
             scope.$watch('cacheEnabled', function() {
@@ -176,7 +184,11 @@ function ImageController($scope, uploader, config, $rootScope, topicMessageDispa
 
     var onSuccess = function () {
         $rootScope.image.uploaded[uploader.path] = new Date().getTime();
-        $scope.imageSource = config.awsPath + imagePathBuilder({cache:false, path: uploader.path});
+        $scope.imageSource = config.awsPath + imagePathBuilder({
+            cache:false,
+            path: uploader.path,
+            parentWidth: $scope.getParentWidth()
+        });
         $scope.loading = false;
         $scope.status = 201;
         $scope.name = '';
@@ -230,9 +242,30 @@ function ImageUploadDialogController($scope, $modal, config) {
 
 function ImagePathBuilderFactory($rootScope) {
     return function(args) {
-        if (requiresTimestampedUrl())
-            return args.path + getSeparator() + getTimeStamp();
-        return args.path;
+        var path = args.parentWidth != undefined ? getSizedImage() : args.path;
+        if (requiresTimestampedUrl()) path += getSeparator() + getTimeStamp();
+        return path;
+
+        function getSizedImage() {
+            return args.path + '?width=' + convertParentWidthToRangedWidth()
+        }
+
+        function convertParentWidthToRangedWidth() {
+            var width;
+            [
+                {lowerbound: 0, upperbound: 68, actual: 60},
+                {lowerbound: 69, upperbound: 195, actual: 160},
+                {lowerbound: 196, upperbound: 419, actual: 320},
+                {lowerbound: 420, upperbound: 543, actual: 480},
+                {lowerbound: 544, upperbound: 767, actual: 640},
+                {lowerbound: 768, upperbound: 991, actual: 800}
+            ].forEach(function (v) {
+                if (args.parentWidth >= v.lowerbound && args.parentWidth <= v.upperbound) {
+                    width = v.actual;
+                }
+            });
+            return width || 1024;
+        }
 
         function requiresTimestampedUrl() {
             return isCacheDisabled() || hasImageBeenUploaded();
@@ -251,7 +284,7 @@ function ImagePathBuilderFactory($rootScope) {
         }
 
         function pathDoesNotContainQueryString() {
-            return args.path.indexOf('?') == -1;
+            return path.indexOf('?') == -1;
         }
 
         function getTimeStamp() {
