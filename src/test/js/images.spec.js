@@ -95,12 +95,12 @@ describe('image-management', function () {
             route.routes['/template/image-show'] = {
                 templateUrl: 'image-show.html'
             };
-            directive = ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, dispatcher, $timeout, $rootScope, route, function(args) {
+            directive = ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, dispatcher, $timeout, $rootScope, route, function (args) {
                 var path = '';
                 path += args.cache ? 'cache' : 'no-cache';
                 path += ':';
                 path += args.path;
-                if(parentWidth){
+                if (parentWidth) {
                     path += '?';
                     path += parentWidth;
                 }
@@ -126,7 +126,8 @@ describe('image-management', function () {
                 link: '@',
                 target: '@',
                 alt: '@',
-                imageClass: '@'
+                imageClass: '@',
+                width: '@'
             });
         });
 
@@ -483,35 +484,41 @@ describe('image-management', function () {
                 expect(registry['app.start']).toBeUndefined();
             });
         });
+
+        it('resolve box width from width attribute', function () {
+            scope.width = 200;
+            link();
+            expect(scope.getBoxWidth()).toEqual(200);
+        });
     });
 
-    describe('ImagePathBuilder', function() {
+    describe('ImagePathBuilder', function () {
         var builder;
         var args = {};
 
-        beforeEach(inject(function(imagePathBuilder, $rootScope) {
+        beforeEach(inject(function (imagePathBuilder, $rootScope) {
             builder = imagePathBuilder;
             args.path = 'P';
-            $rootScope.image = {uploaded:{}, defaultTimeStamp:'D'};
+            $rootScope.image = {uploaded: {}, defaultTimeStamp: 'D'};
         }));
 
         function testImagePath(timestamp) {
             [
-                {actual:0, expected:60},
-                {actual:1, expected:60},
-                {actual:68, expected:60},
-                {actual:69, expected:160},
-                {actual:195, expected:160},
-                {actual:196, expected:320},
-                {actual:419, expected:320},
-                {actual:420, expected:480},
-                {actual:543, expected:480},
-                {actual:544, expected:640},
-                {actual:767, expected:640},
-                {actual:768, expected:800},
-                {actual:991, expected:800},
-                {actual:992, expected:1024},
-                {actual:1200, expected:1024}
+                {actual: 0, expected: 60},
+                {actual: 1, expected: 60},
+                {actual: 68, expected: 60},
+                {actual: 69, expected: 160},
+                {actual: 195, expected: 160},
+                {actual: 196, expected: 320},
+                {actual: 419, expected: 320},
+                {actual: 420, expected: 480},
+                {actual: 543, expected: 480},
+                {actual: 544, expected: 640},
+                {actual: 767, expected: 640},
+                {actual: 768, expected: 800},
+                {actual: 991, expected: 800},
+                {actual: 992, expected: 1024},
+                {actual: 1200, expected: 1024}
             ].forEach(function (value) {
                     describe('and parent width ' + value.actual + ' is given', function () {
                         it('then width ' + value.expected + ' is appended', function () {
@@ -524,14 +531,14 @@ describe('image-management', function () {
                 });
         }
 
-        describe('with cache enabled', function() {
-            beforeEach(function() {
+        describe('with cache enabled', function () {
+            beforeEach(function () {
                 args.cache = true;
             });
 
             testImagePath();
 
-            describe('and image was uploaded then image timestamp gets appended', function() {
+            describe('and image was uploaded then image timestamp gets appended', function () {
                 var timestamp = 'T';
 
                 beforeEach(inject(function ($rootScope) {
@@ -542,17 +549,17 @@ describe('image-management', function () {
             });
         });
 
-        describe('with cache disabled', function() {
-            beforeEach(function() {
+        describe('with cache disabled', function () {
+            beforeEach(function () {
                 args.cache = false;
             });
-            
-            describe('and no image uploaded then use default timestamp', function() {
+
+            describe('and no image uploaded then use default timestamp', function () {
                 var timestamp = 'D';
                 testImagePath(timestamp);
             });
 
-            describe('and image uploaded then use image timestamp', function() {
+            describe('and image uploaded then use image timestamp', function () {
                 var timestamp = 'TT';
 
                 beforeEach(inject(function ($rootScope) {
@@ -596,7 +603,7 @@ describe('image-management', function () {
                     return uploader;
                 }
             };
-            scope.getParentWidth = function () {
+            scope.getBoxWidth = function () {
                 return 100;
             };
             ctrl = $controller(ImageController, {
@@ -607,7 +614,7 @@ describe('image-management', function () {
                     cacheControl.cleared = true;
                 }},
                 topicMessageDispatcher: dispatcherMock,
-                imagePathBuilder : function() {
+                imagePathBuilder: function () {
                     return rootScope.image.uploaded[uploader.path];
                 }
             })
@@ -713,7 +720,8 @@ describe('image-management', function () {
                         code: 'contentType.violation1',
                         default: 'contentType.violation1'
                     }
-                }, {
+                },
+                {
                     topic: 'system.warning',
                     message: {
                         code: 'contentType.violation2',
