@@ -1,5 +1,5 @@
 angular.module('image-management', ['ui.bootstrap.modal', 'config'])
-    .directive('imageShow', ['config', 'topicRegistry', 'activeUserHasPermission', 'topicMessageDispatcher', '$timeout', '$rootScope', '$route', 'imagePathBuilder', ImageShowDirectiveFactory])
+    .directive('imageShow', ['config', 'topicRegistry', 'activeUserHasPermission', 'topicMessageDispatcher', '$timeout', '$rootScope', 'imagePathBuilder', ImageShowDirectiveFactory])
     .factory('imagePathBuilder', ['$rootScope', ImagePathBuilderFactory])
     .controller('ImageUploadDialogController', ['$scope', '$modal', 'config', ImageUploadDialogController])
     .controller('ImageController', ['$scope', 'uploader', 'config', '$rootScope', 'topicMessageDispatcher', 'imagePathBuilder', ImageController])
@@ -31,11 +31,13 @@ angular.module('image-management', ['ui.bootstrap.modal', 'config'])
         };
     });
 
-function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, topicMessageDispatcher, $timeout, $rootScope, $route, imagePathBuilder) {
+function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, topicMessageDispatcher, $timeout, $rootScope, imagePathBuilder) {
+    var componentsDir = config.componentsDir || 'bower_components';
+
     return {
         restrict: 'E',
         controller: ['$scope', 'uploader', 'config', '$rootScope', 'topicMessageDispatcher', 'imagePathBuilder', ImageController],
-        templateUrl: $route.routes['/template/image-show'].templateUrl,
+        templateUrl: componentsDir + '/binarta.images.angular/template/image-show.html',
         scope: {
             path: '@',
             link: '@',

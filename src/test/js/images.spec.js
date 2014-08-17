@@ -28,10 +28,10 @@ describe('image-management', function () {
     });
 
     describe('image show directive', function () {
-        var registry, element, attrs, permitter, dispatcher, topics, imageEvent, loadHandler, errorHandler, abortHandler, rootScope, route;
+        var registry, element, attrs, permitter, dispatcher, topics, imageEvent, loadHandler, errorHandler, abortHandler, rootScope;
         var removedClass, addedClass, parentWidth;
 
-        beforeEach(inject(function (activeUserHasPermission, activeUserHasPermissionHelper, topicMessageDispatcher, topicMessageDispatcherMock, $timeout, $rootScope, topicRegistryMock, topicRegistry, imagePathBuilder) {
+        beforeEach(inject(function (activeUserHasPermission, activeUserHasPermissionHelper, topicMessageDispatcher, topicMessageDispatcherMock, $timeout, $rootScope, topicRegistryMock, topicRegistry) {
             permitter = activeUserHasPermissionHelper;
             rootScope = $rootScope;
             scope = $rootScope.$new();
@@ -91,11 +91,7 @@ describe('image-management', function () {
             config = {awsPath: 'base/'};
             dispatcher = topicMessageDispatcher;
             topics = topicMessageDispatcherMock;
-            route = {routes: []};
-            route.routes['/template/image-show'] = {
-                templateUrl: 'image-show.html'
-            };
-            directive = ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, dispatcher, $timeout, $rootScope, route, function (args) {
+            directive = ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, dispatcher, $timeout, $rootScope, function (args) {
                 var path = '';
                 path += args.cache ? 'cache' : 'no-cache';
                 path += ':';
@@ -116,8 +112,15 @@ describe('image-management', function () {
             expect(directive.controller).toEqual(['$scope', 'uploader', 'config', '$rootScope', 'topicMessageDispatcher', 'imagePathBuilder', ImageController]);
         });
 
-        it('template url', function () {
-            expect(directive.templateUrl).toEqual('image-show.html');
+        it('default template url', function () {
+            expect(directive.templateUrl).toEqual('bower_components/binarta.images.angular/template/image-show.html');
+        });
+
+        it('template url with specific components directory', function () {
+            config.componentsDir = 'components';
+            directive = ImageShowDirectiveFactory(config);
+
+            expect(directive.templateUrl).toEqual('components/binarta.images.angular/template/image-show.html');
         });
 
         it('scope', function () {
