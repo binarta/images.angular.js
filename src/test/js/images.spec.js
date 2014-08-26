@@ -2,14 +2,8 @@ describe('image-management', function () {
     var scope, ctrl, directive, rest, notifications, config;
     var $httpBackend;
     var uploader;
-    var _file = {
-        size: 1,
-        type: 'type',
-        name: 'name'
-    };
-    var file = {
-        files: [_file]
-    };
+    var _file;
+    var file;
 
     beforeEach(module('image-management'));
     beforeEach(module('permissions'));
@@ -21,6 +15,14 @@ describe('image-management', function () {
         }};
         scope = $rootScope.$new();
         $httpBackend = $injector.get('$httpBackend');
+        _file = {
+            size: 2000,
+            type: 'type',
+            name: 'name'
+        };
+        file = {
+            files: [_file]
+        };
     }));
     afterEach(function () {
         $httpBackend.verifyNoOutstandingExpectation();
@@ -640,13 +642,96 @@ describe('image-management', function () {
             expect(scope.selecting).toEqual(false);
         });
 
-        it('add a file to the uploader', function () {
-            ctrl.add(file, path);
+        describe('adding a file to the uploader', function() {
+            beforeEach(function() {
+                ctrl.add(file, path);
+            });
 
-            expect(scope.name).toEqual(_file.name);
-            expect(scope.canUpload).toEqual(true);
-            expect(uploader.file).toEqual(_file);
-            expect(uploader.path).toEqual(path);
+            it('populates scope', function() {
+                expect(scope.name).toEqual(_file.name);
+                expect(scope.canUpload).toEqual(true);
+                expect(uploader.file).toEqual(_file);
+                expect(uploader.path).toEqual(path);
+            });
+
+            describe('under the size limit', function() {
+                beforeEach(function() {
+                    file.files[0].size = 1023;
+                    ctrl.add(file, path);
+                });
+
+                it('fire notification', function() {
+                    expect(scope.hasError).toBeTruthy();
+                    expect(topics).toEqual([
+                        {
+                            topic: 'system.warning',
+                            message: {
+                                code: 'contentLength.lowerbound',
+                                default: 'contentLength.lowerbound'
+                            }
+                        }
+                    ])
+                });
+
+                it('with configured lowerbound the nfire notification', function() {
+                    topics = [];
+                    config.image = {upload: { lowerbound: 10}};
+                    file.files[0].size = 9;
+                    ctrl.add(file, path);
+
+                    expect(scope.hasError).toBeTruthy();
+                    expect(topics).toEqual([
+                        {
+                            topic: 'system.warning',
+                            message: {
+                                code: 'contentLength.lowerbound',
+                                default: 'contentLength.lowerbound'
+                            }
+                        }
+                    ])
+                })
+
+            });
+
+            describe('above the size limit', function() {
+                beforeEach(function() {
+                    file.files[0].size = 10485761;
+                    ctrl.add(file, path);
+                });
+
+                it('then execute rejection', function() {
+                    expect(scope.hasError).toBeTruthy();
+                    expect(topics).toEqual([
+                        {
+                            topic: 'system.warning',
+                            message: {
+                                code: 'contentLength.upperbound',
+                                default: 'contentLength.upperbound'
+                            }
+                        }
+                    ])
+                });
+
+                it('with configured upperbound then execute rejection', function() {
+                    topics = [];
+                    config.image = {upload: { upperbound: 2000}};
+                    file.files[0].size = 2001;
+                    ctrl.add(file, path);
+
+                    expect(scope.hasError).toBeTruthy();
+                    expect(topics).toEqual([
+                        {
+                            topic: 'system.warning',
+                            message: {
+                                code: 'contentLength.upperbound',
+                                default: 'contentLength.upperbound'
+                            }
+                        }
+                    ])
+                })
+
+
+            });
         });
 
         it('loading gets set to true until response is received', function () {

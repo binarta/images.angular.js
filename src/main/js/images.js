@@ -213,6 +213,30 @@ function ImageController($scope, uploader, config, $rootScope, topicMessageDispa
     };
 
     this.add = function (file, path) {
+        var violations = validateContentLength(file);
+        if (violations.contentLength.length > 0) onRejected(violations);
+        else executeUpload(file, path);
+    };
+    function validateContentLength(file) {
+        var violations = {contentLength:[]};
+        if (file.files[0].size < getLowerbound()) violations.contentLength.push('lowerbound');
+        if (file.files[0].size > getUpperbound()) violations.contentLength.push('upperbound');
+        return violations;
+    }
+
+    function getLowerbound() {
+        return getImageUploadConfig() && config.image.upload.lowerbound ? config.image.upload.lowerbound : 1024;
+    }
+
+    function getImageUploadConfig() {
+        return config.image && config.image.upload;
+    }
+
+    function getUpperbound() {
+        return getImageUploadConfig() && config.image.upload.upperbound ? config.image.upload.upperbound : 10485760;
+    }
+
+    function executeUpload(file, path) {
         uploader.add(file, path);
         $scope.name = file.files[0].name;
         $scope.canUpload = true;
