@@ -260,7 +260,8 @@ describe('image-management', function () {
                 };
 
                 beforeEach(inject(function (topicRegistry) {
-                    angular.module('image-management')._runBlocks[0](rootScope, location, topicRegistry, dispatcher);
+                    var run = angular.module('image-management')._runBlocks[0];
+                    run[run.length-1](rootScope, location, topicRegistry, dispatcher);
                 }));
 
                 it('when all images are loaded fire images.loaded notification', function () {
