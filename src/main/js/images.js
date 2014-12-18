@@ -3,7 +3,7 @@ angular.module('image-management', ['ui.bootstrap.modal', 'config'])
     .factory('imagePathBuilder', ['$rootScope', ImagePathBuilderFactory])
     .controller('ImageUploadDialogController', ['$scope', '$modal', 'config', ImageUploadDialogController])
     .controller('ImageController', ['$scope', 'uploader', 'config', '$rootScope', 'topicMessageDispatcher', 'imagePathBuilder', ImageController])
-    .run(function ($rootScope, $location, topicRegistry, topicMessageDispatcher) {
+    .run(['$rootScope', '$location', 'topicRegistry', 'topicMessageDispatcher', function ($rootScope, $location, topicRegistry, topicMessageDispatcher) {
         var imageCount = 0;
 
         $rootScope.$watch(function () {
@@ -29,7 +29,7 @@ angular.module('image-management', ['ui.bootstrap.modal', 'config'])
             uploaded: [],
             defaultTimeStamp: new Date().getTime()
         };
-    });
+    }]);
 
 function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, topicMessageDispatcher, $timeout, $rootScope, imagePathBuilder) {
     var componentsDir = config.componentsDir || 'bower_components';
