@@ -44,7 +44,8 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
             target: '@',
             alt: '@',
             imageClass: '@',
-            width: '@'
+            width: '@',
+            asBackgroundImage: '@'
         },
         link: function (scope, element, attrs, controller) {
 
@@ -124,6 +125,14 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
                 element.find("input[type='file']").click();
             };
 
+            scope.updateBackgroundImage = function (path) {
+                element.css('background-image', 'url("' + path + '")');
+            };
+
+            if(scope.asBackgroundImage) {
+                scope.updateBackgroundImage(toImageSource());
+            }
+
             var putCacheEnabledOnScope = function () {
                 activeUserHasPermission({
                     no: function () {
@@ -196,6 +205,7 @@ function ImageController($scope, uploader, config, $rootScope, topicMessageDispa
         $scope.status = 201;
         $scope.name = '';
         $scope.selecting = false;
+        if($scope.asBackgroundImage) $scope.updateBackgroundImage($scope.imageSource);
     };
 
     var onRejected = function (violations) {

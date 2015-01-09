@@ -8,7 +8,7 @@
     </div>
 
     <a ng-href="{{link}}" target="{{target}}">
-        <img ng-src="{{imageSource}}" class="working {{imgClass}}" alt="">
+        <img ng-src="{{imageSource}}" class="working {{imgClass}}" alt="" ng-class="{'hidden': asBackgroundImage}">
     </a>
 
     <input type="file" class="hidden">

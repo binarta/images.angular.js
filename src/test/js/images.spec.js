@@ -31,7 +31,7 @@ describe('image-management', function () {
 
     describe('image show directive', function () {
         var registry, element, attrs, permitter, dispatcher, topics, imageEvent, loadHandler, errorHandler, abortHandler, rootScope;
-        var removedClass, addedClass, parentWidth;
+        var removedClass, addedClass, parentWidth, cssProperty, cssValue;
 
         beforeEach(inject(function (activeUserHasPermission, activeUserHasPermissionHelper, topicMessageDispatcher, topicMessageDispatcherMock, $timeout, $rootScope, topicRegistryMock, topicRegistry) {
             permitter = activeUserHasPermissionHelper;
@@ -85,6 +85,10 @@ describe('image-management', function () {
                             parentWidth = 100;
                         }
                     }
+                },
+                css: function (property, value) {
+                    cssProperty = property;
+                    cssValue = value;
                 }
             };
 
@@ -132,7 +136,8 @@ describe('image-management', function () {
                 target: '@',
                 alt: '@',
                 imageClass: '@',
-                width: '@'
+                width: '@',
+                asBackgroundImage: '@'
             });
         });
 
@@ -496,6 +501,23 @@ describe('image-management', function () {
             link();
             expect(scope.getBoxWidth()).toEqual(200);
         });
+
+        it('when image is not a background image', function () {
+            scope.path = 'path';
+            link();
+
+            expect(cssProperty).toBeUndefined();
+            expect(cssValue).toBeUndefined();
+        });
+
+        it('when image is a background image', function () {
+            scope.asBackgroundImage = true;
+            scope.path = 'path';
+            link();
+
+            expect(cssProperty).toEqual('background-image');
+            expect(cssValue).toEqual('url("base/no-cache:path?100")');
+        });
     });
 
     describe('ImagePathBuilder', function () {
@@ -580,7 +602,7 @@ describe('image-management', function () {
     describe('ImageController', function () {
         var awsPath = 'path';
         var path = 'path';
-        var rootScope, dispatcherMock, topics;
+        var rootScope, dispatcherMock, topics, backgroundImagePath;
 
         beforeEach(inject(function ($rootScope, $controller, cacheControl) {
             config = {awsPath: awsPath};
@@ -611,6 +633,9 @@ describe('image-management', function () {
             };
             scope.getBoxWidth = function () {
                 return 100;
+            };
+            scope.updateBackgroundImage = function (path) {
+                backgroundImagePath = path;
             };
             ctrl = $controller(ImageController, {
                 $scope: scope,
@@ -763,22 +788,42 @@ describe('image-management', function () {
         });
 
         describe('on upload success', function () {
-            beforeEach(function () {
-                scope.selecting = true;
-                ctrl.add(file, path);
-                scope.upload();
-                uploader.handlers.success('payload', 201);
+            describe('and image is not a background image', function () {
+                beforeEach(function () {
+                    scope.selecting = true;
+                    ctrl.add(file, path);
+                    scope.upload();
+                    uploader.handlers.success('payload', 201);
+                });
+
+                it('refresh image source', function () {
+                    expect(scope.name).toEqual('');
+                    expect(scope.imageSource).toContain(awsPath + rootScope.image.uploaded[uploader.path]);
+                    expect(scope.status).toEqual(201);
+                    expect(scope.selecting).toEqual(false);
+                });
+
+                it('keep reference of newly uploaded image on rootScope', function () {
+                    expect(rootScope.image.uploaded[uploader.path]).toMatch(/\d+/);
+                });
+
+                it('update background image is not called', function () {
+                    expect(backgroundImagePath).toBeUndefined();
+                });
             });
 
-            it('refresh image source', function () {
-                expect(scope.name).toEqual('');
-                expect(scope.imageSource).toContain(awsPath + rootScope.image.uploaded[uploader.path]);
-                expect(scope.status).toEqual(201);
-                expect(scope.selecting).toEqual(false);
-            });
+            describe('and image is a background image', function () {
+                beforeEach(function () {
+                    scope.selecting = true;
+                    scope.asBackgroundImage = true;
+                    ctrl.add(file, path);
+                    scope.upload();
+                    uploader.handlers.success('payload', 201);
+                });
 
-            it('keep reference of newly uploaded image on rootScope', function () {
-                expect(rootScope.image.uploaded[uploader.path]).toMatch(/\d+/);
+                it('update background image is called', function () {
+                    expect(backgroundImagePath).toEqual(scope.imageSource);
+                });
             });
         });
 
