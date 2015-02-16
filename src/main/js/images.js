@@ -1,5 +1,7 @@
 angular.module('image-management', ['ui.bootstrap.modal', 'config'])
+    .service('imageManagement', ['$q', 'config', 'imagePathBuilder', 'activeUserHasPermission', 'uploader', '$rootScope', '$timeout', ImageManagementService])
     .directive('imageShow', ['config', 'topicRegistry', 'activeUserHasPermission', 'topicMessageDispatcher', '$timeout', '$rootScope', 'imagePathBuilder', ImageShowDirectiveFactory])
+    .directive('binImage', ['imageManagement', 'activeUserHasPermission', 'ngRegisterTopicHandler', 'editModeRenderer', BinImageDirectiveFactory])
     .factory('imagePathBuilder', ['$rootScope', ImagePathBuilderFactory])
     .controller('ImageUploadDialogController', ['$scope', '$modal', 'config', ImageUploadDialogController])
     .controller('ImageController', ['$scope', 'uploader', 'config', '$rootScope', 'topicMessageDispatcher', 'imagePathBuilder', ImageController])
@@ -30,6 +32,80 @@ angular.module('image-management', ['ui.bootstrap.modal', 'config'])
             defaultTimeStamp: new Date().getTime()
         };
     }]);
+
+function ImageManagementService ($q, config, imagePathBuilder, activeUserHasPermission, uploader, $rootScope, $timeout) {
+    var self = this;
+
+    this.getLowerbound = function () {
+        return config.image && config.image.upload && config.image.upload.lowerbound ? config.image.upload.lowerbound : 1024;
+    };
+
+    this.getUpperbound = function () {
+        return config.image && config.image.upload && config.image.upload.upperbound ? config.image.upload.upperbound : 10485760;
+    };
+
+    this.getImagePath = function (args) {
+        var deferred = $q.defer();
+
+        activeUserHasPermission({
+            no: function () {
+                deferred.resolve(get(config.image && config.image.cache));
+            },
+            yes: function () {
+                deferred.resolve(get(false));
+            }
+        }, 'image.upload');
+
+        function get(cache) {
+            return config.awsPath + imagePathBuilder({
+                    cache: cache,
+                    path: args.code,
+                    parentWidth: args.width
+                });
+        }
+
+        return deferred.promise;
+    };
+
+    this.validate = function (file) {
+        var violations = [];
+        if (file.files[0].size < self.getLowerbound()) violations.push('size.lowerbound');
+        if (file.files[0].size > self.getUpperbound()) violations.push('size.upperbound');
+        return violations;
+    };
+
+    this.upload = function (args) {
+        var deferred = $q.defer();
+
+        $timeout(function() {
+            deferred.notify('uploading');
+        }, 0);
+
+        uploader.add(args.file, args.code);
+
+        uploader.upload({
+            success: function (payload) {
+                $rootScope.image.uploaded[args.code] = new Date().getTime();
+                deferred.resolve(payload);
+            },
+            rejected: function (reason) {
+                deferred.reject(reason);
+            }
+        });
+
+        return deferred.promise;
+    };
+
+    this.fileUpload = function (context) {
+        var body = angular.element(document.body);
+        var input = body.find('#bin-image-file-upload');
+        if (input.length != 1) {
+            body.append('<input id="bin-image-file-upload" type="file" class="hidden">');
+            input = body.find('#bin-image-file-upload');
+        }
+        return input.fileupload(context);
+    }
+}
 
 function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, topicMessageDispatcher, $timeout, $rootScope, imagePathBuilder) {
     var componentsDir = config.componentsDir || 'bower_components';
@@ -95,10 +171,10 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
 
             function toImageSource() {
                 return config.awsPath + imagePathBuilder({
-                    cache: scope.cacheEnabled,
-                    path: scope.path,
-                    parentWidth: scope.getBoxWidth()
-                });
+                        cache: scope.cacheEnabled,
+                        path: scope.path,
+                        parentWidth: scope.getBoxWidth()
+                    });
             }
 
             scope.$watch('cacheEnabled', function () {
@@ -163,6 +239,140 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
                 topicRegistry.unsubscribe('edit.mode', putEditingOnScope);
                 topicRegistry.unsubscribe('app.start', putCacheEnabledOnScope);
             });
+        }
+    }
+}
+
+function BinImageDirectiveFactory(imageManagement, activeUserHasPermission, ngRegisterTopicHandler, editModeRenderer) {
+    return {
+        restrict: 'A',
+        scope: true,
+        link: function (scope, element, attrs) {
+            function setDefaultImageSrc() {
+                imageManagement.getImagePath({code: attrs.binImage, width: getBoxWidth()}).then(function (path) {
+                    element[0].src = path;
+                });
+            }
+            setDefaultImageSrc();
+
+            function setImageSrc(src) {
+                element[0].src = src;
+            }
+
+            element.addClass('working');
+            element.bind('load', function () {
+                imageFound();
+            });
+            element.bind('error', function () {
+                imageNotFound();
+            });
+            element.bind('abort', function () {
+                imageNotFound();
+            });
+            function imageFound() {
+                element.removeClass('not-found');
+                element.removeClass('working');
+            }
+            function imageNotFound() {
+                //element.addClass('not-found');
+                element.removeClass('working');
+                setImageSrc("http://placehold.it/" + getBoxWidth() + 'x' + element.parent().height());
+            }
+
+            function getBoxWidth () {
+                return attrs.width || element.parent().width();
+            }
+
+            function bindClickEvent(editMode) {
+                if (editMode) {
+                    element.bind("click", function () {
+                        open();
+                    });
+                } else {
+                    element.unbind("click");
+                    setDefaultImageSrc();
+                }
+            }
+
+            activeUserHasPermission({
+                yes: function () {
+                    ngRegisterTopicHandler(scope, 'edit.mode', bindClickEvent);
+                },
+                no: function () {
+                    bindClickEvent(false);
+                },
+                scope: scope
+            }, 'image.upload');
+
+            function open() {
+                var data;
+                function init() {
+                    scope.violations = [];
+                    scope.state = '';
+                }
+                init();
+
+                imageManagement.fileUpload({
+                    dataType: 'json',
+                    add: function(e, d) {
+                        editModeRenderer.open({
+                            template: "<div id='bin-image-file-upload-dialog'>" +
+                            "<form>" +
+                            "<p class='text-warning' ng-repeat='v in violations'>" +
+                            "<i class='fa fa-times-circle fa-fw'></i>" +
+                            "<span ng-switch on='v'>" +
+                            "<span ng-switch-when='size.upperbound'> De foto mag maximum 10MB groot zijn.</span>" +
+                            "<span ng-switch-when='size.lowerbound'> De foto moet minimum 1kB groot zijn.</span>" +
+                            "<span ng-switch-default> {{v}}</span>" +
+                            "</span>" +
+                            "</p>" +
+                            "<p ng-if='state == \"uploading\"'><i class='fa fa-spinner fa-spin fa-fw'></i> Bezig met uploaden...</p>" +
+                            "<p ng-if='state == \"preview\"'><i class='fa fa-spinner fa-spin fa-fw'></i> Voorbeeld laden...</p>" +
+                            "</form>" +
+                            "<div class='dropdown-menu-buttons'>" +
+                            "<button type='submit' class='btn btn-success' ng-click='submit()' ng-if='state == \"ok\"'>Opslaan</button>" +
+                            "<button type='reset' class='btn btn-default' ng-click='close()'>Annuleren</button>" +
+                            "</div></div>",
+                            scope: scope
+                        });
+                        scope.$apply(scope.state = 'preview');
+                        scope.violations = imageManagement.validate(d);
+
+                        if (scope.violations.length == 0) {
+                            var reader = new FileReader();
+                            reader.onload = function (e) {
+                                setImageSrc(e.target.result);
+                                scope.$apply(scope.state = 'ok');
+                            };
+                            reader.readAsDataURL(d.files[0]);
+                        } else {
+                            scope.$apply(scope.state = '');
+                        }
+
+                        data = d;
+                    }
+                }).click();
+
+                scope.submit = function () {
+                    element.addClass('uploading');
+                    imageManagement.upload({file: data, code: attrs.binImage}).then(function () {
+                        element.removeClass('uploading');
+                        scope.state = '';
+                        setDefaultImageSrc();
+                        editModeRenderer.close();
+                    }, function (reason) {
+                        element.removeClass('uploading');
+                        scope.state = reason;
+                    }, function (update) {
+                        scope.state = update;
+                    });
+                };
+
+                scope.close = function () {
+                    setDefaultImageSrc();
+                    editModeRenderer.close();
+                };
+            }
         }
     }
 }
