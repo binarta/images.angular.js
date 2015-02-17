@@ -501,12 +501,15 @@ function ImagePathBuilderFactory($rootScope) {
         function convertParentWidthToRangedWidth() {
             var width;
             [
-                {lowerbound: 0, upperbound: 68, actual: 60},
-                {lowerbound: 69, upperbound: 195, actual: 160},
-                {lowerbound: 196, upperbound: 419, actual: 320},
-                {lowerbound: 420, upperbound: 543, actual: 480},
-                {lowerbound: 544, upperbound: 767, actual: 640},
-                {lowerbound: 768, upperbound: 991, actual: 800}
+                {lowerbound: 0, upperbound: 59, actual: 60},
+                {lowerbound: 60, upperbound: 159, actual: 160},
+                {lowerbound: 160, upperbound: 319, actual: 320},
+                {lowerbound: 320, upperbound: 479, actual: 480},
+                {lowerbound: 480, upperbound: 767, actual: 768},
+                {lowerbound: 768, upperbound: 991, actual: 992},
+                {lowerbound: 992, upperbound: 1199, actual: 1200},
+                {lowerbound: 1200, upperbound: 1919, actual: 1920},
+                {lowerbound: 1920, upperbound: 4095, actual: 4096}
             ].forEach(function (v) {
                     if (args.parentWidth >= v.lowerbound && args.parentWidth <= v.upperbound) {
                         width = v.actual;

@@ -922,19 +922,23 @@ describe('image-management', function () {
             [
                 {actual: 0, expected: 60},
                 {actual: 1, expected: 60},
-                {actual: 68, expected: 60},
-                {actual: 69, expected: 160},
-                {actual: 195, expected: 160},
-                {actual: 196, expected: 320},
-                {actual: 419, expected: 320},
-                {actual: 420, expected: 480},
-                {actual: 543, expected: 480},
-                {actual: 544, expected: 640},
-                {actual: 767, expected: 640},
-                {actual: 768, expected: 800},
-                {actual: 991, expected: 800},
-                {actual: 992, expected: 1024},
-                {actual: 1200, expected: 1024}
+                {actual: 59, expected: 60},
+                {actual: 60, expected: 160},
+                {actual: 159, expected: 160},
+                {actual: 160, expected: 320},
+                {actual: 319, expected: 320},
+                {actual: 320, expected: 480},
+                {actual: 479, expected: 480},
+                {actual: 480, expected: 768},
+                {actual: 767, expected: 768},
+                {actual: 768, expected: 992},
+                {actual: 991, expected: 992},
+                {actual: 992, expected: 1200},
+                {actual: 1199, expected: 1200},
+                {actual: 1200, expected: 1920},
+                {actual: 1919, expected: 1920},
+                {actual: 1920, expected: 4096},
+                {actual: 4095, expected: 4096}
             ].forEach(function (value) {
                     describe('and parent width ' + value.actual + ' is given', function () {
                         it('then width ' + value.expected + ' is appended', function () {
