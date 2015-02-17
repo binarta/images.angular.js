@@ -19,7 +19,7 @@ describe('image-management', function () {
         $httpBackend = $injector.get('$httpBackend');
         _file = {
             size: 2000,
-            type: 'type',
+            type: 'image/jpeg',
             name: 'name'
         };
         file = {
@@ -109,6 +109,14 @@ describe('image-management', function () {
                 var violations = imageManagement.validate(file);
 
                 expect(violations).toEqual(['size.upperbound']);
+            });
+
+            it('file type is not an image', function () {
+                file.files[0].type = 'application';
+
+                var violations = imageManagement.validate(file);
+
+                expect(violations).toEqual(['type.invalid']);
             });
 
             it('valid file', function () {

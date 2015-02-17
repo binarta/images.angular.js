@@ -71,6 +71,7 @@ function ImageManagementService ($q, config, imagePathBuilder, activeUserHasPerm
         var violations = [];
         if (file.files[0].size < self.getLowerbound()) violations.push('size.lowerbound');
         if (file.files[0].size > self.getUpperbound()) violations.push('size.upperbound');
+        if (file.files[0].type.indexOf('image/') == -1) violations.push('type.invalid');
         return violations;
     };
 
@@ -100,7 +101,7 @@ function ImageManagementService ($q, config, imagePathBuilder, activeUserHasPerm
         var body = angular.element(document.body);
         var input = body.find('#bin-image-file-upload');
         if (input.length != 1) {
-            body.append('<input id="bin-image-file-upload" type="file" class="hidden">');
+            body.append('<input id="bin-image-file-upload" type="file" accept="image/*" class="hidden">');
             input = body.find('#bin-image-file-upload');
         }
         return input.fileupload(context);
@@ -322,11 +323,12 @@ function BinImageDirectiveFactory(imageManagement, activeUserHasPermission, ngRe
                             "<span ng-switch on='v'>" +
                             "<span ng-switch-when='size.upperbound'> De foto mag maximum 10MB groot zijn.</span>" +
                             "<span ng-switch-when='size.lowerbound'> De foto moet minimum 1kB groot zijn.</span>" +
+                            "<span ng-switch-when='type.invalid'> Ongeldige foto.</span>" +
                             "<span ng-switch-default> {{v}}</span>" +
                             "</span>" +
                             "</p>" +
                             "<p ng-if='state == \"uploading\"'><i class='fa fa-spinner fa-spin fa-fw'></i> Bezig met uploaden...</p>" +
-                            "<p ng-if='state == \"preview\"'><i class='fa fa-spinner fa-spin fa-fw'></i> Voorbeeld laden...</p>" +
+                            "<p ng-if='state == \"preview\"'><i class='fa fa-spinner fa-spin fa-fw'></i> Voorbeeld wordt geladen...</p>" +
                             "</form>" +
                             "<div class='dropdown-menu-buttons'>" +
                             "<button type='submit' class='btn btn-success' ng-click='submit()' ng-if='state == \"ok\"'>Opslaan</button>" +
