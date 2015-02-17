@@ -655,12 +655,14 @@ describe('image-management', function () {
     });
 
     describe('binImage directive', function () {
-        var scope, element, event, directive, editModeRenderer, editModeRendererSpy, imageManagement, addedClass, removedClass, permitter, registry;
+        var scope, element, event, directive, imageManagement, addedClass, removedClass;
         var imagePath = 'image/path.jpg';
 
-        beforeEach(inject(function ($rootScope, $q, activeUserHasPermission, activeUserHasPermissionHelper, ngRegisterTopicHandler, topicRegistryMock) {
+        beforeEach(inject(function ($rootScope, $q) {
             scope = $rootScope.$new();
-            permitter = activeUserHasPermissionHelper;
+
+            scope.init = function () {};
+
             addedClass = [];
             removedClass = [];
             event = [];
@@ -687,8 +689,6 @@ describe('image-management', function () {
             };
             element[0] = {};
 
-            registry = topicRegistryMock;
-
             imageManagement = {
                 getImagePathSpy: {},
                 getImagePath: function (args) {
@@ -696,41 +696,10 @@ describe('image-management', function () {
                     var deferred = $q.defer();
                     deferred.resolve(imagePath);
                     return deferred.promise;
-                },
-                fileUploadSpy: {},
-                fileUploadClicked: false,
-                fileUpload: function (ctx) {
-                    imageManagement.fileUploadSpy = ctx;
-                    return {
-                        click: function () {
-                            imageManagement.fileUploadClicked = true;
-                        }
-                    }
-                },
-                validate: function (file) {
-                    return [];
-                },
-                uploadSpy: {},
-                upload: function (ctx) {
-                    imageManagement.uploadSpy = ctx;
-                    var deferred = $q.defer();
-                    deferred.resolve('');
-                    return deferred.promise;
                 }
             };
 
-            editModeRendererSpy = {};
-
-            editModeRenderer = {
-                open: function (args) {
-                    editModeRendererSpy.open = args;
-                },
-                close: function () {
-                    editModeRendererSpy.close = true;
-                }
-            };
-
-            directive = BinImageDirectiveFactory(imageManagement, activeUserHasPermission, ngRegisterTopicHandler, editModeRenderer)
+            directive = BinImageDirectiveFactory(imageManagement);
         }));
 
         it('restrict', function () {
@@ -739,6 +708,10 @@ describe('image-management', function () {
 
         it('uses child scope', function () {
             expect(directive.scope).toEqual(true);
+        });
+
+        it('controller', function () {
+            expect(directive.controller).toEqual('binImageController');
         });
 
         describe('on link with width', function () {
@@ -758,6 +731,10 @@ describe('image-management', function () {
                 scope.$digest();
             });
 
+            it('put code on scope', function () {
+                expect(scope.code).toEqual('test.img');
+            });
+
             it('get image path', function () {
                 expect(imageManagement.getImagePathSpy).toEqual({code: 'test.img', width: 100});
                 expect(element[0].src).toEqual(imagePath);
@@ -765,6 +742,12 @@ describe('image-management', function () {
 
             it('put working class on element', function () {
                 expect(addedClass[0]).toEqual('working');
+            });
+
+            it('update image src', function () {
+                scope.setImageSrc('test');
+
+                expect(element[0].src).toEqual('test');
             });
 
             describe('bind image events', function () {
@@ -810,41 +793,238 @@ describe('image-management', function () {
                     });
                 });
             });
+        });
+    });
 
-            describe('when user has permission', function () {
+    describe('binBackgroundImage directive', function () {
+        var scope, element, directive, imageManagement, cssSpy;
+        var imagePath = 'image/path.jpg';
+
+        beforeEach(inject(function ($rootScope, $q) {
+            scope = $rootScope.$new();
+
+            scope.init = function () {};
+
+            element = {
+                width: function () {
+                    return 100;
+                },
+                css: function (k, v) {
+                    cssSpy = {
+                        key: k,
+                        value: v
+                    }
+                }
+            };
+            element[0] = {};
+
+            imageManagement = {
+                getImagePathSpy: {},
+                getImagePath: function (args) {
+                    imageManagement.getImagePathSpy = args;
+                    var deferred = $q.defer();
+                    deferred.resolve(imagePath);
+                    return deferred.promise;
+                }
+            };
+
+            directive = BinBackgroundImageDirectiveFactory(imageManagement);
+        }));
+
+        it('restrict', function () {
+            expect(directive.restrict).toEqual('A');
+        });
+
+        it('uses child scope', function () {
+            expect(directive.scope).toEqual(true);
+        });
+
+        it('controller', function () {
+            expect(directive.controller).toEqual('binImageController');
+        });
+
+        describe('on link', function () {
+            beforeEach(function () {
+                directive.link(scope, element, {binBackgroundImage: 'test.img'});
+                scope.$digest();
+            });
+
+            it('put code on scope', function () {
+                expect(scope.code).toEqual('test.img');
+            });
+
+            it('get image path', function () {
+                expect(imageManagement.getImagePathSpy).toEqual({code: 'test.img', width: 100});
+                expect(cssSpy).toEqual({
+                    key: 'background-image',
+                    value: 'url("'+ imagePath + '")'
+                });
+            });
+
+            it('update image src', function () {
+                scope.setImageSrc('test');
+
+                expect(cssSpy).toEqual({
+                    key: 'background-image',
+                    value: 'url(test)'
+                });
+            });
+        });
+    });
+
+    describe('binImageController', function () {
+        var scope, element, event, directive, editModeRenderer, editModeRendererSpy, imageManagement, addedClass, removedClass, permitter, registry;
+        var imagePath = 'image/path.jpg';
+
+        var fileReaderSpy = {};
+        FileReader = function () {
+            return {
+                readAsDataURL: function (data) {
+                    fileReaderSpy.data = data;
+                    fileReaderSpy.onloadend = this.onloadend;
+                },
+                onloadend: function (){},
+                result: 'result'
+            };
+        };
+
+        beforeEach(inject(function ($rootScope, $q, activeUserHasPermission, activeUserHasPermissionHelper, ngRegisterTopicHandler, topicRegistryMock) {
+            scope = $rootScope.$new();
+
+            scope.setImageSrc = function (src) {
+                scope.setImageSrcSpy = src;
+            };
+
+            scope.setDefaultImageSrc = function () {
+                scope.setDefaultImageSrcCalled = true;
+            };
+
+            scope.code = 'test.img';
+
+            permitter = activeUserHasPermissionHelper;
+            addedClass = [];
+            removedClass = [];
+            event = [];
+            element = {
+                addClass: function (c) {
+                    addedClass.push(c)
+                },
+                removeClass: function (c) {
+                    removedClass.push(c);
+                },
+                bind: function (e, f) {
+                    event[e] = f;
+                },
+                unbind: function (e) {
+                    event[e] = undefined;
+                }
+            };
+
+            registry = topicRegistryMock;
+
+            imageManagement = {
+                fileUploadSpy: {},
+                fileUploadClicked: false,
+                fileUpload: function (ctx) {
+                    imageManagement.fileUploadSpy = ctx;
+                    return {
+                        click: function () {
+                            imageManagement.fileUploadClicked = true;
+                        }
+                    }
+                },
+                validateSpy: {},
+                validateReturn: [],
+                validate: function (file) {
+                    imageManagement.validateSpy = file;
+                    return imageManagement.validateReturn;
+                },
+                uploadSpy: {},
+                upload: function (ctx) {
+                    imageManagement.uploadSpy = ctx;
+                    var deferred = $q.defer();
+                    deferred.resolve('');
+                    return deferred.promise;
+                }
+            };
+
+            editModeRendererSpy = {};
+
+            editModeRenderer = {
+                open: function (args) {
+                    editModeRendererSpy.open = args;
+                },
+                close: function () {
+                    editModeRendererSpy.close = true;
+                }
+            };
+
+            directive = BinImageController(scope, imageManagement, editModeRenderer, activeUserHasPermission, ngRegisterTopicHandler);
+            scope.init(element);
+        }));
+
+        describe('when user has permission', function () {
+            beforeEach(function () {
+                permitter.yes();
+            });
+
+            it('for image.upload', function () {
+                expect(permitter.permission).toEqual('image.upload');
+            });
+
+            describe('and edit.mode true bindEvent received', function () {
                 beforeEach(function () {
-                    permitter.yes();
+                    registry['edit.mode'](true);
                 });
 
-                it('for image.upload', function () {
-                    expect(permitter.permission).toEqual('image.upload');
+                it('bind element to click bindEvent', function () {
+                    expect(event['click']).toBeDefined();
                 });
 
-                describe('and edit.mode true bindEvent received', function () {
+                describe('and element is clicked', function () {
+                    var clickResponse;
+
                     beforeEach(function () {
-                        registry['edit.mode'](true);
+                        clickResponse = event['click']();
                     });
 
-                    it('bind element to click bindEvent', function () {
-                        expect(event['click']).toBeDefined();
+                    it('click event returns false to prevent the default action and stop propagation', function () {
+                        expect(clickResponse).toEqual(false);
                     });
 
-                    describe('and element is clicked', function () {
-                        beforeEach(function () {
-                            event['click']();
+                    it('init', function () {
+                        expect(scope.violations).toEqual([]);
+                        expect(scope.state).toEqual('');
+                    });
+
+                    it('fileupload is executed', function () {
+                        expect(imageManagement.fileUploadSpy).toBeDefined();
+                        expect(imageManagement.fileUploadClicked).toBeTruthy();
+                    });
+
+                    it('with context', function () {
+                        expect(imageManagement.fileUploadSpy.dataType).toEqual('json');
+                        expect(imageManagement.fileUploadSpy.add).toEqual(jasmine.any(Function));
+                    });
+
+                    describe('image is added', function () {
+                        describe('with violations', function () {
+                            beforeEach(function () {
+                                imageManagement.validateReturn = ['violation'];
+
+                                imageManagement.fileUploadSpy.add(null, file);
+                            });
+
+                            it('put violations on scope', function () {
+                                expect(scope.violations).toEqual(['violation']);
+                            });
+
+                            it('reset state', function () {
+                                expect(scope.state).toEqual('');
+                            });
                         });
 
-                        it('fileupload is executed', function () {
-                            expect(imageManagement.fileUploadSpy).toBeDefined();
-                            expect(imageManagement.fileUploadClicked).toBeTruthy();
-                        });
-
-                        it('with context', function () {
-                            expect(imageManagement.fileUploadSpy.dataType).toEqual('json');
-                            expect(imageManagement.fileUploadSpy.add).toEqual(jasmine.any(Function));
-                        });
-
-                        describe('image is added', function () {
+                        describe('without violations', function () {
                             beforeEach(function () {
                                 imageManagement.fileUploadSpy.add(null, file);
                             });
@@ -855,7 +1035,29 @@ describe('image-management', function () {
                             });
 
                             it('state is set to preview', function () {
-                                expect(scope.state).toEqual('preview');
+                                expect(scope.state).toEqual('loading');
+                            });
+
+                            it('put violations on scope', function () {
+                                expect(scope.violations).toEqual([]);
+                            });
+
+                            it('read image data', function () {
+                                expect(fileReaderSpy.data).toEqual(_file);
+                            });
+
+                            describe('fileReader onload', function () {
+                                beforeEach(function () {
+                                    fileReaderSpy.onloadend();
+                                });
+
+                                it('state is set to ok', function () {
+                                    expect(scope.state).toEqual('ok');
+                                });
+
+                                it('set image source', function () {
+                                    expect(scope.setImageSrcSpy).toEqual('result');
+                                });
                             });
 
                             describe('on submit', function () {
@@ -864,46 +1066,81 @@ describe('image-management', function () {
                                 });
 
                                 it('add uploading class', function () {
-                                    expect(addedClass[1]).toEqual('uploading');
+                                    expect(addedClass[0]).toEqual('uploading');
                                 });
 
-                                it('image is uploaded', function () {
+                                it('upload', function () {
                                     expect(imageManagement.uploadSpy.file).toEqual(file);
                                     expect(imageManagement.uploadSpy.code).toEqual('test.img');
                                 });
 
-                                it('on success', function () {
-                                    scope.$digest();
+                                describe('upload success', function () {
+                                    beforeEach(function () {
+                                        scope.$digest();
+                                    });
 
-                                    expect(scope.state).toEqual('');
-                                    expect(removedClass[0]).toEqual('uploading');
+                                    it('reset state', function () {
+                                        expect(scope.state).toEqual('');
+                                    });
+
+                                    it('remove uploading class', function () {
+                                        expect(removedClass[0]).toEqual('uploading');
+                                    });
+
+                                    it('set image path', function () {
+                                        expect(scope.setDefaultImageSrcCalled).toBeTruthy();
+                                    });
+
+                                    it('close editModeRenderer', function () {
+                                        expect(editModeRendererSpy.close).toBeTruthy();
+                                    });
+                                });
+                            });
+
+                            describe('on close', function () {
+                                beforeEach(function () {
+                                    scope.close();
+                                });
+
+                                it('set image path', function () {
+                                    expect(scope.setDefaultImageSrcCalled).toBeTruthy();
+                                });
+
+                                it('close editModeRenderer', function () {
                                     expect(editModeRendererSpy.close).toBeTruthy();
-                                    expect(element[0].src).toEqual(imagePath);
                                 });
                             });
                         });
                     });
                 });
-
-                describe('and edit.mode false bindEvent received', function () {
-                    beforeEach(function () {
-                        registry['edit.mode'](false);
-                    });
-
-                    it('unbind element from click bindEvent', function () {
-                        expect(event['click']).toBeUndefined();
-                    });
-                });
             });
 
-            describe('when user has no permission', function () {
+            describe('and edit.mode false bindEvent received', function () {
                 beforeEach(function () {
-                    permitter.no();
+                    registry['edit.mode'](false);
                 });
 
                 it('unbind element from click bindEvent', function () {
                     expect(event['click']).toBeUndefined();
                 });
+
+                it('set default image path', function () {
+                    expect(scope.setDefaultImageSrcCalled).toBeTruthy();
+                });
+            });
+        });
+
+        describe('when user has no permission', function () {
+            beforeEach(function () {
+                permitter.no();
+            });
+
+            it('unbind element from click bindEvent', function () {
+                expect(event['click']).toBeUndefined();
+            });
+
+            it('set default image path', function () {
+                expect(scope.setDefaultImageSrcCalled).toBeTruthy();
             });
         });
     });

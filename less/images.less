@@ -1,7 +1,8 @@
-[bin-image] {
-  transition: all 0.3s ease-out;
+[bin-image],
+[bin-background-image] {
   outline: rgba(91, 183, 91, 0) solid 2px;
   opacity: 1;
+  transition: opacity 0.3s ease-out, outline 0.3s ease-out;
 }
 [bin-image].working {
   opacity: 0 !important;
@@ -16,7 +17,9 @@
   border: 4px dashed lightgray;
 }
 [editmode="true"] [bin-image]:hover,
-[editmode="true"] [bin-image].uploading {
+[editmode="true"] [bin-image].uploading,
+[editmode="true"] [bin-background-image]:hover,
+[editmode="true"] [bin-background-image].uploading {
   outline: #5bb75b solid 2px;
   cursor: pointer;
   opacity: 0.7;
