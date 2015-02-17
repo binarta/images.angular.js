@@ -274,9 +274,8 @@ function BinImageDirectiveFactory(imageManagement, activeUserHasPermission, ngRe
                 element.removeClass('working');
             }
             function imageNotFound() {
-                //element.addClass('not-found');
+                element.addClass('not-found');
                 element.removeClass('working');
-                setImageSrc("http://placehold.it/" + getBoxWidth() + 'x' + element.parent().height());
             }
 
             function getBoxWidth () {
