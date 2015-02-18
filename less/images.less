@@ -9,16 +9,16 @@
   &.working,
   &.not-found {
     height: 0;
-  }
-  &.working {
-    opacity: 0 !important;
-    visibility: hidden !important;
+    opacity: 0;
+    visibility: hidden;
   }
 }
 [editmode="true"] {
   [bin-image].not-found {
     height: inherit;
     width: 100%;
+    opacity: 1;
+    visibility: visible;
     background: lightgray;
     border: 4px dashed darkgray;
     color: darkgray;
