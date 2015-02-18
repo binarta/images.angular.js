@@ -670,7 +670,14 @@ describe('image-management', function () {
                 parent: function () {
                     return {
                         width: function () {
-                            return 100;
+                            return 0;
+                        },
+                        parent: function () {
+                            return {
+                                width: function () {
+                                    return 100;
+                                }
+                            }
                         }
                     }
                 },
@@ -712,17 +719,6 @@ describe('image-management', function () {
 
         it('controller', function () {
             expect(directive.controller).toEqual('binImageController');
-        });
-
-        describe('on link with width', function () {
-            beforeEach(function () {
-                directive.link(scope, element, {binImage: 'test.img', width: 200});
-                scope.$digest();
-            });
-
-            it('use element width', function () {
-                expect(imageManagement.getImagePathSpy).toEqual({code: 'test.img', width: 200});
-            });
         });
 
         describe('on link', function () {

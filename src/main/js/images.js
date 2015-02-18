@@ -131,7 +131,13 @@ function BinImageDirectiveFactory(imageManagement) {
             };
 
             function getBoxWidth () {
-                return attrs.width || element.parent().width();
+                var width = 0;
+                var el = element;
+                while (width == 0) {
+                    el = el.parent();
+                    width = el.width();
+                }
+                return width;
             }
 
             element.addClass('working');

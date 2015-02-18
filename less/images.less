@@ -1,27 +1,34 @@
 [bin-image],
 [bin-background-image] {
+  height: inherit;
   outline: rgba(91, 183, 91, 0) solid 2px;
   opacity: 1;
   transition: opacity 0.3s ease-out, outline 0.3s ease-out;
 }
-[bin-image].working {
-  opacity: 0 !important;
+[bin-image], {
+  &.working,
+  &.not-found {
+    height: 0;
+  }
+  &.working {
+    opacity: 0 !important;
+    visibility: hidden !important;
+  }
 }
-[bin-image].not-found {
-  display: none;
-}
-[editmode="true"] [bin-image].not-found {
-  display: inherit;
-  width: 100%;
-  background: darkgray;
-  border: 4px dashed lightgray;
-  color: lightgrey;
-}
-[editmode="true"] [bin-image]:hover,
-[editmode="true"] [bin-image].uploading,
-[editmode="true"] [bin-background-image]:hover,
-[editmode="true"] [bin-background-image].uploading {
-  outline: #5bb75b solid 2px;
-  cursor: pointer;
-  opacity: 0.7;
+[editmode="true"] {
+  [bin-image].not-found {
+    height: inherit;
+    width: 100%;
+    background: lightgray;
+    border: 4px dashed darkgray;
+    color: darkgray;
+  }
+  [bin-image]:hover,
+  [bin-image].uploading,
+  [bin-background-image]:hover,
+  [bin-background-image].uploading {
+    outline: #5bb75b solid 2px;
+    cursor: pointer;
+    opacity: 0.7;
+  }
 }
