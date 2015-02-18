@@ -8,9 +8,14 @@
   opacity: 0 !important;
 }
 [bin-image].not-found {
+  display: none;
+}
+[editmode="true"] [bin-image].not-found {
+  display: inherit;
   width: 100%;
   background: darkgray;
   border: 4px dashed lightgray;
+  color: lightgrey;
 }
 [editmode="true"] [bin-image]:hover,
 [editmode="true"] [bin-image].uploading,
