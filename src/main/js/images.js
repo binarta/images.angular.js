@@ -6,7 +6,7 @@ angular.module('image-management', ['ui.bootstrap.modal', 'config'])
     .factory('imagePathBuilder', ['$rootScope', ImagePathBuilderFactory])
     .controller('ImageUploadDialogController', ['$scope', '$modal', 'config', ImageUploadDialogController])
     .controller('ImageController', ['$scope', 'uploader', 'config', '$rootScope', 'topicMessageDispatcher', 'imagePathBuilder', ImageController])
-    .controller('binImageController', ['$scope', 'imageManagement', 'editModeRenderer', 'activeUserHasPermission', 'ngRegisterTopicHandler', BinImageController])
+    .controller('binImageController', ['$scope', 'imageManagement', 'editModeRenderer', 'activeUserHasPermission', 'ngRegisterTopicHandler', '$window', BinImageController])
     .run(['$rootScope', '$location', 'topicRegistry', 'topicMessageDispatcher', function ($rootScope, $location, topicRegistry, topicMessageDispatcher) {
         var imageCount = 0;
 
@@ -185,7 +185,7 @@ function BinBackgroundImageDirectiveFactory(imageManagement) {
     }
 }
 
-function BinImageController($scope, imageManagement, editModeRenderer, activeUserHasPermission, ngRegisterTopicHandler) {
+function BinImageController($scope, imageManagement, editModeRenderer, activeUserHasPermission, ngRegisterTopicHandler, $window) {
     var element;
 
     $scope.init = function (el) {
@@ -246,21 +246,27 @@ function BinImageController($scope, imageManagement, editModeRenderer, activeUse
                     "</div></div>",
                     scope: $scope
                 });
-                $scope.$apply($scope.state = 'loading');
+                data = d;
                 $scope.violations = imageManagement.validate(d);
 
                 if ($scope.violations.length == 0) {
-                    var reader = new FileReader();
-                    reader.onloadend = function () {
-                        $scope.setImageSrc(reader.result);
-                        $scope.$apply($scope.state = 'ok');
-                    };
-                    reader.readAsDataURL(d.files[0]);
+
+                    if ($window.FileReader) {
+                        $scope.$apply($scope.state = 'loading');
+
+                        var reader = new $window.FileReader();
+                        reader.onloadend = function () {
+                            $scope.setImageSrc(reader.result);
+                            $scope.$apply($scope.state = 'ok');
+                        };
+                        reader.readAsDataURL(d.files[0]);
+                    } else {
+                        $scope.submit();
+                    }
+
                 } else {
                     $scope.$apply($scope.state = '');
                 }
-
-                data = d;
             }
         }).click();
 

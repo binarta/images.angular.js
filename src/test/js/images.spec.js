@@ -869,22 +869,10 @@ describe('image-management', function () {
     });
 
     describe('binImageController', function () {
-        var scope, element, event, directive, editModeRenderer, editModeRendererSpy, imageManagement, addedClass, removedClass, permitter, registry;
+        var scope, element, event, editModeRenderer, editModeRendererSpy, imageManagement, addedClass, removedClass, permitter, registry, $window;
         var imagePath = 'image/path.jpg';
 
-        var fileReaderSpy = {};
-        FileReader = function () {
-            return {
-                readAsDataURL: function (data) {
-                    fileReaderSpy.data = data;
-                    fileReaderSpy.onloadend = this.onloadend;
-                },
-                onloadend: function (){},
-                result: 'result'
-            };
-        };
-
-        beforeEach(inject(function ($rootScope, $q, activeUserHasPermission, activeUserHasPermissionHelper, ngRegisterTopicHandler, topicRegistryMock) {
+        beforeEach(inject(function ($rootScope, $q, activeUserHasPermission, activeUserHasPermissionHelper, ngRegisterTopicHandler, topicRegistryMock, _$window_) {
             scope = $rootScope.$new();
 
             scope.setImageSrc = function (src) {
@@ -955,7 +943,9 @@ describe('image-management', function () {
                 }
             };
 
-            directive = BinImageController(scope, imageManagement, editModeRenderer, activeUserHasPermission, ngRegisterTopicHandler);
+            $window = _$window_;
+
+            BinImageController(scope, imageManagement, editModeRenderer, activeUserHasPermission, ngRegisterTopicHandler, $window);
             scope.init(element);
         }));
 
@@ -1038,23 +1028,53 @@ describe('image-management', function () {
                                 expect(scope.violations).toEqual([]);
                             });
 
-                            it('read image data', function () {
-                                expect(fileReaderSpy.data).toEqual(_file);
-                            });
+                            describe('when FileReader is available', function () {
+                                var fileReaderSpy = {};
 
-                            describe('fileReader onload', function () {
                                 beforeEach(function () {
-                                    fileReaderSpy.onloadend();
+                                    $window.FileReader = function () {
+                                        return {
+                                            readAsDataURL: function (data) {
+                                                fileReaderSpy.data = data;
+                                                fileReaderSpy.onloadend = this.onloadend;
+                                            },
+                                            onloadend: function (){},
+                                            result: 'result'
+                                        };
+                                    };
+                                    imageManagement.fileUploadSpy.add(null, file);
                                 });
 
-                                it('state is set to ok', function () {
-                                    expect(scope.state).toEqual('ok');
+                                it('read image data', function () {
+                                    expect(fileReaderSpy.data).toEqual(_file);
                                 });
 
-                                it('set image source', function () {
-                                    expect(scope.setImageSrcSpy).toEqual('result');
+                                describe('fileReader onload', function () {
+                                    beforeEach(function () {
+                                        fileReaderSpy.onloadend();
+                                    });
+
+                                    it('state is set to ok', function () {
+                                        expect(scope.state).toEqual('ok');
+                                    });
+
+                                    it('set image source', function () {
+                                        expect(scope.setImageSrcSpy).toEqual('result');
+                                    });
                                 });
                             });
+
+                            describe('when FileReader is not available', function () {
+                                beforeEach(function () {
+                                    $window.FileReader = undefined;
+                                    imageManagement.fileUploadSpy.add(null, file);
+                                });
+
+                                it('image is submitted', function () {
+                                    expect(imageManagement.uploadSpy.file).toEqual(file);
+                                });
+                            });
+
 
                             describe('on submit', function () {
                                 beforeEach(function () {
