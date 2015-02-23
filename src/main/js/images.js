@@ -116,6 +116,25 @@ function BinImageDirectiveFactory(imageManagement) {
         scope: true,
         controller: 'binImageController',
         link: function (scope, element, attrs) {
+            element.addClass('working');
+            element.bind('load', function () {
+                imageFound();
+            });
+            element.bind('error', function () {
+                imageNotFound();
+            });
+            element.bind('abort', function () {
+                imageNotFound();
+            });
+            function imageFound() {
+                element.removeClass('not-found');
+                element.removeClass('working');
+            }
+            function imageNotFound() {
+                element.addClass('not-found');
+                element.removeClass('working');
+            }
+
             scope.code = attrs.binImage;
             scope.init(element);
 
@@ -138,25 +157,6 @@ function BinImageDirectiveFactory(imageManagement) {
                     width = el.width();
                 }
                 return width;
-            }
-
-            element.addClass('working');
-            element.bind('load', function () {
-                imageFound();
-            });
-            element.bind('error', function () {
-                imageNotFound();
-            });
-            element.bind('abort', function () {
-                imageNotFound();
-            });
-            function imageFound() {
-                element.removeClass('not-found');
-                element.removeClass('working');
-            }
-            function imageNotFound() {
-                element.addClass('not-found');
-                element.removeClass('working');
             }
         }
     }
