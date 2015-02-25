@@ -71,9 +71,9 @@ function ImageManagementService ($q, config, imagePathBuilder, activeUserHasPerm
 
     this.validate = function (file) {
         var violations = [];
-        if (file.files[0].size < self.getLowerbound()) violations.push('size.lowerbound');
-        if (file.files[0].size > self.getUpperbound()) violations.push('size.upperbound');
-        if (file.files[0].type.indexOf('image/') == -1) violations.push('type.invalid');
+        if (file.files[0].size < self.getLowerbound()) violations.push('contentLength.lowerbound');
+        if (file.files[0].size > self.getUpperbound()) violations.push('contentLength.upperbound');
+        if (file.files[0].type.indexOf('image/') == -1) violations.push('contentType.whitelist');
         return violations;
     };
 
@@ -239,9 +239,9 @@ function BinImageController($scope, imageManagement, editModeRenderer, activeUse
                     "<p class='text-warning' ng-repeat='v in violations'>" +
                     "<i class='fa fa-times-circle fa-fw'></i>" +
                     "<span ng-switch on='v'>" +
-                    "<span ng-switch-when='size.upperbound'> De foto mag maximum 10MB groot zijn.</span>" +
-                    "<span ng-switch-when='size.lowerbound'> De foto moet minimum 1kB groot zijn.</span>" +
-                    "<span ng-switch-when='type.invalid'> Ongeldige foto.</span>" +
+                    "<span ng-switch-when='contentLength.upperbound'> De foto mag maximum 10MB groot zijn.</span>" +
+                    "<span ng-switch-when='contentLength.lowerbound'> De foto moet minimum 1kB groot zijn.</span>" +
+                    "<span ng-switch-when='contentType.whitelist'> Ongeldige foto.</span>" +
                     "<span ng-switch-default> {{v}}</span>" +
                     "</span>" +
                     "</p>" +

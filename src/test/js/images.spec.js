@@ -101,14 +101,14 @@ describe('image-management', function () {
                 file.files[0].size = 1023;
                 var violations = imageManagement.validate(file);
 
-                expect(violations).toEqual(['size.lowerbound']);
+                expect(violations).toEqual(['contentLength.lowerbound']);
             });
 
             it('above the size limit', function () {
                 file.files[0].size = 10485761;
                 var violations = imageManagement.validate(file);
 
-                expect(violations).toEqual(['size.upperbound']);
+                expect(violations).toEqual(['contentLength.upperbound']);
             });
 
             it('file type is not an image', function () {
@@ -116,7 +116,7 @@ describe('image-management', function () {
 
                 var violations = imageManagement.validate(file);
 
-                expect(violations).toEqual(['type.invalid']);
+                expect(violations).toEqual(['contentType.whitelist']);
             });
 
             it('valid file', function () {
