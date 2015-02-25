@@ -100,14 +100,22 @@ function ImageManagementService ($q, config, imagePathBuilder, activeUserHasPerm
     };
 
     this.fileUpload = function (context) {
+        return getFileUploadElement().fileupload(context);
+    };
+
+    this.triggerFileUpload = function () {
+        getFileUploadElement().click();
+    };
+
+    function getFileUploadElement () {
         var body = angular.element(document.body);
         var input = body.find('#bin-image-file-upload');
         if (input.length != 1) {
             body.append('<input id="bin-image-file-upload" type="file" accept="image/*" class="hidden">');
             input = body.find('#bin-image-file-upload');
         }
-        return input.fileupload(context);
-    };
+        return input;
+    }
 }
 
 function BinImageDirectiveFactory(imageManagement) {
