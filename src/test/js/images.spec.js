@@ -1029,8 +1029,8 @@ describe('image-management', function () {
                             });
 
                             describe('when URL is available', function () {
-                                it('state is set to ok', function () {
-                                    expect(scope.state).toEqual('ok');
+                                it('state is set to preview', function () {
+                                    expect(scope.state).toEqual('preview');
                                 });
 
                                 it('get object url from URL', function () {
@@ -1072,10 +1072,6 @@ describe('image-management', function () {
                                     expect(addedClass[0]).toEqual('uploading');
                                 });
 
-                                it('preview image object url is revoked', function () {
-                                    expect($window.URL.revokeObjectURLSpy).toEqual('objectUrl');
-                                });
-
                                 it('upload', function () {
                                     expect(imageManagement.uploadSpy.file).toEqual(file);
                                     expect(imageManagement.uploadSpy.code).toEqual('test.img');
@@ -1100,6 +1096,10 @@ describe('image-management', function () {
 
                                     it('close editModeRenderer', function () {
                                         expect(editModeRendererSpy.close).toBeTruthy();
+                                    });
+
+                                    it('preview image object url is revoked', function () {
+                                        expect($window.URL.revokeObjectURLSpy).toEqual('objectUrl');
                                     });
                                 });
                             });

@@ -194,7 +194,7 @@ function BinBackgroundImageDirectiveFactory(imageManagement) {
 }
 
 function BinImageController($scope, imageManagement, editModeRenderer, activeUserHasPermission, ngRegisterTopicHandler, $window) {
-    var element, image = {};
+    var element;
 
     $scope.init = function (el) {
         element = el;
@@ -239,9 +239,10 @@ function BinImageController($scope, imageManagement, editModeRenderer, activeUse
                     "</span>" +
                     "</p>" +
                     "<p ng-if='state == \"uploading\"'><i class='fa fa-spinner fa-spin fa-fw'></i> Bezig met uploaden...</p>" +
+                    "<p ng-if='state == \"preview\"' class='bin-image-preview'><img ng-src=\"{{previewImageUrl}}\"><span>PREVIEW</span></p>" +
                     "</form>" +
                     "<div class='dropdown-menu-buttons'>" +
-                    "<button type='submit' class='btn btn-success' ng-click='submit()' ng-if='state == \"ok\"'>Opslaan</button>" +
+                    "<button type='submit' class='btn btn-success' ng-click='submit()' ng-if='state == \"preview\"'>Opslaan</button>" +
                     "<button type='reset' class='btn btn-default' ng-click='close()'>Annuleren</button>" +
                     "</div></div>",
                     scope: $scope
@@ -251,46 +252,43 @@ function BinImageController($scope, imageManagement, editModeRenderer, activeUse
                 if ($scope.violations.length == 0) {
                     if ($window.URL) {
                         disposePreviewImage();
-                        image.data = d;
-                        image.objectUrl = $window.URL.createObjectURL(d.files[0]);
-                        $scope.setImageSrc(image.objectUrl);
-                        $scope.$apply($scope.state = 'ok');
+                        $scope.previewImageUrl = $window.URL.createObjectURL(d.files[0]);
+                        $scope.setImageSrc($scope.previewImageUrl);
+                        $scope.$apply($scope.state = 'preview');
                     } else {
-                        image.data = d;
                         $scope.submit();
                     }
                 } else {
                     $scope.$apply($scope.state = '');
                 }
+
+                $scope.submit = function () {
+                    element.addClass('uploading');
+                    imageManagement.upload({file: d, code: $scope.code}).then(function () {
+                        element.removeClass('uploading');
+                        $scope.state = '';
+                        $scope.setDefaultImageSrc();
+                        editModeRenderer.close();
+                        disposePreviewImage();
+                    }, function (reason) {
+                        element.removeClass('uploading');
+                        $scope.state = reason;
+                    }, function (update) {
+                        $scope.state = update;
+                    });
+                };
+
+                $scope.close = function () {
+                    $scope.setDefaultImageSrc();
+                    editModeRenderer.close();
+                    disposePreviewImage();
+                };
+
+                function disposePreviewImage () {
+                    if ($scope.previewImageUrl && $window.URL) $window.URL.revokeObjectURL($scope.previewImageUrl);
+                }
             }
         }).click();
-
-        $scope.submit = function () {
-            element.addClass('uploading');
-            imageManagement.upload({file: image.data, code: $scope.code}).then(function () {
-                element.removeClass('uploading');
-                $scope.state = '';
-                $scope.setDefaultImageSrc();
-                editModeRenderer.close();
-            }, function (reason) {
-                element.removeClass('uploading');
-                $scope.state = reason;
-            }, function (update) {
-                $scope.state = update;
-            });
-            disposePreviewImage();
-        };
-
-        $scope.close = function () {
-            $scope.setDefaultImageSrc();
-            editModeRenderer.close();
-            disposePreviewImage();
-        };
-
-        function disposePreviewImage () {
-            if (image.objectUrl && $window.URL) $window.URL.revokeObjectURL(image.objectUrl);
-            image = {};
-        }
     }
 }
 
