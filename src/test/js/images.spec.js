@@ -944,6 +944,15 @@ describe('image-management', function () {
             };
 
             $window = _$window_;
+            $window.URL = {
+                createObjectURL: function (file) {
+                    $window.URL.createObjectURLSpy = file;
+                    return 'objectUrl';
+                },
+                revokeObjectURL: function (url) {
+                    $window.URL.revokeObjectURLSpy = url;
+                }
+            };
 
             BinImageController(scope, imageManagement, editModeRenderer, activeUserHasPermission, ngRegisterTopicHandler, $window);
             scope.init(element);
@@ -976,11 +985,6 @@ describe('image-management', function () {
 
                     it('click event returns false to prevent the default action and stop propagation', function () {
                         expect(clickResponse).toEqual(false);
-                    });
-
-                    it('init', function () {
-                        expect(scope.violations).toEqual([]);
-                        expect(scope.state).toEqual('');
                     });
 
                     it('fileupload is executed', function () {
@@ -1020,53 +1024,37 @@ describe('image-management', function () {
                                 expect(editModeRendererSpy.open.template).toEqual(jasmine.any(String));
                             });
 
-                            it('state is set to preview', function () {
-                                expect(scope.state).toEqual('loading');
-                            });
-
                             it('put violations on scope', function () {
                                 expect(scope.violations).toEqual([]);
                             });
 
-                            describe('when FileReader is available', function () {
-                                var fileReaderSpy = {};
-
-                                beforeEach(function () {
-                                    $window.FileReader = function () {
-                                        return {
-                                            readAsDataURL: function (data) {
-                                                fileReaderSpy.data = data;
-                                                fileReaderSpy.onloadend = this.onloadend;
-                                            },
-                                            onloadend: function (){},
-                                            result: 'result'
-                                        };
-                                    };
-                                    imageManagement.fileUploadSpy.add(null, file);
+                            describe('when URL is available', function () {
+                                it('state is set to ok', function () {
+                                    expect(scope.state).toEqual('ok');
                                 });
 
-                                it('read image data', function () {
-                                    expect(fileReaderSpy.data).toEqual(_file);
+                                it('get object url from URL', function () {
+                                    expect($window.URL.createObjectURLSpy).toEqual(_file);
                                 });
 
-                                describe('fileReader onload', function () {
+                                it('set image source', function () {
+                                    expect(scope.setImageSrcSpy).toEqual('objectUrl');
+                                });
+
+                                describe('new image is added', function () {
                                     beforeEach(function () {
-                                        fileReaderSpy.onloadend();
+                                        imageManagement.fileUploadSpy.add(null, file);
                                     });
 
-                                    it('state is set to ok', function () {
-                                        expect(scope.state).toEqual('ok');
-                                    });
-
-                                    it('set image source', function () {
-                                        expect(scope.setImageSrcSpy).toEqual('result');
+                                    it('previous object url is revoked', function () {
+                                        expect($window.URL.revokeObjectURLSpy).toEqual('objectUrl');
                                     });
                                 });
                             });
 
-                            describe('when FileReader is not available', function () {
+                            describe('when URL is not available', function () {
                                 beforeEach(function () {
-                                    $window.FileReader = undefined;
+                                    $window.URL = undefined;
                                     imageManagement.fileUploadSpy.add(null, file);
                                 });
 
@@ -1075,7 +1063,6 @@ describe('image-management', function () {
                                 });
                             });
 
-
                             describe('on submit', function () {
                                 beforeEach(function () {
                                     scope.submit();
@@ -1083,6 +1070,10 @@ describe('image-management', function () {
 
                                 it('add uploading class', function () {
                                     expect(addedClass[0]).toEqual('uploading');
+                                });
+
+                                it('preview image object url is revoked', function () {
+                                    expect($window.URL.revokeObjectURLSpy).toEqual('objectUrl');
                                 });
 
                                 it('upload', function () {
@@ -1124,6 +1115,10 @@ describe('image-management', function () {
 
                                 it('close editModeRenderer', function () {
                                     expect(editModeRendererSpy.close).toBeTruthy();
+                                });
+
+                                it('preview image object url is revoked', function () {
+                                    expect($window.URL.revokeObjectURLSpy).toEqual('objectUrl');
                                 });
                             });
                         });

@@ -194,7 +194,7 @@ function BinBackgroundImageDirectiveFactory(imageManagement) {
 }
 
 function BinImageController($scope, imageManagement, editModeRenderer, activeUserHasPermission, ngRegisterTopicHandler, $window) {
-    var element;
+    var element, image = {};
 
     $scope.init = function (el) {
         element = el;
@@ -223,13 +223,6 @@ function BinImageController($scope, imageManagement, editModeRenderer, activeUse
     }
 
     function open() {
-        var data;
-        function init() {
-            $scope.violations = [];
-            $scope.state = '';
-        }
-        init();
-
         imageManagement.fileUpload({
             dataType: 'json',
             add: function(e, d) {
@@ -246,7 +239,6 @@ function BinImageController($scope, imageManagement, editModeRenderer, activeUse
                     "</span>" +
                     "</p>" +
                     "<p ng-if='state == \"uploading\"'><i class='fa fa-spinner fa-spin fa-fw'></i> Bezig met uploaden...</p>" +
-                    "<p ng-if='state == \"loading\"'><i class='fa fa-spinner fa-spin fa-fw'></i> Voorbeeld wordt geladen...</p>" +
                     "</form>" +
                     "<div class='dropdown-menu-buttons'>" +
                     "<button type='submit' class='btn btn-success' ng-click='submit()' ng-if='state == \"ok\"'>Opslaan</button>" +
@@ -254,24 +246,19 @@ function BinImageController($scope, imageManagement, editModeRenderer, activeUse
                     "</div></div>",
                     scope: $scope
                 });
-                data = d;
                 $scope.violations = imageManagement.validate(d);
 
                 if ($scope.violations.length == 0) {
-
-                    if ($window.FileReader) {
-                        $scope.$apply($scope.state = 'loading');
-
-                        var reader = new $window.FileReader();
-                        reader.onloadend = function () {
-                            $scope.setImageSrc(reader.result);
-                            $scope.$apply($scope.state = 'ok');
-                        };
-                        reader.readAsDataURL(d.files[0]);
+                    if ($window.URL) {
+                        disposePreviewImage();
+                        image.data = d;
+                        image.objectUrl = $window.URL.createObjectURL(d.files[0]);
+                        $scope.setImageSrc(image.objectUrl);
+                        $scope.$apply($scope.state = 'ok');
                     } else {
+                        image.data = d;
                         $scope.submit();
                     }
-
                 } else {
                     $scope.$apply($scope.state = '');
                 }
@@ -280,7 +267,7 @@ function BinImageController($scope, imageManagement, editModeRenderer, activeUse
 
         $scope.submit = function () {
             element.addClass('uploading');
-            imageManagement.upload({file: data, code: $scope.code}).then(function () {
+            imageManagement.upload({file: image.data, code: $scope.code}).then(function () {
                 element.removeClass('uploading');
                 $scope.state = '';
                 $scope.setDefaultImageSrc();
@@ -291,12 +278,19 @@ function BinImageController($scope, imageManagement, editModeRenderer, activeUse
             }, function (update) {
                 $scope.state = update;
             });
+            disposePreviewImage();
         };
 
         $scope.close = function () {
             $scope.setDefaultImageSrc();
             editModeRenderer.close();
+            disposePreviewImage();
         };
+
+        function disposePreviewImage () {
+            if (image.objectUrl && $window.URL) $window.URL.revokeObjectURL(image.objectUrl);
+            image = {};
+        }
     }
 }
 
