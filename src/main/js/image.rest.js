@@ -1,4 +1,4 @@
-angular.module('image.rest', [])
+angular.module('image.rest', ['config', 'rest.client'])
     .factory('uploader', ['restServiceHandler', 'config', ImageUploaderFactory]);
 
 function ImageUploaderFactory(restServiceHandler, config) {

@@ -1,3 +1,5 @@
+angular.module('checkpoint', []);
+
 describe('image-management', function () {
     var scope, ctrl, directive, rest, notifications, config;
     var $httpBackend;

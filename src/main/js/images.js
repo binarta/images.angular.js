@@ -1,4 +1,4 @@
-angular.module('image-management', ['ui.bootstrap.modal', 'config'])
+angular.module('image-management', ['config', 'checkpoint', 'image.rest', 'notifications', 'ui.bootstrap.modal', 'toggle.edit.mode'])
     .service('imageManagement', ['$q', 'config', 'imagePathBuilder', 'activeUserHasPermission', 'uploader', '$rootScope', '$timeout', ImageManagementService])
     .directive('imageShow', ['config', 'topicRegistry', 'activeUserHasPermission', 'topicMessageDispatcher', '$timeout', '$rootScope', 'imagePathBuilder', ImageShowDirectiveFactory])
     .directive('binImage', ['imageManagement', BinImageDirectiveFactory])

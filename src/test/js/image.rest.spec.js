@@ -1,3 +1,5 @@
+angular.module('rest.client', []);
+
 describe('image.rest', function () {
     var scope, rest, notifications;
     var $httpBackend;
