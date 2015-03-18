@@ -29,12 +29,5 @@
     "bower_components",
     "test",
     "tests"
-  ],
-  "overrides": {
-    "jquery-file-upload": {"dependencies": null},
-    "main": [
-      "js/vendor/jquery.ui.widget.js",
-      "js/jquery.fileupload.js"
-    ]
-  }
+  ]
 }
