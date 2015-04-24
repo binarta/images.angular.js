@@ -229,21 +229,16 @@ function BinImageController($scope, imageManagement, editModeRenderer, activeUse
                 editModeRenderer.open({
                     template: "<div id='bin-image-file-upload-dialog'>" +
                     "<form>" +
-                    "<p class='text-warning' ng-repeat='v in violations'>" +
+                    "<p class='text-warning' ng-if='violation'>" +
                     "<i class='fa fa-times-circle fa-fw'></i>" +
-                    "<span ng-switch on='v'>" +
-                    "<span ng-switch-when='contentLength.upperbound'> De foto mag maximum 10MB groot zijn.</span>" +
-                    "<span ng-switch-when='contentLength.lowerbound'> De foto moet minimum 1kB groot zijn.</span>" +
-                    "<span ng-switch-when='contentType.whitelist'> Ongeldige foto.</span>" +
-                    "<span ng-switch-default> {{v}}</span>" +
-                    "</span>" +
+                    "<span i18n code='upload.image.{{violation}}' default='{{violation}}' read-only>{{var}}</span>" +
                     "</p>" +
-                    "<p ng-if='state == \"uploading\"'><i class='fa fa-spinner fa-spin fa-fw'></i> Bezig met uploaden...</p>" +
-                    "<p ng-if='state == \"preview\"' class='bin-image-preview'><img ng-src=\"{{previewImageUrl}}\"><span>PREVIEW</span></p>" +
+                    "<p ng-if='state == \"uploading\"' i18n code=\"upload.image.uploading\" default=\"Bezig met uploaden...\" read-only><i class='fa fa-spinner fa-spin fa-fw'></i> {{var}}</p>" +
+                    "<p ng-if='state == \"preview\"' class='bin-image-preview' i18n code=\"upload.image.preview\" default=\"PREVIEW\" read-only><img ng-src=\"{{previewImageUrl}}\"><span>{{var}}</span></p>" +
                     "</form>" +
                     "<div class='dropdown-menu-buttons'>" +
-                    "<button type='submit' class='btn btn-success' ng-click='submit()' ng-if='state == \"preview\"'>Opslaan</button>" +
-                    "<button type='reset' class='btn btn-default' ng-click='close()'>Annuleren</button>" +
+                    "<button type='submit' class='btn btn-success' ng-click='submit()' ng-if='state == \"preview\"' i18n code='upload.image.save.button' default='Opslaan' read-only>{{var}}</button>" +
+                    "<button type='reset' class='btn btn-default' ng-click='close()' i18n code='upload.image.cancel.button' default='Annuleren' read-only>{{var}}</button>" +
                     "</div></div>",
                     scope: $scope
                 });
@@ -259,6 +254,7 @@ function BinImageController($scope, imageManagement, editModeRenderer, activeUse
                         $scope.submit();
                     }
                 } else {
+                    $scope.violation = $scope.violations[0];
                     $scope.$apply($scope.state = '');
                 }
 

@@ -5,21 +5,27 @@
       "upload.image.contentLength.upperbound": "De foto mag maximum 10MB groot zijn.",
       "upload.image.contentType.whitelist": "Ongeldige foto.",
       "upload.image.uploading": "Bezig met uploaden...",
-      "upload.image.preview": "PREVIEW"
+      "upload.image.preview": "PREVIEW",
+      "upload.image.save.button": "Opslaan",
+      "upload.image.cancel.button": "Annuleren"
     },
     "nl":{
       "upload.image.contentLength.lowerbound": "De foto moet minimum 1kB groot zijn.",
       "upload.image.contentLength.upperbound": "De foto mag maximum 10MB groot zijn.",
       "upload.image.contentType.whitelist": "Ongeldige foto.",
       "upload.image.uploading": "Bezig met uploaden...",
-      "upload.image.preview": "PREVIEW"
+      "upload.image.preview": "PREVIEW",
+      "upload.image.save.button": "Opslaan",
+      "upload.image.cancel.button": "Annuleren"
     },
     "en":{
       "upload.image.contentLength.lowerbound": "Your image must be at least 1kB.",
       "upload.image.contentLength.upperbound": "Maximum image size is 10MB.",
       "upload.image.contentType.whitelist": "Invalid image.",
       "upload.image.uploading": "Uploading...",
-      "upload.image.preview": "PREVIEW"
+      "upload.image.preview": "PREVIEW",
+      "upload.image.save.button": "Save",
+      "upload.image.cancel.button": "Cancel"
     }
   }
 }

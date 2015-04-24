@@ -1007,8 +1007,8 @@ describe('image-management', function () {
                                 imageManagement.fileUploadSpy.add(null, file);
                             });
 
-                            it('put violations on scope', function () {
-                                expect(scope.violations).toEqual(['violation']);
+                            it('put violation on scope', function () {
+                                expect(scope.violation).toEqual('violation');
                             });
 
                             it('reset state', function () {
@@ -1026,8 +1026,8 @@ describe('image-management', function () {
                                 expect(editModeRendererSpy.open.template).toEqual(jasmine.any(String));
                             });
 
-                            it('put violations on scope', function () {
-                                expect(scope.violations).toEqual([]);
+                            it('no violation on scope', function () {
+                                expect(scope.violation).toBeUndefined();
                             });
 
                             describe('when URL is available', function () {

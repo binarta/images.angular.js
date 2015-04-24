@@ -3,7 +3,8 @@
   "main": [
     "./src/main/js/images.js",
     "./src/main/js/image.rest.js",
-    "./less/images.less"
+    "./less/images.less",
+    "./metadata.json"
   ],
   "dependencies": {
     "angular": "1.3.*",
