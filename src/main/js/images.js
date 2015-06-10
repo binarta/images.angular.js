@@ -226,6 +226,49 @@ function BinImageController($scope, imageManagement, editModeRenderer, activeUse
         imageManagement.fileUpload({
             dataType: 'json',
             add: function(e, d) {
+                var rendererScope = angular.extend($scope.$new(), {
+                    submit: function () {
+                        element.addClass('uploading');
+                        imageManagement.upload({file: d, code: $scope.code}).then(function () {
+                            element.removeClass('uploading');
+                            rendererScope.state = '';
+                            $scope.setDefaultImageSrc();
+                            editModeRenderer.close();
+                            disposePreviewImage();
+                        }, function (reason) {
+                            element.removeClass('uploading');
+                            rendererScope.state = reason;
+                        }, function (update) {
+                            rendererScope.state = update;
+                        });
+                    },
+                    close: function () {
+                        $scope.setDefaultImageSrc();
+                        editModeRenderer.close();
+                        disposePreviewImage();
+                    }
+                });
+
+                var violations = imageManagement.validate(d);
+
+                if (violations.length == 0) {
+                    if ($window.URL) {
+                        disposePreviewImage();
+                        $scope.previewImageUrl = $window.URL.createObjectURL(d.files[0]);
+                        $scope.setImageSrc($scope.previewImageUrl);
+                        rendererScope.state = 'preview';
+                    } else {
+                        rendererScope.submit();
+                    }
+                } else {
+                    $scope.violation = violations[0];
+                    rendererScope.state = '';
+                }
+
+                function disposePreviewImage () {
+                    if ($scope.previewImageUrl && $window.URL) $window.URL.revokeObjectURL($scope.previewImageUrl);
+                }
+
                 editModeRenderer.open({
                     template: "<div id='bin-image-file-upload-dialog'>" +
                     "<form>" +
@@ -240,49 +283,8 @@ function BinImageController($scope, imageManagement, editModeRenderer, activeUse
                     "<button type='submit' class='btn btn-success' ng-click='submit()' ng-if='state == \"preview\"' i18n code='upload.image.save.button' default='Opslaan' read-only>{{var}}</button>" +
                     "<button type='reset' class='btn btn-default' ng-click='close()' i18n code='upload.image.cancel.button' default='Annuleren' read-only>{{var}}</button>" +
                     "</div></div>",
-                    scope: $scope
+                    scope: rendererScope
                 });
-                $scope.violations = imageManagement.validate(d);
-
-                if ($scope.violations.length == 0) {
-                    if ($window.URL) {
-                        disposePreviewImage();
-                        $scope.previewImageUrl = $window.URL.createObjectURL(d.files[0]);
-                        $scope.setImageSrc($scope.previewImageUrl);
-                        $scope.$apply($scope.state = 'preview');
-                    } else {
-                        $scope.submit();
-                    }
-                } else {
-                    $scope.violation = $scope.violations[0];
-                    $scope.$apply($scope.state = '');
-                }
-
-                $scope.submit = function () {
-                    element.addClass('uploading');
-                    imageManagement.upload({file: d, code: $scope.code}).then(function () {
-                        element.removeClass('uploading');
-                        $scope.state = '';
-                        $scope.setDefaultImageSrc();
-                        editModeRenderer.close();
-                        disposePreviewImage();
-                    }, function (reason) {
-                        element.removeClass('uploading');
-                        $scope.state = reason;
-                    }, function (update) {
-                        $scope.state = update;
-                    });
-                };
-
-                $scope.close = function () {
-                    $scope.setDefaultImageSrc();
-                    editModeRenderer.close();
-                    disposePreviewImage();
-                };
-
-                function disposePreviewImage () {
-                    if ($scope.previewImageUrl && $window.URL) $window.URL.revokeObjectURL($scope.previewImageUrl);
-                }
             }
         }).click();
     }

@@ -1012,7 +1012,7 @@ describe('image-management', function () {
                             });
 
                             it('reset state', function () {
-                                expect(scope.state).toEqual('');
+                                expect(editModeRendererSpy.open.scope.state).toEqual('');
                             });
                         });
 
@@ -1022,7 +1022,7 @@ describe('image-management', function () {
                             });
 
                             it('editModeRenderer is opened', function () {
-                                expect(editModeRendererSpy.open.scope).toEqual(scope);
+                                expect(editModeRendererSpy.open.scope.$parent).toEqual(scope);
                                 expect(editModeRendererSpy.open.template).toEqual(jasmine.any(String));
                             });
 
@@ -1032,7 +1032,7 @@ describe('image-management', function () {
 
                             describe('when URL is available', function () {
                                 it('state is set to preview', function () {
-                                    expect(scope.state).toEqual('preview');
+                                    expect(editModeRendererSpy.open.scope.state).toEqual('preview');
                                 });
 
                                 it('get object url from URL', function () {
@@ -1067,7 +1067,7 @@ describe('image-management', function () {
 
                             describe('on submit', function () {
                                 beforeEach(function () {
-                                    scope.submit();
+                                    editModeRendererSpy.open.scope.submit();
                                 });
 
                                 it('add uploading class', function () {
@@ -1085,7 +1085,7 @@ describe('image-management', function () {
                                     });
 
                                     it('reset state', function () {
-                                        expect(scope.state).toEqual('');
+                                        expect(editModeRendererSpy.open.scope.state).toEqual('');
                                     });
 
                                     it('remove uploading class', function () {
@@ -1108,7 +1108,7 @@ describe('image-management', function () {
 
                             describe('on close', function () {
                                 beforeEach(function () {
-                                    scope.close();
+                                    editModeRendererSpy.open.scope.close();
                                 });
 
                                 it('set image path', function () {
