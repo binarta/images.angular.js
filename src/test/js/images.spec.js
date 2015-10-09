@@ -959,8 +959,9 @@ describe('image-management', function () {
                 }
             };
 
+            imageType = 'image-type';
             BinImageController(scope, imageManagement, editModeRenderer, activeUserHasPermission, ngRegisterTopicHandler, $window);
-            scope.init({element:element});
+            scope.init({element:element, imageType:imageType});
         }));
 
         describe('when user has permission', function () {
@@ -1068,6 +1069,17 @@ describe('image-management', function () {
                                 });
                             });
 
+                            describe('on submit without image type', function() {
+                                beforeEach(function() {
+                                    scope.init({element:element});
+                                    editModeRendererSpy.open.scope.submit();
+                                });
+
+                                it('test', function() {
+                                    expect(imageManagement.uploadSpy.imageType).toEqual('foreground');
+                                })
+                            });
+
                             describe('on submit', function () {
                                 beforeEach(function () {
                                     editModeRendererSpy.open.scope.submit();
@@ -1080,6 +1092,7 @@ describe('image-management', function () {
                                 it('upload', function () {
                                     expect(imageManagement.uploadSpy.file).toEqual(file);
                                     expect(imageManagement.uploadSpy.code).toEqual('test.img');
+                                    expect(imageManagement.uploadSpy.imageType).toEqual(imageType);
                                 });
 
                                 describe('upload success', function () {
@@ -1159,6 +1172,7 @@ describe('image-management', function () {
                 expect(scope.setDefaultImageSrcCalled).toBeTruthy();
             });
         });
+
     });
 
     describe('ImagePathBuilder', function () {

@@ -195,9 +195,12 @@ function BinBackgroundImageDirectiveFactory(imageManagement) {
 
 function BinImageController($scope, imageManagement, editModeRenderer, activeUserHasPermission, ngRegisterTopicHandler, $window) {
     var element;
+    var self = this;
 
     $scope.init = function (args) {
         element = args.element;
+        self.ctx = args;
+        if (!self.ctx.imageType) self.ctx.imageType = 'foreground';
     };
 
     activeUserHasPermission({
@@ -229,7 +232,7 @@ function BinImageController($scope, imageManagement, editModeRenderer, activeUse
                 var rendererScope = angular.extend($scope.$new(), {
                     submit: function () {
                         element.addClass('uploading');
-                        imageManagement.upload({file: d, code: $scope.code}).then(function () {
+                        imageManagement.upload({file: d, code: $scope.code, imageType:self.ctx.imageType}).then(function () {
                             element.removeClass('uploading');
                             rendererScope.state = '';
                             $scope.setDefaultImageSrc();
