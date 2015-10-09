@@ -14,7 +14,7 @@
     "binarta.notifications.angular": "1.*.*",
     "binarta.toggle.edit.mode.angular": "1.*.*",
     "binarta.rest.client.angular": "0.*.*",
-    "angular-bootstrap": "0.*.*",
+    "binarta.ui.bootstrap.ex.angular": "0.*.*",
     "jquery-file-upload": "~9.9.3"
   },
   "devDependencies": {
