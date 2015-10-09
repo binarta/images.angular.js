@@ -41,18 +41,23 @@ describe('image.rest', function () {
         }));
 
         it('add a file', function () {
-            uploader.add(file, 'path');
+            uploader.add(file, 'path', 'type');
 
             expect(uploader.file).toEqual(_file);
             expect(uploader.path).toEqual('path');
+            expect(uploader.imageType).toEqual('type');
         });
 
         it('upload a file', function () {
-            uploader.add(file, 'path');
+            uploader.add(file, 'path', 'type');
 
             uploader.upload();
             expect(rest.ctx.params.method).toEqual('PUT');
-            expect(rest.ctx.params.url).toEqual('api/image/path?namespace=' + namespace);
+            expect(rest.ctx.params.url).toEqual('api/image/path');
+            expect(rest.ctx.params.params).toEqual({
+                namespace:namespace,
+                imageType:'type'
+            });
             expect(rest.ctx.params.data).toEqual(_file);
             expect(rest.ctx.params.headers['Content-Type']).toEqual(_file.type);
             expect(rest.ctx.params.headers['Content-Length']).toEqual(_file.size);
@@ -62,13 +67,13 @@ describe('image.rest', function () {
             config.baseUri = 'http://host/context/';
             uploader.add(file, 'path');
             uploader.upload();
-            expect(rest.ctx.params.url).toEqual(config.baseUri + 'api/image/path?namespace=' + namespace);
+            expect(rest.ctx.params.url).toEqual(config.baseUri + 'api/image/path');
         });
 
         it('check headers', function () {
             uploader.upload();
             expect(rest.ctx.params.method).toEqual('PUT');
-            expect(rest.ctx.params.url).toEqual('api/image/?namespace=' + namespace);
+            expect(rest.ctx.params.url).toEqual('api/image/');
             expect(rest.ctx.params.data).toEqual(null);
             expect(rest.ctx.params.headers['Content-Type']).toEqual(null);
             expect(rest.ctx.params.headers['Content-Length']).toEqual(0);
