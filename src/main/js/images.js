@@ -144,7 +144,7 @@ function BinImageDirectiveFactory(imageManagement) {
             }
 
             scope.code = attrs.binImage;
-            scope.init(element);
+            scope.init({element:element, imageType:'foreground'});
 
             scope.setDefaultImageSrc = function() {
                 imageManagement.getImagePath({code: scope.code, width: getBoxWidth()}).then(function (path) {
@@ -177,7 +177,7 @@ function BinBackgroundImageDirectiveFactory(imageManagement) {
         controller: 'binImageController',
         link: function (scope, element, attrs) {
             scope.code = attrs.binBackgroundImage;
-            scope.init(element);
+            scope.init({element:element, imageType:'background'});
 
             scope.setDefaultImageSrc = function() {
                 imageManagement.getImagePath({code: scope.code, width: element.width()}).then(function (path) {

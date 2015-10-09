@@ -666,7 +666,7 @@ describe('image-management', function () {
         beforeEach(inject(function ($rootScope, $q) {
             scope = $rootScope.$new();
 
-            scope.init = function () {};
+            scope.init = jasmine.createSpy('init');
 
             addedClass = [];
             removedClass = [];
@@ -730,6 +730,13 @@ describe('image-management', function () {
             beforeEach(function () {
                 directive.link(scope, element, {binImage: 'test.img'});
                 scope.$digest();
+            });
+
+            it('test', function() {
+                expect(scope.init.calls[0].args[0]).toEqual({
+                    element:element,
+                    imageType:'foreground'
+                })
             });
 
             it('put code on scope', function () {
@@ -804,7 +811,7 @@ describe('image-management', function () {
         beforeEach(inject(function ($rootScope, $q) {
             scope = $rootScope.$new();
 
-            scope.init = function () {};
+            scope.init = jasmine.createSpy('init');
 
             element = {
                 width: function () {
@@ -848,6 +855,13 @@ describe('image-management', function () {
             beforeEach(function () {
                 directive.link(scope, element, {binBackgroundImage: 'test.img'});
                 scope.$digest();
+            });
+
+            it('test', function() {
+                expect(scope.init.calls[0].args[0]).toEqual({
+                    element:element,
+                    imageType:'background'
+                })
             });
 
             it('put code on scope', function () {
