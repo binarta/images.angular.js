@@ -84,7 +84,7 @@ function ImageManagementService ($q, config, imagePathBuilder, activeUserHasPerm
             deferred.notify('uploading');
         }, 0);
 
-        uploader.add(args.file, args.code);
+        uploader.add(args.file, args.code, args.imageType);
 
         uploader.upload({
             success: function (payload) {

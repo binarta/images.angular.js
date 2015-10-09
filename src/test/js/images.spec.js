@@ -6,6 +6,7 @@ describe('image-management', function () {
     var uploader;
     var _file;
     var file;
+    var imageType
 
     beforeEach(module('image-management'));
     beforeEach(module('permissions'));
@@ -43,6 +44,7 @@ describe('image-management', function () {
             $rootScope = _$rootScope_;
             config.awsPath = 'http://aws/path/';
             code = 'test.img';
+            imageType = 'image-type';
             boxWidth = '100';
         }));
 
@@ -135,7 +137,7 @@ describe('image-management', function () {
             beforeEach(inject(function (_uploader_, $timeout) {
                 uploader = _uploader_;
 
-                promise = imageManagement.upload({file: file, code: code})
+                promise = imageManagement.upload({file: file, code: code, imageType:imageType})
                     .then(function (payload) {
                         expect(payload).toEqual('ok');
                     }, function (reason) {
@@ -147,6 +149,7 @@ describe('image-management', function () {
             it('pass values to uploader', function () {
                 expect(uploader.spy.add.file).toEqual(file);
                 expect(uploader.spy.add.path).toEqual(code);
+                expect(uploader.spy.add.imageType).toEqual(imageType);
             });
 
             describe('when upload succeeded', function () {
