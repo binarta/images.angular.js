@@ -6,7 +6,7 @@ describe('image-management', function () {
     var uploader;
     var _file;
     var file;
-    var imageType
+    var imageType;
 
     beforeEach(module('image-management'));
     beforeEach(module('permissions'));
@@ -960,7 +960,7 @@ describe('image-management', function () {
             };
 
             BinImageController(scope, imageManagement, editModeRenderer, activeUserHasPermission, ngRegisterTopicHandler, $window);
-            scope.init(element);
+            scope.init({element:element});
         }));
 
         describe('when user has permission', function () {

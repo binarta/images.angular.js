@@ -196,8 +196,8 @@ function BinBackgroundImageDirectiveFactory(imageManagement) {
 function BinImageController($scope, imageManagement, editModeRenderer, activeUserHasPermission, ngRegisterTopicHandler, $window) {
     var element;
 
-    $scope.init = function (el) {
-        element = el;
+    $scope.init = function (args) {
+        element = args.element;
     };
 
     activeUserHasPermission({
