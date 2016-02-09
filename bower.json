@@ -15,7 +15,7 @@
     "binarta.toggle.edit.mode.angular": "1.*.*",
     "binarta.rest.client.angular": "0.*.*",
     "binarta.ui.bootstrap.ex.angular": "0.*.*",
-    "jquery-file-upload": "~9.9.3"
+    "jquery-file-upload": "9.11.2"
   },
   "devDependencies": {
     "angular-mocks": "1.3.*",
