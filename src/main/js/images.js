@@ -216,7 +216,7 @@ function BinImageController($scope, imageManagement, editModeRenderer, activeUse
     function bindClickEvent(editMode) {
         if (editMode) {
             element.bind("click", function () {
-                open();
+                $scope.onEdit ? $scope.onEdit() : open();
                 return false;
             });
         } else {
