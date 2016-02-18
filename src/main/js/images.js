@@ -349,7 +349,8 @@ function BinImagesController($rootScope, $q, rest, config, editModeRenderer, $te
                 addFirstImage().then(function (result) {
                     var image = result.data;
                     image.path = toImagePath(image.id);
-                    self.images = [image];
+                    self.images.splice(0, 1);
+                    self.images.push(image);
                 });
             }
 
