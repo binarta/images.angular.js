@@ -1803,8 +1803,8 @@ describe('image-management', function () {
                                 scope.deleteImage(ctrl.images[0]);
                             });
 
-                            it('put violation on scope', function () {
-                                expect(scope.violation).toEqual('images.lowerbound');
+                            it('put violations on scope', function () {
+                                expect(scope.violations).toEqual(['images.lowerbound']);
                             });
                         });
 

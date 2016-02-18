@@ -420,7 +420,7 @@ function BinImagesController($rootScope, $q, rest, config, editModeRenderer, $te
                         scope.openedImage = undefined;
                     });
                 } else {
-                    scope.violation = 'images.lowerbound';
+                    scope.violations.push('images.lowerbound');
                 }
             };
 
