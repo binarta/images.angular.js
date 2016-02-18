@@ -8,7 +8,7 @@ img {
   opacity: 1;
   transition: opacity 0.3s ease-out, outline 0.3s ease-out;
 }
-[bin-image], {
+[bin-image] {
   &.working,
   &.not-found {
     height: 0;
@@ -26,6 +26,9 @@ img {
     background: lightgray;
     border: 4px dashed darkgray;
     color: darkgray;
+  }
+  [bin-background-image].not-found {
+    background: lightgray;
   }
   [bin-image]:hover,
   [bin-image].uploading,

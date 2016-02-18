@@ -10,7 +10,9 @@ module.exports = function(config) {
             {pattern:'bower_components/thk-config-mock/src/config.mock.js'},
             {pattern:'bower_components/thinkerit.angularx.bootstrap.mocks/src/angularx.bootstrap.mocks.js'},
             {pattern:'bower_components/binarta.toggle.edit.mode.angular/src/main/js/toggle.edit.mode.js'},
-            {pattern:'src/main/js/**/*.js'},
+            {pattern:'src/main/js/image.in.memory.js'},
+            {pattern:'src/main/js/image.rest.js'},
+            {pattern:'src/main/js/images.js'},
             {pattern:'src/test/js/**/*.js'}
         ],
         browsers:['PhantomJS']

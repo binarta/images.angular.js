@@ -4,37 +4,61 @@
       "upload.image.contentLength.lowerbound": "De foto moet minimum 1kB groot zijn.",
       "upload.image.contentLength.upperbound": "De foto mag maximum 10MB groot zijn.",
       "upload.image.contentType.whitelist": "Ongeldige foto.",
+      "upload.image.upload.failed": "De upload is mislukt vanwege problemen met het netwerk. Gelieve opnieuw te proberen.",
+      "upload.image.images.upperbound": "Het maximum aantal foto's is bereikt.",
+      "upload.image.images.lowerbound": "Er moet minstens 1 foto zijn.",
+      "upload.image.no.images.yet": "Er zijn nog geen foto's.",
       "upload.image.uploading": "Bezig met uploaden...",
       "upload.image.preview": "PREVIEW",
       "upload.image.save.button": "Opslaan",
-      "upload.image.cancel.button": "Annuleren"
+      "upload.image.cancel.button": "Annuleren",
+      "upload.image.add.image.button": "Foto toevoegen",
+      "upload.image.delete.image.button": "Verwijderen"
     },
     "en":{
       "upload.image.contentLength.lowerbound": "Your image must be at least 1kB.",
       "upload.image.contentLength.upperbound": "Maximum image size is 10MB.",
       "upload.image.contentType.whitelist": "Invalid image.",
+      "upload.image.upload.failed": "The upload failed due to network problems. Please try again.",
+      "upload.image.images.upperbound": "The maximum number of images has been reached.",
+      "upload.image.images.lowerbound": "There must be at least 1 image.",
+      "upload.image.no.images.yet": "There are no images yet.",
       "upload.image.uploading": "Uploading...",
       "upload.image.preview": "PREVIEW",
       "upload.image.save.button": "Save",
-      "upload.image.cancel.button": "Cancel"
+      "upload.image.cancel.button": "Cancel",
+      "upload.image.add.image.button": "Add image",
+      "upload.image.delete.image.button": "Delete"
     },
     "fr":{
       "upload.image.contentLength.lowerbound": "Une image doit peser minimum 1kB.",
       "upload.image.contentLength.upperbound": "Une image ne peut excéder 10MB.",
       "upload.image.contentType.whitelist": "Image non valide.",
+      "upload.image.upload.failed": "The upload failed due to network problems. Please try again.",
+      "upload.image.images.upperbound": "The maximum number of images has been reached.",
+      "upload.image.images.lowerbound": "There must be at least 1 image.",
+      "upload.image.no.images.yet": "There are no images yet.",
       "upload.image.uploading": "Le téléchargement est en cours...",
       "upload.image.preview": "APERCU",
       "upload.image.save.button": "Enregistrer",
-      "upload.image.cancel.button": "Annuler"
+      "upload.image.cancel.button": "Annuler",
+      "upload.image.add.image.button": "Add image",
+      "upload.image.delete.image.button": "Delete"
     },
     "de":{
       "upload.image.contentLength.lowerbound": "Ein Foto muss eine Mindestgröße von 1kB haben.",
       "upload.image.contentLength.upperbound": "Ein Foto darf eine Größe von maximal 10MB haben.",
       "upload.image.contentType.whitelist": "Ungültiges Foto.",
+      "upload.image.upload.failed": "The upload failed due to network problems. Please try again.",
+      "upload.image.images.upperbound": "The maximum number of images has been reached.",
+      "upload.image.images.lowerbound": "There must be at least 1 image.",
+      "upload.image.no.images.yet": "There are no images yet.",
       "upload.image.uploading": "Upload wird ausgeführt...",
       "upload.image.preview": "VORSCHAU",
       "upload.image.save.button": "Speichern",
-      "upload.image.cancel.button": "Abbrechen"
+      "upload.image.cancel.button": "Abbrechen",
+      "upload.image.add.image.button": "Add image",
+      "upload.image.delete.image.button": "Delete"
     }
   }
 }

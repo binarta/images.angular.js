@@ -1,4 +1,12 @@
 angular.module('checkpoint', []);
+angular.module('rest.client', [])
+    .factory('restServiceHandler', function() {
+        return jasmine.createSpy('restServiceHandlerSpy');
+    });
+angular.module('toggle.edit.mode', [])
+    .service('editModeRenderer', function () {
+        return jasmine.createSpyObj('editModeRenderer', ['open', 'close']);
+    });
 
 describe('image-management', function () {
     var scope, ctrl, directive, rest, notifications, config;
@@ -666,7 +674,7 @@ describe('image-management', function () {
         beforeEach(inject(function ($rootScope, $q) {
             scope = $rootScope.$new();
 
-            scope.init = jasmine.createSpy('init');
+            scope.bindImageEvents = jasmine.createSpy('bindImageEvents');
 
             addedClass = [];
             removedClass = [];
@@ -732,15 +740,12 @@ describe('image-management', function () {
                 scope.$digest();
             });
 
-            it('test', function() {
-                expect(scope.init.calls[0].args[0]).toEqual({
-                    element:element,
-                    imageType:'foreground'
-                })
-            });
-
             it('put code on scope', function () {
                 expect(scope.code).toEqual('test.img');
+            });
+
+            it('bind image events', function () {
+                expect(scope.bindImageEvents).toHaveBeenCalled();
             });
 
             it('get image path', function () {
@@ -748,70 +753,23 @@ describe('image-management', function () {
                 expect(element[0].src).toEqual(imagePath);
             });
 
-            it('put working class on element', function () {
-                expect(addedClass[0]).toEqual('working');
-            });
-
             it('update image src', function () {
                 scope.setImageSrc('test');
 
                 expect(element[0].src).toEqual('test');
             });
-
-            describe('bind image events', function () {
-                describe('when image not found', function () {
-                    beforeEach(function () {
-                        event['error']();
-                    });
-
-                    it('put not-found class on element', function () {
-                        expect(addedClass[1]).toEqual('not-found');
-                    });
-
-                    it('remove working class from element', function () {
-                        expect(removedClass[0]).toEqual('working');
-                    });
-                });
-
-                describe('when image aborted', function () {
-                    beforeEach(function () {
-                        event['abort']();
-                    });
-
-                    it('put not-found class on element', function () {
-                        expect(addedClass[1]).toEqual('not-found');
-                    });
-
-                    it('remove working class from element', function () {
-                        expect(removedClass[0]).toEqual('working');
-                    });
-                });
-
-                describe('when image is found', function () {
-                    beforeEach(function () {
-                        event['load']();
-                    });
-
-                    it('put not-found class on element', function () {
-                        expect(removedClass[0]).toEqual('not-found');
-                    });
-
-                    it('remove working class from element', function () {
-                        expect(removedClass[1]).toEqual('working');
-                    });
-                });
-            });
         });
     });
 
     describe('binBackgroundImage directive', function () {
-        var scope, element, directive, imageManagement, cssSpy;
+        var scope, element, directive, imageManagement, cssSpy, getImagePathDeferred, bindImageEventsDeferred;
         var imagePath = 'image/path.jpg';
 
         beforeEach(inject(function ($rootScope, $q) {
             scope = $rootScope.$new();
 
-            scope.init = jasmine.createSpy('init');
+            bindImageEventsDeferred = $q.defer();
+            scope.bindImageEvents = jasmine.createSpy('bindImageEvents').andReturn(bindImageEventsDeferred.promise);
 
             element = {
                 width: function () {
@@ -826,14 +784,9 @@ describe('image-management', function () {
             };
             element[0] = {};
 
+            getImagePathDeferred = $q.defer();
             imageManagement = {
-                getImagePathSpy: {},
-                getImagePath: function (args) {
-                    imageManagement.getImagePathSpy = args;
-                    var deferred = $q.defer();
-                    deferred.resolve(imagePath);
-                    return deferred.promise;
-                }
+                getImagePath: jasmine.createSpy('getImagePath').andReturn(getImagePathDeferred.promise)
             };
 
             directive = BinBackgroundImageDirectiveFactory(imageManagement);
@@ -857,22 +810,38 @@ describe('image-management', function () {
                 scope.$digest();
             });
 
-            it('test', function() {
-                expect(scope.init.calls[0].args[0]).toEqual({
-                    element:element,
-                    imageType:'background'
-                })
-            });
-
             it('put code on scope', function () {
                 expect(scope.code).toEqual('test.img');
             });
 
             it('get image path', function () {
-                expect(imageManagement.getImagePathSpy).toEqual({code: 'test.img', width: 100});
-                expect(cssSpy).toEqual({
-                    key: 'background-image',
-                    value: 'url("'+ imagePath + '")'
+                expect(imageManagement.getImagePath).toHaveBeenCalledWith({code: 'test.img', width: 100});
+            });
+
+            describe('on get image path success', function () {
+                beforeEach(function () {
+                    getImagePathDeferred.resolve(imagePath);
+                    scope.$digest();
+                });
+
+                it('bind image events', function () {
+                    expect(scope.bindImageEvents).toHaveBeenCalledWith({
+                        bindOn: jasmine.any(Object)
+                    });
+                });
+
+                describe('on success', function () {
+                    beforeEach(function () {
+                        bindImageEventsDeferred.resolve();
+                        scope.$digest();
+                    });
+
+                    it('set background image', function () {
+                        expect(cssSpy).toEqual({
+                            key: 'background-image',
+                            value: 'url("'+ imagePath + '")'
+                        });
+                    });
                 });
             });
 
@@ -920,7 +889,8 @@ describe('image-management', function () {
                 },
                 unbind: function (e) {
                     event[e] = undefined;
-                }
+                },
+                is: function () {}
             };
 
             registry = topicRegistryMock;
@@ -973,10 +943,113 @@ describe('image-management', function () {
                 }
             };
 
-            imageType = 'image-type';
-            BinImageController(scope, imageManagement, editModeRenderer, activeUserHasPermission, ngRegisterTopicHandler, $window);
-            scope.init({element:element, imageType:imageType});
+            BinImageController(scope, element, $q, imageManagement, editModeRenderer, activeUserHasPermission, ngRegisterTopicHandler, $window);
         }));
+
+        it('is in working state', function () {
+            expect(scope.state).toEqual('working');
+        });
+
+        describe('bind image events', function () {
+            describe('and no args given', function () {
+                var resolved, rejected;
+
+                beforeEach(function () {
+                    scope.bindImageEvents().then(function () {
+                        resolved = true;
+                    }, function () {
+                        rejected = true;
+                    });
+                    scope.$digest();
+                });
+
+                describe('when image not found', function () {
+                    beforeEach(function () {
+                        event['error']();
+                    });
+
+                    it('put not-found class on element', function () {
+                        expect(addedClass[1]).toEqual('not-found');
+                    });
+
+                    it('remove working class from element', function () {
+                        expect(removedClass[0]).toEqual('working');
+                    });
+
+                    it('set state on scope', function () {
+                        expect(scope.state).toEqual('not-found');
+                    });
+
+                    it('promise is rejected', function () {
+                        expect(rejected).toBeTruthy();
+                    });
+                });
+
+                describe('when image aborted', function () {
+                    beforeEach(function () {
+                        event['abort']();
+                    });
+
+                    it('put not-found class on element', function () {
+                        expect(addedClass[1]).toEqual('not-found');
+                    });
+
+                    it('remove working class from element', function () {
+                        expect(removedClass[0]).toEqual('working');
+                    });
+
+                    it('set state on scope', function () {
+                        expect(scope.state).toEqual('not-found');
+                    });
+
+                    it('promise is rejected', function () {
+                        expect(rejected).toBeTruthy();
+                    });
+                });
+
+                describe('when image is found', function () {
+                    beforeEach(function () {
+                        event['load']();
+                    });
+
+                    it('put not-found class on element', function () {
+                        expect(removedClass[0]).toEqual('not-found');
+                    });
+
+                    it('remove working class from element', function () {
+                        expect(removedClass[1]).toEqual('working');
+                    });
+
+                    it('set state on scope', function () {
+                        expect(scope.state).toEqual('loaded');
+                    });
+
+                    it('promise is rejected', function () {
+                        expect(resolved).toBeTruthy();
+                    });
+                });
+            });
+
+            describe('with args given', function () {
+                var events = [];
+                var newElement = {
+                    bind: function (event) {
+                        events.push(event);
+                    }
+                };
+
+                beforeEach(function () {
+                    scope.bindImageEvents({
+                        bindOn: newElement
+                    });
+                    scope.$digest();
+                });
+
+                it('events are bound to other element', function () {
+                    expect(events).toEqual(['load', 'error', 'abort']);
+                });
+            });
+        });
 
         describe('when user has permission', function () {
             beforeEach(function () {
@@ -1000,22 +1073,36 @@ describe('image-management', function () {
                     var clickResponse;
 
                     describe('with overridden edit click event', function () {
-                        var opened;
-
                         beforeEach(function () {
-                            scope.onEdit = function () {
-                                opened = true;
-                            };
-                            clickResponse = event['click']();
+                            scope.onEdit = jasmine.createSpy('onEdit');
                         });
 
-                        it('custom event is triggered', function () {
-                            expect(opened).toBeTruthy();
+                        describe('and image is loaded', function () {
+                            beforeEach(function () {
+                                scope.state = 'loaded';
+                                clickResponse = event['click']();
+                            });
+
+                            it('custom event is triggered', function () {
+                                expect(scope.onEdit).toHaveBeenCalledWith({isFirstImage : false});
+                            });
+                        });
+
+                        describe('and image is not found', function () {
+                            beforeEach(function () {
+                                scope.state = 'not-found';
+                                clickResponse = event['click']();
+                            });
+
+                            it('custom event is triggered', function () {
+                                expect(scope.onEdit).toHaveBeenCalledWith({isFirstImage : true});
+                            });
                         });
                     });
 
                     describe('default', function () {
                         beforeEach(function () {
+                            scope.state = 'loaded';
                             clickResponse = event['click']();
                         });
 
@@ -1100,18 +1187,32 @@ describe('image-management', function () {
                                 });
 
                                 describe('on submit without image type', function() {
+                                    var matchOn;
+
                                     beforeEach(function() {
-                                        scope.init({element:element});
+                                        element.is = function (m) {
+                                            matchOn = m;
+                                            return true;
+                                        };
+
                                         editModeRendererSpy.open.scope.submit();
+                                    });
+
+                                    it('check if img', function () {
+                                        expect(matchOn).toEqual('img');
                                     });
 
                                     it('test', function() {
                                         expect(imageManagement.uploadSpy.imageType).toEqual('foreground');
-                                    })
+                                    });
                                 });
 
                                 describe('on submit', function () {
                                     beforeEach(function () {
+                                        element.is = function () {
+                                            return false;
+                                        };
+
                                         editModeRendererSpy.open.scope.submit();
                                     });
 
@@ -1122,7 +1223,7 @@ describe('image-management', function () {
                                     it('upload', function () {
                                         expect(imageManagement.uploadSpy.file).toEqual(file);
                                         expect(imageManagement.uploadSpy.code).toEqual('test.img');
-                                        expect(imageManagement.uploadSpy.imageType).toEqual(imageType);
+                                        expect(imageManagement.uploadSpy.imageType).toEqual('background');
                                     });
 
                                     describe('upload success', function () {
@@ -1183,10 +1284,6 @@ describe('image-management', function () {
                 it('unbind element from click bindEvent', function () {
                     expect(event['click']).toBeUndefined();
                 });
-
-                it('set default image path', function () {
-                    expect(scope.setDefaultImageSrcCalled).toBeTruthy();
-                });
             });
         });
 
@@ -1198,9 +1295,627 @@ describe('image-management', function () {
             it('unbind element from click bindEvent', function () {
                 expect(event['click']).toBeUndefined();
             });
+        });
 
-            it('set default image path', function () {
-                expect(scope.setDefaultImageSrcCalled).toBeTruthy();
+    });
+
+    describe('binImagesController', function () {
+        var $rootScope, $q, ctrl, restHandler, editModeRenderer, imageManagement, uploadDeferred;
+        var initDeferred;
+        var partition = '/test/partition/';
+
+        beforeEach(inject(function (_$rootScope_, $controller, _$q_, restServiceHandler, config, _editModeRenderer_, _imageManagement_) {
+            $q = _$q_;
+            $rootScope = _$rootScope_;
+            editModeRenderer = _editModeRenderer_;
+            restHandler = restServiceHandler;
+            imageManagement = _imageManagement_;
+            imageManagement.fileUpload = jasmine.createSpy('fileupload');
+            imageManagement.triggerFileUpload = jasmine.createSpy('triggerFileUpload');
+            uploadDeferred = $q.defer();
+            imageManagement.upload = jasmine.createSpy('upload').andReturn(uploadDeferred.promise);
+            imageManagement.validate = jasmine.createSpy('validate');
+
+            config.namespace = 'namespace';
+            config.baseUri = 'baseUri/';
+            config.awsPath = 'awsPath/';
+
+            initDeferred = $q.defer();
+            restHandler.andReturn(initDeferred.promise);
+
+            ctrl = $controller('binImagesController');
+        }));
+
+        describe('with partition', function () {
+            beforeEach(function () {
+                ctrl.init({
+                    partition: partition
+                });
+            });
+
+            it('get images', function () {
+                expect(restHandler).toHaveBeenCalledWith({
+                    params: {
+                        data: {
+                            args: {
+                                namespace: 'namespace',
+                                partition: '/test/partition/',
+                                sortings: [{
+                                    on: "priority",
+                                    orientation: "asc"
+                                }],
+                                subset: {
+                                    count: 10,
+                                    offset: 0
+                                },
+                                type: "images"
+                            },
+                            locale: 'default'
+                        },
+                        headers: {
+                            "accept-language": "default"
+                        },
+                        method: "POST",
+                        url: 'baseUri/api/query/catalog-item/search',
+                        withCredentials: true
+                    }
+                });
+            });
+
+            describe('on success', function () {
+                describe('when empty results', function () {
+                    beforeEach(function () {
+                        initDeferred.resolve({
+                            data: []
+                        });
+                        $rootScope.$digest();
+                    });
+
+                    it('only default image', function () {
+                        expect(ctrl.images).toEqual([{
+                            id: partition + '0',
+                            path: 'carousels' + partition + '0.img'
+                        }]);
+                    });
+                });
+
+                describe('with one result', function () {
+                    beforeEach(function () {
+                        initDeferred.resolve({
+                            data: [{id: '/id'}]
+                        });
+                        $rootScope.$digest();
+                    });
+
+                    it('data is available on controller', function () {
+                        expect(ctrl.images).toEqual([{id: '/id', path: 'carousels/id.img'}]);
+                    });
+                });
+            });
+        });
+
+        describe('with partition and limit', function () {
+            beforeEach(function () {
+                ctrl.init({
+                    partition: partition,
+                    limit: 1
+                });
+            });
+
+            it('get images', function () {
+                expect(restHandler.calls[0].args[0].params.data.args.subset.count).toEqual(1);
+            });
+        });
+
+        describe('on open', function () {
+            var scope, getRemainingItemsDeferred;
+
+            beforeEach(function () {
+                ctrl.init({
+                    partition: partition
+                });
+            });
+
+            describe('no catalog items', function () {
+                beforeEach(function () {
+                    initDeferred.resolve({
+                        data: []
+                    });
+                    $rootScope.$digest();
+
+                    getRemainingItemsDeferred = $q.defer();
+                    restHandler.andReturn(getRemainingItemsDeferred.promise);
+                });
+
+                describe('and no image files', function () {
+                    beforeEach(function () {
+                        ctrl.open({isFirstImage: true});
+
+                        getRemainingItemsDeferred.resolve({
+                            data: []
+                        });
+                        $rootScope.$digest();
+
+                        scope = editModeRenderer.open.calls[0].args[0].scope;
+                    });
+
+                    it('isFirstImage is on scope', function () {
+                        expect(scope.isFirstImage).toBeTruthy();
+                    });
+
+                    it('file-upload is triggered', function () {
+                        expect(imageManagement.triggerFileUpload).toHaveBeenCalled();
+                    });
+
+                    describe('on file selected', function () {
+                        var addCatalogItemDeferred;
+
+                        beforeEach(function () {
+                            addCatalogItemDeferred = $q.defer();
+                            restHandler.andReturn(addCatalogItemDeferred.promise);
+
+                            imageManagement.fileUpload.calls[0].args[0].add(null, {});
+                        });
+
+                        it('catalog item is created', function () {
+                            expect(restHandler).toHaveBeenCalledWith({
+                                params: {
+                                    data: {
+                                        type: 'images',
+                                        partition: partition,
+                                        locale: 'default',
+                                        namespace: 'namespace',
+                                        defaultName: 'image'
+                                    },
+                                    method: "PUT",
+                                    url: 'baseUri/api/entity/catalog-item',
+                                    withCredentials: true
+                                }
+                            });
+                        });
+
+                        describe('on success', function () {
+                            beforeEach(function () {
+                                imageManagement.validate.andReturn([]);
+
+                                addCatalogItemDeferred.resolve({
+                                    data: {
+                                        id: partition + 'new'
+                                    }
+                                });
+                                $rootScope.$digest();
+                            });
+
+                            describe('file is uploaded', function () {
+                                beforeEach(function () {
+                                    uploadDeferred.resolve();
+                                    $rootScope.$digest();
+                                });
+
+                                it('set isFirstImage to false', function () {
+                                    expect(scope.isFirstImage).toBeFalsy();
+                                });
+
+                                it('default image is replaced', function () {
+                                    expect(ctrl.images).toEqual([{
+                                        id : partition + 'new',
+                                        path : 'carousels' + partition + 'new.img'
+                                    }]);
+                                });
+                            });
+                        });
+                    });
+                });
+
+                describe('and first image file exists', function () {
+                    var addFirstImageDeferred;
+
+                    beforeEach(function () {
+                        ctrl.open();
+                        addFirstImageDeferred = $q.defer();
+                        restHandler.andReturn(addFirstImageDeferred.promise);
+
+                        getRemainingItemsDeferred.resolve({
+                            data: []
+                        });
+                        $rootScope.$digest();
+
+                        scope = editModeRenderer.open.calls[0].args[0].scope;
+                    });
+
+                    it('awsPath is on scope', function () {
+                        expect(scope.awsPath).toEqual('awsPath/');
+                    });
+
+                    describe('add catalog item for first image', function () {
+                        it('create default catalog item', function () {
+                            expect(restHandler).toHaveBeenCalledWith({
+                                params: {
+                                    data: {
+                                        type: 'images',
+                                        partition: partition,
+                                        locale: 'default',
+                                        namespace: 'namespace',
+                                        defaultName: 'image',
+                                        name: '0'
+                                    },
+                                    method: "PUT",
+                                    url: 'baseUri/api/entity/catalog-item',
+                                    withCredentials: true
+                                }
+                            });
+                        });
+
+                        describe('on success', function () {
+                            var item = {
+                                entity: 'catalog-item',
+                                id: partition + '0',
+                                path: 'carousels' + partition + '0.img'
+                            };
+
+                            beforeEach(function () {
+                                addFirstImageDeferred.resolve({
+                                    data: {
+                                        entity: 'catalog-item',
+                                        id: partition + '0'
+                                    }
+                                });
+                                $rootScope.$digest();
+                            });
+
+                            it('image is on controller', function () {
+                                expect(ctrl.images).toEqual([item]);
+                            });
+                        });
+                    });
+                });
+            });
+
+            describe('with catalog items', function () {
+                beforeEach(inject(function ($templateCache) {
+                    $templateCache.put('images-bin-images-ctrl-clerk.html','template');
+
+                    initDeferred.resolve({
+                        data: [{
+                            id: '/image1',
+                            priority: 1
+                        }, {
+                            id: '/image2',
+                            priority: 2
+                        }]
+                    });
+                    $rootScope.$digest();
+                    getRemainingItemsDeferred = $q.defer();
+                    restHandler.andReturn(getRemainingItemsDeferred.promise);
+
+                    ctrl.open();
+
+                    getRemainingItemsDeferred.resolve({
+                        data: []
+                    });
+                    $rootScope.$digest();
+                }));
+
+                it('remaining items are requested', function () {
+                    expect(restHandler.calls[1].args[0].params.data.args.subset.count).toEqual(8);
+                    expect(restHandler.calls[1].args[0].params.data.args.subset.offset).toEqual(2);
+                });
+
+                it('images are on controller', function () {
+                    expect(ctrl.images).toEqual([{
+                        id: '/image1',
+                        priority: 1,
+                        path: 'carousels/image1.img'
+                    }, {
+                        id: '/image2',
+                        priority: 2,
+                        path: 'carousels/image2.img'
+                    }]);
+                });
+
+                it('editModeRenderer is opened', function () {
+                    expect(editModeRenderer.open).toHaveBeenCalledWith({
+                        template: 'template',
+                        scope: jasmine.any(Object)
+                    });
+                });
+
+                describe('with renderer scope', function () {
+                    beforeEach(function () {
+                        scope = editModeRenderer.open.calls[0].args[0].scope;
+                    });
+
+                    it('images are on scope', function () {
+                        expect(scope.images).toEqual(ctrl.images);
+                    });
+
+                    describe('on add image', function () {
+                        beforeEach(function () {
+                            scope.addImage();
+                        });
+
+                        it('file upload is triggered', function () {
+                            expect(imageManagement.fileUpload).toHaveBeenCalledWith({
+                                dataType: 'json',
+                                add: jasmine.any(Function)
+                            });
+                            expect(imageManagement.triggerFileUpload).toHaveBeenCalled();
+                        });
+
+                        describe('on add file', function () {
+                            var file = 'file';
+                            var addCatalogItemDeferred;
+
+                            beforeEach(function () {
+                                addCatalogItemDeferred = $q.defer();
+                                restHandler.andReturn(addCatalogItemDeferred.promise);
+
+                                imageManagement.fileUpload.calls[0].args[0].add(null, file);
+                            });
+
+                            it('create new catalog item', function () {
+                                expect(restHandler).toHaveBeenCalledWith({
+                                    params: {
+                                        data: {
+                                            type: 'images',
+                                            partition: partition,
+                                            locale: 'default',
+                                            namespace: 'namespace',
+                                            defaultName: 'image'
+                                        },
+                                        method: "PUT",
+                                        url: 'baseUri/api/entity/catalog-item',
+                                        withCredentials: true
+                                    }
+                                });
+                            });
+
+                            describe('on catalog item created', function () {
+                                describe('and image is invalid', function () {
+                                    beforeEach(function () {
+                                        imageManagement.validate.andReturn(['invalid']);
+                                        addCatalogItemDeferred.resolve({
+                                            data: {
+                                                id: partition + 'new'
+                                            }
+                                        });
+                                        $rootScope.$digest();
+                                    });
+
+                                    it('image is validated', function () {
+                                        expect(imageManagement.validate).toHaveBeenCalledWith(file);
+                                    });
+
+                                    it('do not upload image', function () {
+                                        expect(imageManagement.upload).not.toHaveBeenCalled();
+                                    });
+
+                                    it('violations are on scope', function () {
+                                        expect(scope.violations).toEqual(['invalid']);
+                                    });
+
+                                    it('delete catalog item', function () {
+                                        expect(restHandler).toHaveBeenCalledWith({
+                                            params: {
+                                                method: 'DELETE',
+                                                url: 'baseUri/api/entity/catalog-item?id=' + encodeURIComponent(partition + 'new'),
+                                                withCredentials: true
+                                            }
+                                        });
+                                    });
+                                });
+
+                                describe('and image is valid', function () {
+                                    beforeEach(function () {
+                                        imageManagement.validate.andReturn([]);
+                                        addCatalogItemDeferred.resolve({
+                                            data: {
+                                                id: partition + 'new'
+                                            }
+                                        });
+                                        $rootScope.$digest();
+                                    });
+
+                                    it('upload image', function () {
+                                        expect(imageManagement.upload).toHaveBeenCalledWith({
+                                            file: file,
+                                            code: 'carousels' + partition + 'new.img',
+                                            imageType: 'foreground'
+                                        });
+
+                                        expect(scope.uploading).toBeTruthy();
+                                    });
+
+                                    describe('on upload success', function () {
+                                        beforeEach(function () {
+                                            uploadDeferred.resolve();
+                                            $rootScope.$digest();
+                                        });
+
+                                        it('add new image to scope', function () {
+                                            expect(ctrl.images).toEqual([{
+                                                id: '/image1',
+                                                priority: 1,
+                                                path: 'carousels/image1.img'
+                                            }, {
+                                                id: '/image2',
+                                                priority: 2,
+                                                path: 'carousels/image2.img'
+                                            }, {
+                                                id: partition + 'new',
+                                                path: 'carousels' + partition + 'new.img'
+                                            }]);
+                                            expect(scope.uploading).toBeFalsy();
+                                        });
+                                    });
+
+                                    describe('on upload failed', function () {
+                                        beforeEach(function () {
+                                            uploadDeferred.reject();
+                                            $rootScope.$digest();
+                                        });
+
+                                        it('put violations on scope', function () {
+                                            expect(scope.violations).toEqual(['upload.failed']);
+                                        });
+
+                                        it('delete catalog item', function () {
+                                            expect(restHandler).toHaveBeenCalledWith({
+                                                params: {
+                                                    method: 'DELETE',
+                                                    url: 'baseUri/api/entity/catalog-item?id=' + encodeURIComponent(partition + 'new'),
+                                                    withCredentials: true
+                                                }
+                                            });
+                                        });
+                                    });
+                                });
+                            });
+                        });
+                    });
+
+                    it('on open image', function () {
+                        scope.openImage('image');
+
+                        expect(scope.openedImage).toEqual('image');
+                    });
+
+                    it('on close image', function () {
+                        scope.openImage('image');
+                        scope.closeImage();
+
+                        expect(scope.openedImage).toBeUndefined();
+                    });
+
+                    describe('on delete image', function () {
+                        var deleteImageDeferred;
+
+                        beforeEach(function () {
+                            deleteImageDeferred = $q.defer();
+                            restHandler.andReturn(deleteImageDeferred.promise);
+
+                            scope.openedImage = 'image';
+                        });
+
+                        describe('when only one image', function () {
+                            beforeEach(function () {
+                                ctrl.images = [{id: 'id'}];
+                                scope.deleteImage(ctrl.images[0]);
+                            });
+
+                            it('put violation on scope', function () {
+                                expect(scope.violation).toEqual('images.lowerbound');
+                            });
+                        });
+
+                        describe('when more than one image', function () {
+                            beforeEach(function () {
+                                ctrl.images = [{id: 'id1'}, {id: 'id2'}];
+                                scope.deleteImage(ctrl.images[0]);
+                            });
+
+                            it('delete catalog item', function () {
+                                expect(restHandler).toHaveBeenCalledWith({
+                                    params: {
+                                        method: 'DELETE',
+                                        url: 'baseUri/api/entity/catalog-item?id=id1',
+                                        withCredentials: true
+                                    }
+                                });
+                            });
+
+                            describe('on delete success', function () {
+                                beforeEach(function () {
+                                    deleteImageDeferred.resolve();
+                                    $rootScope.$digest();
+                                });
+
+                                it('remove item from images', function () {
+                                    expect(ctrl.images).toEqual([{id: 'id2'}]);
+                                });
+
+                                it('image is closed', function () {
+                                    expect(scope.openedImage).toBeUndefined();
+                                });
+                            });
+                        });
+                    });
+
+                    it('on close', function () {
+                        scope.close();
+
+                        expect(editModeRenderer.close).toHaveBeenCalled();
+                    });
+                });
+            });
+
+            describe('with max amount of catalog items', function () {
+                beforeEach(inject(function ($templateCache) {
+                    $templateCache.put('images-bin-images-ctrl-clerk.html', 'template');
+
+                    initDeferred.resolve({
+                        data: [{
+                            id: '/image1',
+                            priority: 1
+                        }, {
+                            id: '/image2',
+                            priority: 2
+                        },{
+                            id: '/image1',
+                            priority: 3
+                        }, {
+                            id: '/image2',
+                            priority: 4
+                        },{
+                            id: '/image1',
+                            priority: 5
+                        }, {
+                            id: '/image2',
+                            priority: 6
+                        },{
+                            id: '/image1',
+                            priority: 7
+                        }, {
+                            id: '/image2',
+                            priority: 8
+                        },{
+                            id: '/image1',
+                            priority: 9
+                        }, {
+                            id: '/image2',
+                            priority: 10
+                        }
+                        ]
+                    });
+                    $rootScope.$digest();
+                    getRemainingItemsDeferred = $q.defer();
+                    restHandler.andReturn(getRemainingItemsDeferred.promise);
+
+                    ctrl.open();
+
+                    getRemainingItemsDeferred.resolve({
+                        data: []
+                    });
+                    $rootScope.$digest();
+
+                    scope = editModeRenderer.open.calls[0].args[0].scope;
+                }));
+
+                describe('on add image', function () {
+                    beforeEach(function () {
+                        scope.addImage();
+                    });
+
+                    it('file upload is not triggered', function () {
+                        expect(imageManagement.fileUpload).not.toHaveBeenCalled();
+                        expect(imageManagement.triggerFileUpload).not.toHaveBeenCalled();
+                    });
+
+                    it('put violation on scope', function () {
+                        expect(scope.violations).toEqual(['images.upperbound']);
+                    });
+                });
+
             });
         });
 

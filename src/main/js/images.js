@@ -1,4 +1,4 @@
-angular.module('image-management', ['config', 'checkpoint', 'image.rest', 'notifications', 'ui.bootstrap.modal', 'toggle.edit.mode'])
+angular.module('image-management', ['config', 'checkpoint', 'image.rest', 'notifications', 'ui.bootstrap.modal', 'toggle.edit.mode', 'rest.client'])
     .service('imageManagement', ['$q', 'config', 'imagePathBuilder', 'activeUserHasPermission', 'uploader', '$rootScope', '$timeout', ImageManagementService])
     .directive('imageShow', ['config', 'topicRegistry', 'activeUserHasPermission', 'topicMessageDispatcher', '$timeout', '$rootScope', 'imagePathBuilder', ImageShowDirectiveFactory])
     .directive('binImage', ['imageManagement', BinImageDirectiveFactory])
@@ -6,7 +6,8 @@ angular.module('image-management', ['config', 'checkpoint', 'image.rest', 'notif
     .factory('imagePathBuilder', ['$rootScope', ImagePathBuilderFactory])
     .controller('ImageUploadDialogController', ['$scope', '$modal', 'config', ImageUploadDialogController])
     .controller('ImageController', ['$scope', 'uploader', 'config', '$rootScope', 'topicMessageDispatcher', 'imagePathBuilder', ImageController])
-    .controller('binImageController', ['$scope', 'imageManagement', 'editModeRenderer', 'activeUserHasPermission', 'ngRegisterTopicHandler', '$window', BinImageController])
+    .controller('binImageController', ['$scope', '$element', '$q', 'imageManagement', 'editModeRenderer', 'activeUserHasPermission', 'ngRegisterTopicHandler', '$window', BinImageController])
+    .controller('binImagesController', ['$rootScope', '$q', 'restServiceHandler', 'config', 'editModeRenderer', '$templateCache', 'imageManagement', BinImagesController])
     .run(['$rootScope', '$location', 'topicRegistry', 'topicMessageDispatcher', function ($rootScope, $location, topicRegistry, topicMessageDispatcher) {
         var imageCount = 0;
 
@@ -124,27 +125,8 @@ function BinImageDirectiveFactory(imageManagement) {
         scope: true,
         controller: 'binImageController',
         link: function (scope, element, attrs) {
-            element.addClass('working');
-            element.bind('load', function () {
-                imageFound();
-            });
-            element.bind('error', function () {
-                imageNotFound();
-            });
-            element.bind('abort', function () {
-                imageNotFound();
-            });
-            function imageFound() {
-                element.removeClass('not-found');
-                element.removeClass('working');
-            }
-            function imageNotFound() {
-                element.addClass('not-found');
-                element.removeClass('working');
-            }
-
             scope.code = attrs.binImage;
-            scope.init({element:element, imageType:'foreground'});
+            scope.bindImageEvents();
 
             scope.setDefaultImageSrc = function() {
                 imageManagement.getImagePath({code: scope.code, width: getBoxWidth()}).then(function (path) {
@@ -177,11 +159,18 @@ function BinBackgroundImageDirectiveFactory(imageManagement) {
         controller: 'binImageController',
         link: function (scope, element, attrs) {
             scope.code = attrs.binBackgroundImage;
-            scope.init({element:element, imageType:'background'});
 
             scope.setDefaultImageSrc = function() {
                 imageManagement.getImagePath({code: scope.code, width: element.width()}).then(function (path) {
-                    element.css('background-image', 'url("' + path + '")');
+                    var bindElement = angular.element('<img>').attr('src', path);
+
+                    scope.bindImageEvents({
+                        bindOn: bindElement
+                    }).then(function () {
+                        element.css('background-image', 'url("' + path + '")');
+                    }).finally(function () {
+                        bindElement.remove();
+                    });
                 });
             };
             scope.setDefaultImageSrc();
@@ -193,14 +182,37 @@ function BinBackgroundImageDirectiveFactory(imageManagement) {
     }
 }
 
-function BinImageController($scope, imageManagement, editModeRenderer, activeUserHasPermission, ngRegisterTopicHandler, $window) {
-    var element;
-    var self = this;
+function BinImageController($scope, $element, $q, imageManagement, editModeRenderer, activeUserHasPermission, ngRegisterTopicHandler, $window) {
+    $scope.state = 'working';
 
-    $scope.init = function (args) {
-        element = args.element;
-        self.ctx = args;
-        if (!self.ctx.imageType) self.ctx.imageType = 'foreground';
+    $scope.bindImageEvents = function (args) {
+        var deferred = $q.defer();
+        var element = args && args.bindOn ? args.bindOn : $element;
+
+        $element.addClass('working');
+        element.bind('load', function () {
+            imageLoaded();
+        });
+        element.bind('error', function () {
+            imageNotFound();
+        });
+        element.bind('abort', function () {
+            imageNotFound();
+        });
+        function imageLoaded() {
+            $scope.state = 'loaded';
+            $element.removeClass('not-found');
+            $element.removeClass('working');
+            deferred.resolve();
+        }
+        function imageNotFound() {
+            $scope.state = 'not-found';
+            $element.addClass('not-found');
+            $element.removeClass('working');
+            deferred.reject();
+        }
+
+        return deferred.promise;
     };
 
     activeUserHasPermission({
@@ -215,14 +227,23 @@ function BinImageController($scope, imageManagement, editModeRenderer, activeUse
 
     function bindClickEvent(editMode) {
         if (editMode) {
-            element.bind("click", function () {
-                $scope.onEdit ? $scope.onEdit() : open();
+            $element.bind("click", function () {
+                if ($scope.state != 'working') {
+                    $scope.onEdit ? $scope.onEdit({isFirstImage: $scope.state == 'not-found'}) : open();
+                }
                 return false;
             });
         } else {
-            element.unbind("click");
-            $scope.setDefaultImageSrc();
+            $element.unbind("click");
         }
+    }
+
+    function isImgElement() {
+        return $element.is('img');
+    }
+
+    function getImageType() {
+        return isImgElement() ? 'foreground' : 'background';
     }
 
     function open() {
@@ -231,15 +252,15 @@ function BinImageController($scope, imageManagement, editModeRenderer, activeUse
             add: function(e, d) {
                 var rendererScope = angular.extend($scope.$new(), {
                     submit: function () {
-                        element.addClass('uploading');
-                        imageManagement.upload({file: d, code: $scope.code, imageType:self.ctx.imageType}).then(function () {
-                            element.removeClass('uploading');
+                        $element.addClass('uploading');
+                        imageManagement.upload({file: d, code: $scope.code, imageType:getImageType()}).then(function () {
+                            $element.removeClass('uploading');
                             rendererScope.state = '';
                             $scope.setDefaultImageSrc();
                             editModeRenderer.close();
                             disposePreviewImage();
                         }, function (reason) {
-                            element.removeClass('uploading');
+                            $element.removeClass('uploading');
                             rendererScope.state = reason;
                         }, function (update) {
                             rendererScope.state = update;
@@ -294,6 +315,200 @@ function BinImageController($scope, imageManagement, editModeRenderer, activeUse
                 rendererScope.$apply(openEditModeMenu());
             }
         }).click();
+    }
+}
+
+function BinImagesController($rootScope, $q, rest, config, editModeRenderer, $templateCache, imageManagement) {
+    var self = this;
+    self.images = [];
+    var totalAllowedImages = 10;
+    var limit;
+
+    this.init = function (args) {
+        self.partition = args.partition;
+        limit = args.limit || totalAllowedImages;
+
+        getImages({limit: limit, offset: 0}).then(function () {
+            if (self.images.length == 0) self.images.push({
+                id: self.partition + '0',
+                path: toImagePath(self.partition + '0')
+            });
+        });
+    };
+
+    this.open = function (args) {
+        limit = totalAllowedImages - self.images.length;
+
+        getImages({limit: limit, offset: self.images.length}).then(function () {
+            var scope = $rootScope.$new();
+            scope.images = self.images;
+            scope.awsPath = config.awsPath;
+            if (args && args.isFirstImage) scope.isFirstImage = args.isFirstImage;
+
+            if (!scope.isFirstImage && self.images.length == 1 && self.images[0].entity != 'catalog-item') {
+                addFirstImage().then(function (result) {
+                    var image = result.data;
+                    image.path = toImagePath(image.id);
+                    self.images = [image];
+                });
+            }
+
+            scope.addImage = function () {
+                resetViolation();
+
+                if (self.images.length < totalAllowedImages) {
+                    imageManagement.fileUpload({
+                        dataType: 'json',
+                        add: function(e, d) {
+                            addImage().then(function (item) {
+                                var image = item.data;
+                                var violations = imageManagement.validate(d);
+                                if (violations.length == 0) {
+                                    scope.uploading = true;
+
+                                    imageManagement.upload({
+                                        file: d,
+                                        code: toImagePath(image.id),
+                                        imageType: 'foreground'
+                                    }).then(function () {
+                                        if (scope.isFirstImage) {
+                                            scope.isFirstImage = false;
+                                            self.images.splice(0, 1);
+                                        }
+                                        image.path = toImagePath(image.id);
+                                        self.images.push(image);
+                                    }, function () {
+                                        scope.deleteImage(image);
+                                        scope.violations.push('upload.failed');
+                                    }).finally(function () {
+                                        scope.uploading = false;
+                                    });
+                                } else {
+                                    scope.deleteImage(image);
+                                    scope.violations = violations;
+                                }
+                            });
+                        }
+                    });
+                    imageManagement.triggerFileUpload();
+                } else {
+                    scope.violations.push('images.upperbound');
+                }
+            };
+
+            scope.openImage = function (image) {
+                resetViolation();
+                scope.openedImage = image;
+            };
+
+            scope.closeImage = function () {
+                resetViolation();
+                scope.openedImage = undefined;
+            };
+
+            scope.deleteImage = function (image) {
+                resetViolation();
+                if (self.images.length > 1) {
+                    rest({
+                        params: {
+                            method: 'DELETE',
+                            url: config.baseUri + 'api/entity/catalog-item?id=' + encodeURIComponent(image.id),
+                            withCredentials: true
+                        }
+                    }).then(function () {
+                        if (self.images.indexOf(image) != -1) self.images.splice(self.images.indexOf(image), 1);
+                        scope.openedImage = undefined;
+                    });
+                } else {
+                    scope.violation = 'images.lowerbound';
+                }
+            };
+
+            scope.close = function () {
+                editModeRenderer.close();
+            };
+
+            if (scope.isFirstImage) scope.addImage();
+
+            editModeRenderer.open({
+                template: $templateCache.get('images-bin-images-ctrl-clerk.html'),
+                scope: scope
+            });
+
+            function resetViolation() {
+                scope.violations = [];
+            }
+        });
+    };
+
+    function getImages(args) {
+        var deferred = $q.defer();
+
+        if (args.limit > 0) {
+            rest({
+                params: {
+                    data: {
+                        args: {
+                            namespace: config.namespace,
+                            partition: self.partition,
+                            sortings: [{
+                                on: "priority",
+                                orientation: "asc"
+                            }],
+                            subset: {
+                                count: args.limit,
+                                offset: args.offset
+                            },
+                            type: "images"
+                        },
+                        locale: 'default'
+                    },
+                    headers: {
+                        "accept-language": "default"
+                    },
+                    method: "POST",
+                    url: config.baseUri + 'api/query/catalog-item/search',
+                    withCredentials: true
+                }
+            }).then(function (results) {
+                angular.forEach(results.data, function (image) {
+                    image.path = toImagePath(image.id);
+                    self.images.push(image)
+                });
+                deferred.resolve();
+            });
+        } else {
+            deferred.resolve();
+        }
+
+        return deferred.promise;
+    }
+
+    function addImage(firstImage) {
+        var args = {
+            params: {
+                data: {
+                    type: 'images',
+                    partition: self.partition,
+                    locale: 'default',
+                    namespace: config.namespace,
+                    defaultName: 'image'
+                },
+                method: 'PUT',
+                url: (config.baseUri || '') + 'api/entity/catalog-item',
+                withCredentials: true
+            }
+        };
+        if (firstImage) args.params.data.name = '0';
+        return rest(args);
+    }
+
+    function addFirstImage() {
+        return addImage(true);
+    }
+
+    function toImagePath(id) {
+        return 'carousels' + id + '.img';
     }
 }
 
