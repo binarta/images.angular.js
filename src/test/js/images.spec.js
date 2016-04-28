@@ -1964,6 +1964,16 @@ describe('image-management', function () {
                 });
         }
 
+        describe('when path starts with a slash', function () {
+            beforeEach(function () {
+                args.path = '///P';
+            });
+
+            it('strip leading slash', function () {
+                expect(builder(args)).toEqual('P?D');
+            });
+        });
+
         describe('with cache enabled', function () {
             beforeEach(function () {
                 args.cache = true;

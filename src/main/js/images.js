@@ -761,9 +761,14 @@ function ImageUploadDialogController($scope, $modal, config) {
 
 function ImagePathBuilderFactory($rootScope) {
     return function (args) {
+        args.path = stripLeadingSlash(args.path);
         var path = args.parentWidth != undefined ? getSizedImage() : args.path;
         if (requiresTimestampedUrl()) path += getSeparator() + getTimeStamp();
         return path;
+
+        function stripLeadingSlash(path) {
+            return path.replace(/^\/+/, '');
+        }
 
         function getSizedImage() {
             return args.path + '?width=' + convertParentWidthToRangedWidth()
