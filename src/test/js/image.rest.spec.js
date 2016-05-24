@@ -1,5 +1,3 @@
-angular.module('rest.client', []);
-
 describe('image.rest', function () {
     var scope, rest, notifications;
     var $httpBackend;
@@ -15,9 +13,6 @@ describe('image.rest', function () {
 
     beforeEach(module('image.rest'));
     beforeEach(inject(function ($injector, $rootScope) {
-        rest = {service: function (it) {
-            rest.ctx = it;
-        }};
         scope = $rootScope.$new();
         $httpBackend = $injector.get('$httpBackend');
         notifications = {
@@ -35,9 +30,11 @@ describe('image.rest', function () {
         var namespace = 'namespace';
         var config;
 
-        beforeEach(inject(function () {
-            config = {namespace: namespace};
-            uploader = ImageUploaderFactory(rest.service, config);
+        beforeEach(inject(function (_uploader_, _config_, restServiceHandler) {
+            config = _config_;
+            config.namespace = namespace;
+            uploader = _uploader_;
+            rest = restServiceHandler;
         }));
 
         it('add a file', function () {
@@ -52,31 +49,32 @@ describe('image.rest', function () {
             uploader.add(file, 'path', 'type');
 
             uploader.upload();
-            expect(rest.ctx.params.method).toEqual('PUT');
-            expect(rest.ctx.params.url).toEqual('api/image/path');
-            expect(rest.ctx.params.params).toEqual({
+
+            expect(rest.calls[0].args[0].params.method).toEqual('PUT');
+            expect(rest.calls[0].args[0].params.url).toEqual('api/image/path');
+            expect(rest.calls[0].args[0].params.params).toEqual({
                 namespace:namespace,
                 imageType:'type'
             });
-            expect(rest.ctx.params.data).toEqual(_file);
-            expect(rest.ctx.params.headers['Content-Type']).toEqual(_file.type);
-            expect(rest.ctx.params.headers['Content-Length']).toEqual(_file.size);
+            expect(rest.calls[0].args[0].params.data).toEqual(_file);
+            expect(rest.calls[0].args[0].params.headers['Content-Type']).toEqual(_file.type);
+            expect(rest.calls[0].args[0].params.headers['Content-Length']).toEqual(_file.size);
         });
 
         it('upload with baseUri', function () {
             config.baseUri = 'http://host/context/';
             uploader.add(file, 'path');
             uploader.upload();
-            expect(rest.ctx.params.url).toEqual(config.baseUri + 'api/image/path');
+            expect(rest.calls[0].args[0].params.url).toEqual(config.baseUri + 'api/image/path');
         });
 
         it('check headers', function () {
             uploader.upload();
-            expect(rest.ctx.params.method).toEqual('PUT');
-            expect(rest.ctx.params.url).toEqual('api/image/');
-            expect(rest.ctx.params.data).toEqual(null);
-            expect(rest.ctx.params.headers['Content-Type']).toEqual(null);
-            expect(rest.ctx.params.headers['Content-Length']).toEqual(0);
+            expect(rest.calls[0].args[0].params.method).toEqual('PUT');
+            expect(rest.calls[0].args[0].params.url).toEqual('api/image/');
+            expect(rest.calls[0].args[0].params.data).toEqual(null);
+            expect(rest.calls[0].args[0].params.headers['Content-Type']).toEqual(null);
+            expect(rest.calls[0].args[0].params.headers['Content-Length']).toEqual(0);
         });
 
         ['success', 'error', 'rejected'].forEach(function (handler) {
@@ -84,8 +82,8 @@ describe('image.rest', function () {
                 var handlers = {};
                 handlers[handler] = handler;
                 uploader.upload(handlers);
-                expect(rest.ctx[handler]).toEqual(handler);
+                expect(rest.calls[0].args[0][handler]).toEqual(handler);
             });
         });
-    })
+    });
 });
