@@ -127,6 +127,7 @@ function BinImageDirectiveFactory(imageManagement) {
         link: function (scope, element, attrs) {
             scope.code = attrs.binImage;
             scope.bindImageEvents();
+            if (attrs.readOnly == undefined) scope.bindClickEvent();
 
             scope.setDefaultImageSrc = function() {
                 imageManagement.getImagePath({code: scope.code, width: getBoxWidth()}).then(function (path) {
@@ -159,7 +160,8 @@ function BinBackgroundImageDirectiveFactory(imageManagement) {
         controller: 'binImageController',
         link: function (scope, element, attrs) {
             scope.code = attrs.binBackgroundImage;
-
+            if (attrs.readOnly == undefined) scope.bindClickEvent();
+            
             scope.setDefaultImageSrc = function() {
                 imageManagement.getImagePath({code: scope.code, width: element.width()}).then(function (path) {
                     var bindElement = angular.element('<img>').attr('src', path);
@@ -215,15 +217,17 @@ function BinImageController($scope, $element, $q, imageManagement, editModeRende
         return deferred.promise;
     };
 
-    activeUserHasPermission({
-        yes: function () {
-            ngRegisterTopicHandler($scope, 'edit.mode', bindClickEvent);
-        },
-        no: function () {
-            bindClickEvent(false);
-        },
-        scope: $scope
-    }, 'image.upload');
+    $scope.bindClickEvent = function () {
+        activeUserHasPermission({
+            yes: function () {
+                ngRegisterTopicHandler($scope, 'edit.mode', bindClickEvent);
+            },
+            no: function () {
+                bindClickEvent(false);
+            },
+            scope: $scope
+        }, 'image.upload');  
+    };
 
     function bindClickEvent(editMode) {
         if (editMode) {
