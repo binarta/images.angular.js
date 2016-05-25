@@ -33,6 +33,7 @@ describe('image.rest', function () {
         beforeEach(inject(function (_uploader_, _config_, restServiceHandler) {
             config = _config_;
             config.namespace = namespace;
+            config.baseUri = 'base/uri/';
             uploader = _uploader_;
             rest = restServiceHandler;
         }));
@@ -51,7 +52,7 @@ describe('image.rest', function () {
             uploader.upload();
 
             expect(rest.calls[0].args[0].params.method).toEqual('PUT');
-            expect(rest.calls[0].args[0].params.url).toEqual('api/image/path');
+            expect(rest.calls[0].args[0].params.url).toEqual('base/uri/api/image/path');
             expect(rest.calls[0].args[0].params.params).toEqual({
                 namespace:namespace,
                 imageType:'type'
@@ -71,7 +72,7 @@ describe('image.rest', function () {
         it('check headers', function () {
             uploader.upload();
             expect(rest.calls[0].args[0].params.method).toEqual('PUT');
-            expect(rest.calls[0].args[0].params.url).toEqual('api/image/');
+            expect(rest.calls[0].args[0].params.url).toEqual('base/uri/api/image/');
             expect(rest.calls[0].args[0].params.data).toEqual(null);
             expect(rest.calls[0].args[0].params.headers['Content-Type']).toEqual(null);
             expect(rest.calls[0].args[0].params.headers['Content-Length']).toEqual(0);
@@ -83,6 +84,38 @@ describe('image.rest', function () {
                 handlers[handler] = handler;
                 uploader.upload(handlers);
                 expect(rest.calls[0].args[0][handler]).toEqual(handler);
+            });
+        });
+        
+        describe('when context carousel is given', function () {
+            var uploadDeferred, response;
+
+            beforeEach(inject(function ($q) {
+                uploadDeferred = $q.defer();
+                rest.andReturn(uploadDeferred.promise);
+
+                uploader.add(file, 'carousel/id', 'type', true);
+                uploader.upload().then(function (result) {
+                    response = result;
+                });
+            }));
+
+            it('check headers', function () {
+                expect(rest.calls[0].args[0].params.method).toEqual('PUT');
+                expect(rest.calls[0].args[0].params.url).toEqual('base/uri/api/image/carousel/id');
+                expect(rest.calls[0].args[0].params.data).toEqual(_file);
+                expect(rest.calls[0].args[0].params.headers['Content-Type']).toEqual(_file.type);
+                expect(rest.calls[0].args[0].params.headers['Content-Length']).toEqual(_file.size);
+                expect(rest.calls[0].args[0].params.headers['X-Binarta-Carousel']).toEqual(true);
+            });
+
+            it('returns a promise', function () {
+                uploadDeferred.resolve({
+                    "path": "/image/path"
+                });
+                scope.$digest();
+
+                expect(response).toEqual({path: "/image/path"});
             });
         });
     });
