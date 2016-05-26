@@ -130,7 +130,10 @@ function BinImageDirectiveFactory(imageManagement) {
             if (attrs.readOnly == undefined) scope.bindClickEvent();
 
             scope.setDefaultImageSrc = function() {
-                imageManagement.getImagePath({code: scope.code, width: getBoxWidth()}).then(function (path) {
+                imageManagement.getImagePath({
+                    code: scope.code,
+                    width: parseInt(attrs.width) || getBoxWidth()
+                }).then(function (path) {
                     element[0].src = path;
                 });
             };

@@ -763,6 +763,17 @@ describe('image-management', function () {
 
                 expect(element[0].src).toEqual('test');
             });
+
+            describe('with width attribute on image', function () {
+                beforeEach(function () {
+                    directive.link(scope, element, {binImage: 'test.img', width: '200'});
+                    scope.$digest();
+                });
+
+                it('get image path', function () {
+                    expect(imageManagement.getImagePathSpy).toEqual({code: 'test.img', width: 200});
+                });
+            });
         });
 
         describe('when image is read-only', function () {
