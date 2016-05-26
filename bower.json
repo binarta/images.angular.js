@@ -3,7 +3,6 @@
   "main": [
     "./src/main/js/images.js",
     "./src/main/js/image.rest.js",
-    "./src/main/js/images-clerk-tpls-bootstrap3.js",
     "./less/images.less",
     "./metadata-system.json"
   ],
