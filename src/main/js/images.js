@@ -85,7 +85,7 @@ function ImageManagementService ($q, config, imagePathBuilder, activeUserHasPerm
             deferred.notify('uploading');
         }, 0);
 
-        uploader.add(args.file, args.code, args.imageType);
+        uploader.add(args.file, args.code, args.imageType, args.carouselImage);
 
         uploader.upload({
             success: function (payload) {

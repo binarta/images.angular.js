@@ -142,7 +142,7 @@ describe('image-management', function () {
         describe('upload', function () {
             var uploader, promise;
 
-            beforeEach(inject(function (_uploader_, $timeout) {
+            beforeEach(inject(function (_uploader_) {
                 uploader = _uploader_;
 
                 promise = imageManagement.upload({file: file, code: code, imageType:imageType})
@@ -158,6 +158,7 @@ describe('image-management', function () {
                 expect(uploader.spy.add.file).toEqual(file);
                 expect(uploader.spy.add.path).toEqual(code);
                 expect(uploader.spy.add.imageType).toEqual(imageType);
+                expect(uploader.spy.add.carouselImage).toBeFalsy();
             });
 
             describe('when upload succeeded', function () {
@@ -172,6 +173,12 @@ describe('image-management', function () {
 
             it('when upload failed', function () {
                 uploader.spy.upload.rejected('reject');
+            });
+
+            it('upload carousel image', function () {
+                imageManagement.upload({file: file, code: code, imageType:imageType, carouselImage: true});
+
+                expect(uploader.spy.add.carouselImage).toBeTruthy();
             });
         });
     });

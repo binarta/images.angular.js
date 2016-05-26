@@ -3,11 +3,12 @@ angular.module('uploader.mock', [])
         var self = this;
         this.spy = {};
 
-        this.add = function (file, path, type) {
+        this.add = function (file, path, type, carouselImage) {
             self.spy.add = {
                 file: file,
                 path: path,
-                imageType: type
+                imageType: type,
+                carouselImage: carouselImage
             }
         };
 
