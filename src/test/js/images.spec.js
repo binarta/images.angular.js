@@ -149,7 +149,7 @@ describe('image-management', function () {
                     .then(function (payload) {
                         expect(payload).toEqual('ok');
                     }, function (reason) {
-                        expect(reason).toEqual('reject');
+                        expect(reason).toEqual('upload.failed');
                     }
                 );
             }));
@@ -172,7 +172,7 @@ describe('image-management', function () {
             });
 
             it('when upload failed', function () {
-                uploader.spy.upload.rejected('reject');
+                uploader.spy.upload.rejected('upload.failed');
             });
 
             it('upload carousel image', function () {

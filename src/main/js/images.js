@@ -92,8 +92,8 @@ function ImageManagementService ($q, config, imagePathBuilder, activeUserHasPerm
                 $rootScope.image.uploaded[args.code] = new Date().getTime();
                 deferred.resolve(payload);
             },
-            rejected: function (reason) {
-                deferred.reject(reason);
+            rejected: function () {
+                deferred.reject('upload.failed');
             }
         });
 
