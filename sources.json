@@ -1,0 +1,9 @@
+{
+  "default": {
+    "images": "bower_components/binarta.images.angular/src/main/js/images.js",
+    "image.rest": "bower_components/binarta.images.angular/src/main/js/image.rest.js",
+    "uuid": "bower_components/node-uuid/uuid.js",
+    "jquery.ui.widget": "bower_components/jquery-file-upload/js/vendor/jquery.ui.widget.js",
+    "jquery.fileupload": "bower_components/jquery-file-upload/js/jquery.fileupload.js"
+  }
+}

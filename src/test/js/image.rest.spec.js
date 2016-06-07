@@ -51,31 +51,31 @@ describe('image.rest', function () {
 
             uploader.upload();
 
-            expect(rest.calls[0].args[0].params.method).toEqual('PUT');
-            expect(rest.calls[0].args[0].params.url).toEqual('base/uri/api/image/path');
-            expect(rest.calls[0].args[0].params.params).toEqual({
+            expect(rest.calls.first().args[0].params.method).toEqual('PUT');
+            expect(rest.calls.first().args[0].params.url).toEqual('base/uri/api/image/path');
+            expect(rest.calls.first().args[0].params.params).toEqual({
                 namespace:namespace,
                 imageType:'type'
             });
-            expect(rest.calls[0].args[0].params.data).toEqual(_file);
-            expect(rest.calls[0].args[0].params.headers['Content-Type']).toEqual(_file.type);
-            expect(rest.calls[0].args[0].params.headers['Content-Length']).toEqual(_file.size);
+            expect(rest.calls.first().args[0].params.data).toEqual(_file);
+            expect(rest.calls.first().args[0].params.headers['Content-Type']).toEqual(_file.type);
+            expect(rest.calls.first().args[0].params.headers['Content-Length']).toEqual(_file.size);
         });
 
         it('upload with baseUri', function () {
             config.baseUri = 'http://host/context/';
             uploader.add(file, 'path');
             uploader.upload();
-            expect(rest.calls[0].args[0].params.url).toEqual(config.baseUri + 'api/image/path');
+            expect(rest.calls.first().args[0].params.url).toEqual(config.baseUri + 'api/image/path');
         });
 
         it('check headers', function () {
             uploader.upload();
-            expect(rest.calls[0].args[0].params.method).toEqual('PUT');
-            expect(rest.calls[0].args[0].params.url).toEqual('base/uri/api/image/');
-            expect(rest.calls[0].args[0].params.data).toEqual(null);
-            expect(rest.calls[0].args[0].params.headers['Content-Type']).toEqual(null);
-            expect(rest.calls[0].args[0].params.headers['Content-Length']).toEqual(0);
+            expect(rest.calls.first().args[0].params.method).toEqual('PUT');
+            expect(rest.calls.first().args[0].params.url).toEqual('base/uri/api/image/');
+            expect(rest.calls.first().args[0].params.data).toEqual(undefined);
+            expect(rest.calls.first().args[0].params.headers['Content-Type']).toEqual(null);
+            expect(rest.calls.first().args[0].params.headers['Content-Length']).toEqual(0);
         });
 
         ['success', 'error', 'rejected'].forEach(function (handler) {
@@ -83,7 +83,7 @@ describe('image.rest', function () {
                 var handlers = {};
                 handlers[handler] = handler;
                 uploader.upload(handlers);
-                expect(rest.calls[0].args[0][handler]).toEqual(handler);
+                expect(rest.calls.first().args[0][handler]).toEqual(handler);
             });
         });
         
@@ -92,7 +92,7 @@ describe('image.rest', function () {
 
             beforeEach(inject(function ($q) {
                 uploadDeferred = $q.defer();
-                rest.andReturn(uploadDeferred.promise);
+                rest.and.returnValue(uploadDeferred.promise);
 
                 uploader.add(file, 'carousel/id', 'type', true);
                 uploader.upload().then(function (result) {
@@ -101,12 +101,12 @@ describe('image.rest', function () {
             }));
 
             it('check headers', function () {
-                expect(rest.calls[0].args[0].params.method).toEqual('PUT');
-                expect(rest.calls[0].args[0].params.url).toEqual('base/uri/api/image/carousel/id');
-                expect(rest.calls[0].args[0].params.data).toEqual(_file);
-                expect(rest.calls[0].args[0].params.headers['Content-Type']).toEqual(_file.type);
-                expect(rest.calls[0].args[0].params.headers['Content-Length']).toEqual(_file.size);
-                expect(rest.calls[0].args[0].params.headers['X-Binarta-Carousel']).toEqual(true);
+                expect(rest.calls.first().args[0].params.method).toEqual('PUT');
+                expect(rest.calls.first().args[0].params.url).toEqual('base/uri/api/image/carousel/id');
+                expect(rest.calls.first().args[0].params.data).toEqual(_file);
+                expect(rest.calls.first().args[0].params.headers['Content-Type']).toEqual(_file.type);
+                expect(rest.calls.first().args[0].params.headers['Content-Length']).toEqual(_file.size);
+                expect(rest.calls.first().args[0].params.headers['X-Binarta-Carousel']).toEqual(true);
             });
 
             it('returns a promise', function () {

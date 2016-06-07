@@ -803,7 +803,7 @@ describe('image-management', function () {
             scope = $rootScope.$new();
 
             bindImageEventsDeferred = $q.defer();
-            scope.bindImageEvents = jasmine.createSpy('bindImageEvents').andReturn(bindImageEventsDeferred.promise);
+            scope.bindImageEvents = jasmine.createSpy('bindImageEvents').and.returnValue(bindImageEventsDeferred.promise);
             scope.bindClickEvent = jasmine.createSpy('bindClickEvent');
 
             element = {
@@ -821,7 +821,7 @@ describe('image-management', function () {
 
             getImagePathDeferred = $q.defer();
             imageManagement = {
-                getImagePath: jasmine.createSpy('getImagePath').andReturn(getImagePathDeferred.promise)
+                getImagePath: jasmine.createSpy('getImagePath').and.returnValue(getImagePathDeferred.promise)
             };
 
             directive = BinBackgroundImageDirectiveFactory(imageManagement);
