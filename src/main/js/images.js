@@ -124,7 +124,7 @@ function BinImageDirectiveFactory(imageManagement) {
         scope: true,
         controller: 'binImageController',
         link: function (scope, element, attrs) {
-            scope.code = attrs.binImage;
+            scope.code = attrs.binImage.replace(/^\/+/, '');
             scope.bindImageEvents();
             if (attrs.readOnly == undefined) scope.bindClickEvent();
 
@@ -161,7 +161,7 @@ function BinBackgroundImageDirectiveFactory(imageManagement) {
         scope: true,
         controller: 'binImageController',
         link: function (scope, element, attrs) {
-            scope.code = attrs.binBackgroundImage;
+            scope.code = attrs.binBackgroundImage.replace(/^\/+/, '');
             if (attrs.readOnly == undefined) scope.bindClickEvent();
             
             scope.setDefaultImageSrc = function() {
@@ -572,14 +572,9 @@ function ImageUploadDialogController($scope, $modal, config) {
 
 function ImagePathBuilderFactory($rootScope) {
     return function (args) {
-        args.path = stripLeadingSlash(args.path);
         var path = args.parentWidth != undefined ? getSizedImage() : args.path;
         if (requiresTimestampedUrl()) path += getSeparator() + getTimeStamp();
         return path;
-
-        function stripLeadingSlash(path) {
-            return path.replace(/^\/+/, '');
-        }
 
         function getSizedImage() {
             return args.path + '?width=' + convertParentWidthToRangedWidth()

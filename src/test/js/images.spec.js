@@ -793,6 +793,14 @@ describe('image-management', function () {
                 expect(scope.bindClickEvent).not.toHaveBeenCalled();
             });
         });
+
+        it('strip leading slash on code', function () {
+            directive.link(scope, element, {binImage: '/test.img'});
+
+            scope.$digest();
+
+            expect(scope.code).toEqual('test.img');
+        });
     });
 
     describe('binBackgroundImage directive', function () {
@@ -899,6 +907,14 @@ describe('image-management', function () {
             it('bind click event is not called', function () {
                 expect(scope.bindClickEvent).not.toHaveBeenCalled();
             });
+        });
+
+        it('strip leading slash on code', function () {
+            directive.link(scope, element, {binBackgroundImage: '/test.img'});
+
+            scope.$digest();
+
+            expect(scope.code).toEqual('test.img');
         });
     });
 
@@ -1392,16 +1408,6 @@ describe('image-management', function () {
                     });
                 });
         }
-
-        describe('when path starts with a slash', function () {
-            beforeEach(function () {
-                args.path = '///P';
-            });
-
-            it('strip leading slash', function () {
-                expect(builder(args)).toEqual('P?D');
-            });
-        });
 
         describe('with cache enabled', function () {
             beforeEach(function () {
