@@ -1,12 +1,12 @@
-angular.module('image-management', ['config', 'checkpoint', 'image.rest', 'notifications', 'ui.bootstrap.modal', 'toggle.edit.mode', 'rest.client'])
-    .service('imageManagement', ['$q', 'config', 'imagePathBuilder', 'activeUserHasPermission', 'uploader', '$rootScope', '$timeout', ImageManagementService])
-    .directive('imageShow', ['config', 'topicRegistry', 'activeUserHasPermission', 'topicMessageDispatcher', '$timeout', '$rootScope', 'imagePathBuilder', ImageShowDirectiveFactory])
+angular.module('image-management', ['config', 'checkpoint', 'image.rest', 'notifications', 'ui.bootstrap.modal', 'toggle.edit.mode', 'rest.client', 'binarta-checkpointjs-angular1'])
+    .service('imageManagement', ['$q', 'config', 'imagePathBuilder', 'uploader', '$rootScope', '$timeout', 'binarta', ImageManagementService])
+    .directive('imageShow', ['config', 'topicRegistry', 'binarta', 'binartaIsInitialised', 'topicMessageDispatcher', '$timeout', '$rootScope', 'imagePathBuilder', ImageShowDirectiveFactory])
     .directive('binImage', ['imageManagement', BinImageDirectiveFactory])
     .directive('binBackgroundImage', ['imageManagement', BinBackgroundImageDirectiveFactory])
     .factory('imagePathBuilder', ['$rootScope', ImagePathBuilderFactory])
     .controller('ImageUploadDialogController', ['$scope', '$modal', 'config', ImageUploadDialogController])
     .controller('ImageController', ['$scope', 'uploader', 'config', '$rootScope', 'topicMessageDispatcher', 'imagePathBuilder', ImageController])
-    .controller('binImageController', ['$scope', '$element', '$q', 'imageManagement', 'editModeRenderer', 'activeUserHasPermission', 'ngRegisterTopicHandler', '$window', BinImageController])
+    .controller('binImageController', ['$scope', '$element', '$q', 'imageManagement', 'editModeRenderer', 'binarta', 'ngRegisterTopicHandler', '$window', BinImageController])
     .run(['$rootScope', '$location', 'topicRegistry', 'topicMessageDispatcher', function ($rootScope, $location, topicRegistry, topicMessageDispatcher) {
         var imageCount = 0;
 
@@ -35,7 +35,7 @@ angular.module('image-management', ['config', 'checkpoint', 'image.rest', 'notif
         };
     }]);
 
-function ImageManagementService ($q, config, imagePathBuilder, activeUserHasPermission, uploader, $rootScope, $timeout) {
+function ImageManagementService($q, config, imagePathBuilder, uploader, $rootScope, $timeout, binarta) {
     var self = this;
 
     this.getLowerbound = function () {
@@ -49,14 +49,10 @@ function ImageManagementService ($q, config, imagePathBuilder, activeUserHasPerm
     this.getImagePath = function (args) {
         var deferred = $q.defer();
 
-        activeUserHasPermission({
-            no: function () {
-                deferred.resolve(get(config.image && config.image.cache));
-            },
-            yes: function () {
-                deferred.resolve(get(false));
-            }
-        }, 'image.upload');
+        if (binarta.checkpoint.profile.hasPermission('image.upload'))
+            deferred.resolve(get(false));
+        else
+            deferred.resolve(get(config.image && config.image.cache));
 
         function get(cache) {
             return config.awsPath + imagePathBuilder({
@@ -80,7 +76,7 @@ function ImageManagementService ($q, config, imagePathBuilder, activeUserHasPerm
     this.upload = function (args) {
         var deferred = $q.defer();
 
-        $timeout(function() {
+        $timeout(function () {
             deferred.notify('uploading');
         }, 0);
 
@@ -107,7 +103,7 @@ function ImageManagementService ($q, config, imagePathBuilder, activeUserHasPerm
         getFileUploadElement().click();
     };
 
-    function getFileUploadElement () {
+    function getFileUploadElement() {
         var body = angular.element(document.body);
         var input = body.find('#bin-image-file-upload');
         if (input.length != 1) {
@@ -128,7 +124,7 @@ function BinImageDirectiveFactory(imageManagement) {
             scope.bindImageEvents();
             if (attrs.readOnly == undefined) scope.bindClickEvent();
 
-            scope.setDefaultImageSrc = function() {
+            scope.setDefaultImageSrc = function () {
                 imageManagement.getImagePath({
                     code: scope.code,
                     width: parseInt(attrs.width) || getBoxWidth()
@@ -138,11 +134,11 @@ function BinImageDirectiveFactory(imageManagement) {
             };
             scope.setDefaultImageSrc();
 
-            scope.setImageSrc = function(src) {
+            scope.setImageSrc = function (src) {
                 element[0].src = src;
             };
 
-            function getBoxWidth () {
+            function getBoxWidth() {
                 var width = 0;
                 var el = element;
                 while (width == 0) {
@@ -163,8 +159,8 @@ function BinBackgroundImageDirectiveFactory(imageManagement) {
         link: function (scope, element, attrs) {
             scope.code = attrs.binBackgroundImage.replace(/^\/+/, '');
             if (attrs.readOnly == undefined) scope.bindClickEvent();
-            
-            scope.setDefaultImageSrc = function() {
+
+            scope.setDefaultImageSrc = function () {
                 imageManagement.getImagePath({code: scope.code, width: element.width()}).then(function (path) {
                     var bindElement = angular.element('<img>').attr('src', path);
 
@@ -179,14 +175,14 @@ function BinBackgroundImageDirectiveFactory(imageManagement) {
             };
             scope.setDefaultImageSrc();
 
-            scope.setImageSrc = function(src) {
+            scope.setImageSrc = function (src) {
                 element.css('background-image', 'url(' + src + ')');
             };
         }
     }
 }
 
-function BinImageController($scope, $element, $q, imageManagement, editModeRenderer, activeUserHasPermission, ngRegisterTopicHandler, $window) {
+function BinImageController($scope, $element, $q, imageManagement, editModeRenderer, binarta, ngRegisterTopicHandler, $window) {
     $scope.state = 'working';
 
     $scope.bindImageEvents = function (args) {
@@ -209,6 +205,7 @@ function BinImageController($scope, $element, $q, imageManagement, editModeRende
             $element.removeClass('working');
             deferred.resolve();
         }
+
         function imageNotFound() {
             $scope.state = 'not-found';
             $element.addClass('not-found');
@@ -220,15 +217,10 @@ function BinImageController($scope, $element, $q, imageManagement, editModeRende
     };
 
     $scope.bindClickEvent = function () {
-        activeUserHasPermission({
-            yes: function () {
-                ngRegisterTopicHandler($scope, 'edit.mode', bindClickEvent);
-            },
-            no: function () {
-                bindClickEvent(false);
-            },
-            scope: $scope
-        }, 'image.upload');  
+        if (binarta.checkpoint.profile.hasPermission('image.upload'))
+            ngRegisterTopicHandler($scope, 'edit.mode', bindClickEvent);
+        else
+            bindClickEvent(false);
     };
 
     function bindClickEvent(editMode) {
@@ -255,11 +247,15 @@ function BinImageController($scope, $element, $q, imageManagement, editModeRende
     function open() {
         imageManagement.fileUpload({
             dataType: 'json',
-            add: function(e, d) {
+            add: function (e, d) {
                 var rendererScope = angular.extend($scope.$new(), {
                     submit: function () {
                         $element.addClass('uploading');
-                        imageManagement.upload({file: d, code: $scope.code, imageType:getImageType()}).then(function () {
+                        imageManagement.upload({
+                            file: d,
+                            code: $scope.code,
+                            imageType: getImageType()
+                        }).then(function () {
                             $element.removeClass('uploading');
                             rendererScope.state = '';
                             $scope.setDefaultImageSrc();
@@ -295,11 +291,11 @@ function BinImageController($scope, $element, $q, imageManagement, editModeRende
                     rendererScope.state = '';
                 }
 
-                function disposePreviewImage () {
+                function disposePreviewImage() {
                     if ($scope.previewImageUrl && $window.URL) $window.URL.revokeObjectURL($scope.previewImageUrl);
                 }
 
-                function openEditModeMenu () {
+                function openEditModeMenu() {
                     editModeRenderer.open({
                         template: "<div id='bin-image-file-upload-dialog'>" +
                         "<form class='bin-menu-edit-body'>" +
@@ -324,7 +320,7 @@ function BinImageController($scope, $element, $q, imageManagement, editModeRende
     }
 }
 
-function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, topicMessageDispatcher, $timeout, $rootScope, imagePathBuilder) {
+function ImageShowDirectiveFactory(config, topicRegistry, binarta, topicMessageDispatcher, $timeout, $rootScope, imagePathBuilder) {
     var componentsDir = config.componentsDir || 'bower_components';
 
     return {
@@ -422,32 +418,24 @@ function ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermissio
                 element.css('background-image', 'url("' + path + '")');
             };
 
-            if(scope.asBackgroundImage) {
+            if (scope.asBackgroundImage) {
                 scope.updateBackgroundImage(toImageSource());
             }
 
             var putCacheEnabledOnScope = function () {
-                activeUserHasPermission({
-                    no: function () {
-                        scope.cacheEnabled = config.image && config.image.cache;
-                    },
-                    yes: function () {
-                        scope.cacheEnabled = false;
-                    }
-                }, 'image.upload');
+                if (binarta.checkpoint.profile.hasPermission('image.upload'))
+                    scope.cacheEnabled = false;
+                else
+                    scope.cacheEnabled = config.image && config.image.cache;
             };
 
             topicRegistry.subscribe('app.start', putCacheEnabledOnScope);
 
             var putEditingOnScope = function (editMode) {
-                activeUserHasPermission({
-                    no: function () {
-                        scope.editing = false;
-                    },
-                    yes: function () {
-                        scope.editing = editMode;
-                    }
-                }, 'image.upload');
+                if (binarta.checkpoint.profile.hasPermission('image.upload'))
+                    scope.editing = editMode;
+                else
+                    scope.editing = false;
             };
 
             topicRegistry.subscribe('edit.mode', putEditingOnScope);
@@ -490,15 +478,15 @@ function ImageController($scope, uploader, config, $rootScope, topicMessageDispa
     var onSuccess = function () {
         $rootScope.image.uploaded[uploader.path] = new Date().getTime();
         $scope.imageSource = config.awsPath + imagePathBuilder({
-            cache: false,
-            path: uploader.path,
-            parentWidth: $scope.getBoxWidth()
-        });
+                cache: false,
+                path: uploader.path,
+                parentWidth: $scope.getBoxWidth()
+            });
         $scope.loading = false;
         $scope.status = 201;
         $scope.name = '';
         $scope.selecting = false;
-        if($scope.asBackgroundImage) $scope.updateBackgroundImage($scope.imageSource);
+        if ($scope.asBackgroundImage) $scope.updateBackgroundImage($scope.imageSource);
     };
 
     var onRejected = function (violations) {
@@ -521,7 +509,7 @@ function ImageController($scope, uploader, config, $rootScope, topicMessageDispa
         else executeUpload(file, path);
     };
     function validateContentLength(file) {
-        var violations = {contentLength:[]};
+        var violations = {contentLength: []};
         if (file.files[0].size < getLowerbound()) violations.contentLength.push('lowerbound');
         if (file.files[0].size > getUpperbound()) violations.contentLength.push('upperbound');
         return violations;
@@ -593,10 +581,10 @@ function ImagePathBuilderFactory($rootScope) {
                 {lowerbound: 1201, upperbound: 1920, actual: 1920},
                 {lowerbound: 1921, upperbound: 4096, actual: 4096}
             ].forEach(function (v) {
-                    if (args.parentWidth >= v.lowerbound && args.parentWidth <= v.upperbound) {
-                        width = v.actual;
-                    }
-                });
+                if (args.parentWidth >= v.lowerbound && args.parentWidth <= v.upperbound) {
+                    width = v.actual;
+                }
+            });
             return width || 1024;
         }
 

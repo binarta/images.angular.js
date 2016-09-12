@@ -9,20 +9,22 @@ angular.module('toggle.edit.mode', [])
     });
 
 describe('image-management', function () {
-    var scope, ctrl, directive, rest, notifications, config;
+    var binarta, scope, ctrl, directive, rest, notifications, config;
     var $httpBackend;
     var uploader;
     var _file;
     var file;
     var imageType;
 
+    beforeEach(module('binartajs-angular1-spec'));
     beforeEach(module('image-management'));
     beforeEach(module('permissions'));
     beforeEach(module('cache.control'));
     beforeEach(module('notifications'));
     beforeEach(module('toggle.edit.mode'));
     beforeEach(module('uploader.mock'));
-    beforeEach(inject(function ($injector, $rootScope) {
+    beforeEach(inject(function ($injector, $rootScope, _binarta_) {
+        binarta = _binarta_;
         rest = {service: function (it) {
             rest.ctx = it;
         }};
@@ -36,19 +38,23 @@ describe('image-management', function () {
         file = {
             files: [_file]
         };
+
+        binarta.checkpoint.registrationForm.submit({username: 'u', password: 'p'});
     }));
     afterEach(function () {
         $httpBackend.verifyNoOutstandingExpectation();
         $httpBackend.verifyNoOutstandingRequest();
     });
+    afterEach(function() {
+        binarta.checkpoint.gateway.removePermission('image.upload');
+    });
 
     describe('imageManagement service', function () {
-        var imageManagement, config, permissionHelper, code, boxWidth, $rootScope;
+        var imageManagement, config, code, boxWidth, $rootScope;
 
-        beforeEach(inject(function (_imageManagement_, _config_, activeUserHasPermissionHelper, _$rootScope_) {
+        beforeEach(inject(function (_imageManagement_, _config_, _$rootScope_) {
             imageManagement = _imageManagement_;
             config = _config_;
-            permissionHelper = activeUserHasPermissionHelper;
             $rootScope = _$rootScope_;
             config.awsPath = 'http://aws/path/';
             code = 'test.img';
@@ -59,8 +65,6 @@ describe('image-management', function () {
         describe('getImagePath', function () {
             function assertImagePathIsTimestamped () {
                 var promise = imageManagement.getImagePath({code: code, width: boxWidth});
-                permissionHelper.yes();
-
                 promise.then(function (path) {
                     expect(path).toMatch(/http:\/\/aws\/path\/test.img\?width=160&\d+/);
                 });
@@ -74,8 +78,6 @@ describe('image-management', function () {
                 describe('and user has no permission', function () {
                     it('image path is not timestamped', function () {
                         var promise = imageManagement.getImagePath({code: code, width: boxWidth});
-                        permissionHelper.no();
-
                         promise.then(function (path) {
                             expect(path).toEqual('http://aws/path/test.img?width=160');
                         });
@@ -83,6 +85,11 @@ describe('image-management', function () {
                 });
 
                 describe('and user has permission', function () {
+                    beforeEach(function () {
+                        binarta.checkpoint.gateway.addPermission('image.upload');
+                        binarta.checkpoint.profile.refresh();
+                    });
+
                     it('image path is timestamped', function () {
                         assertImagePathIsTimestamped();
                     });
@@ -184,11 +191,10 @@ describe('image-management', function () {
     });
 
     describe('image show directive', function () {
-        var registry, element, attrs, permitter, dispatcher, topics, imageEvent, loadHandler, errorHandler, abortHandler, rootScope;
+        var registry, element, attrs, dispatcher, topics, imageEvent, loadHandler, errorHandler, abortHandler, rootScope;
         var removedClass, addedClass, parentWidth, cssProperty, cssValue;
 
-        beforeEach(inject(function (activeUserHasPermission, activeUserHasPermissionHelper, topicMessageDispatcher, topicMessageDispatcherMock, $timeout, $rootScope, topicRegistryMock, topicRegistry) {
-            permitter = activeUserHasPermissionHelper;
+        beforeEach(inject(function (topicMessageDispatcher, topicMessageDispatcherMock, $timeout, $rootScope, topicRegistryMock, topicRegistry) {
             rootScope = $rootScope;
             scope = $rootScope.$new();
             scope.watches = {};
@@ -251,7 +257,7 @@ describe('image-management', function () {
             config = {awsPath: 'base/'};
             dispatcher = topicMessageDispatcher;
             topics = topicMessageDispatcherMock;
-            directive = ImageShowDirectiveFactory(config, topicRegistry, activeUserHasPermission, dispatcher, $timeout, $rootScope, function (args) {
+            directive = ImageShowDirectiveFactory(config, topicRegistry, binarta, dispatcher, $timeout, $rootScope, function (args) {
                 var path = '';
                 path += args.cache ? 'cache' : 'no-cache';
                 path += ':';
@@ -458,21 +464,14 @@ describe('image-management', function () {
             });
         });
 
-        it('on edit mode true and active user has permission editing true', function () {
-            link();
-            registry['edit.mode'](true);
-            permitter.yes();
-
-            expect(scope.editing).toEqual(true);
-        });
-
         it('on edit mode true and active user has permission image.upload editing true', function () {
+            binarta.checkpoint.gateway.addPermission('image.upload');
+            binarta.checkpoint.profile.refresh();
+
             link();
             registry['edit.mode'](true);
-            permitter.yes();
 
             expect(scope.editing).toEqual(true);
-            expect(permitter.permission).toEqual('image.upload');
         });
         it('on edit mode true and active user has no permission editing false', function () {
             link();
@@ -481,10 +480,12 @@ describe('image-management', function () {
             expect(scope.editing).toEqual(false);
         });
         it('on edit mode false and active user has permission editing false', function () {
+            binarta.checkpoint.gateway.addPermission('image.upload');
+            binarta.checkpoint.profile.refresh();
+
             link();
             scope.editing = true;
             registry['edit.mode'](false);
-            permitter.yes();
 
             expect(scope.editing).toEqual(false);
         });
@@ -492,7 +493,6 @@ describe('image-management', function () {
             link();
             scope.editing = true;
             registry['edit.mode'](false);
-            permitter.no();
 
             expect(scope.editing).toEqual(false);
         });
@@ -555,8 +555,10 @@ describe('image-management', function () {
             });
 
             it('cache is disabled when active user has permission', function () {
+                binarta.checkpoint.gateway.addPermission('image.upload');
+                binarta.checkpoint.profile.refresh();
+
                 rootScope.image.defaultTimeStamp = 'defaultTimeStamp';
-                permitter.yes();
                 triggerWatch();
 
                 expect(scope.imageSource).toEqual('base/no-cache:path?100');
@@ -564,15 +566,16 @@ describe('image-management', function () {
 
             it('cache is enabled when active has no permission', function () {
                 config.image = {cache: true};
-                permitter.no();
+                registry['app.start']();
                 triggerWatch();
-
                 expect(scope.imageSource).toEqual('base/cache:path?100');
             });
 
             it('cache is enabled when cache enabled flag is on and user has permission and image is newly uploaded', function () {
+                binarta.checkpoint.gateway.addPermission('image.upload');
+                binarta.checkpoint.profile.refresh();
+
                 config.image = {cache: true};
-                permitter.yes();
                 rootScope.image.uploaded['path'] = 'timestamp';
                 triggerWatch();
 
@@ -581,7 +584,7 @@ describe('image-management', function () {
 
             it('configure to use the browsers standard image cache mechanism', function () {
                 config.image = {cache: true};
-                permitter.no();
+                registry['app.start']();
                 triggerWatch();
                 expect(scope.imageSource).toEqual('base/cache:path?100');
             });
@@ -1005,7 +1008,7 @@ describe('image-management', function () {
                 }
             };
 
-            BinImageController(scope, element, $q, imageManagement, editModeRenderer, activeUserHasPermission, ngRegisterTopicHandler, $window);
+            BinImageController(scope, element, $q, imageManagement, editModeRenderer, binarta, ngRegisterTopicHandler, $window);
         }));
 
         it('is in working state', function () {
@@ -1114,20 +1117,16 @@ describe('image-management', function () {
         });
 
         describe('bind click event', function () {
-            beforeEach(function () {
-                scope.bindClickEvent();
-            });
-
             describe('when user has permission', function () {
                 beforeEach(function () {
-                    permitter.yes();
-                });
-
-                it('for image.upload', function () {
-                    expect(permitter.permission).toEqual('image.upload');
+                    binarta.checkpoint.gateway.addPermission('image.upload');
+                    binarta.checkpoint.profile.refresh();
                 });
 
                 describe('and edit.mode true bindEvent received', function () {
+                    beforeEach(function () {
+                        scope.bindClickEvent();
+                    });
                     beforeEach(function () {
                         registry['edit.mode'](true);
                     });
@@ -1345,6 +1344,9 @@ describe('image-management', function () {
 
                 describe('and edit.mode false bindEvent received', function () {
                     beforeEach(function () {
+                        scope.bindClickEvent();
+                    });
+                    beforeEach(function () {
                         registry['edit.mode'](false);
                     });
 
@@ -1355,10 +1357,6 @@ describe('image-management', function () {
             });
 
             describe('when user has no permission', function () {
-                beforeEach(function () {
-                    permitter.no();
-                });
-
                 it('unbind element from click bindEvent', function () {
                     expect(event['click']).toBeUndefined();
                 });
