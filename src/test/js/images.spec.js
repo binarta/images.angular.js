@@ -1,6 +1,6 @@
 angular.module('checkpoint', []);
 angular.module('rest.client', [])
-    .factory('restServiceHandler', function() {
+    .factory('restServiceHandler', function () {
         return jasmine.createSpy('restServiceHandlerSpy');
     });
 angular.module('toggle.edit.mode', [])
@@ -25,9 +25,11 @@ describe('image-management', function () {
     beforeEach(module('uploader.mock'));
     beforeEach(inject(function ($injector, $rootScope, _binarta_) {
         binarta = _binarta_;
-        rest = {service: function (it) {
-            rest.ctx = it;
-        }};
+        rest = {
+            service: function (it) {
+                rest.ctx = it;
+            }
+        };
         scope = $rootScope.$new();
         $httpBackend = $injector.get('$httpBackend');
         _file = {
@@ -45,7 +47,7 @@ describe('image-management', function () {
         $httpBackend.verifyNoOutstandingExpectation();
         $httpBackend.verifyNoOutstandingRequest();
     });
-    afterEach(function() {
+    afterEach(function () {
         binarta.checkpoint.gateway.removePermission('image.upload');
     });
 
@@ -63,7 +65,7 @@ describe('image-management', function () {
         }));
 
         describe('getImagePath', function () {
-            function assertImagePathIsTimestamped () {
+            function assertImagePathIsTimestamped() {
                 var promise = imageManagement.getImagePath({code: code, width: boxWidth});
                 promise.then(function (path) {
                     expect(path).toMatch(/http:\/\/aws\/path\/test.img\?width=160&\d+/);
@@ -152,13 +154,13 @@ describe('image-management', function () {
             beforeEach(inject(function (_uploader_) {
                 uploader = _uploader_;
 
-                promise = imageManagement.upload({file: file, code: code, imageType:imageType})
+                promise = imageManagement.upload({file: file, code: code, imageType: imageType})
                     .then(function (payload) {
-                        expect(payload).toEqual('ok');
-                    }, function (reason) {
-                        expect(reason).toEqual('upload.failed');
-                    }
-                );
+                            expect(payload).toEqual('ok');
+                        }, function (reason) {
+                            expect(reason).toEqual('upload.failed');
+                        }
+                    );
             }));
 
             it('pass values to uploader', function () {
@@ -183,7 +185,7 @@ describe('image-management', function () {
             });
 
             it('upload carousel image', function () {
-                imageManagement.upload({file: file, code: code, imageType:imageType, carouselImage: true});
+                imageManagement.upload({file: file, code: code, imageType: imageType, carouselImage: true});
 
                 expect(uploader.spy.add.carouselImage).toBeTruthy();
             });
@@ -426,7 +428,7 @@ describe('image-management', function () {
 
                 beforeEach(inject(function (topicRegistry) {
                     var run = angular.module('image-management')._runBlocks[0];
-                    run[run.length-1](rootScope, location, topicRegistry, dispatcher);
+                    run[run.length - 1](rootScope, location, topicRegistry, dispatcher);
                 }));
 
                 it('when all images are loaded fire images.loaded notification', function () {
@@ -722,6 +724,10 @@ describe('image-management', function () {
 
             imageManagement = {
                 getImagePathSpy: {},
+                getImageUrl: function (args) {
+                    imageManagement.getImagePathSpy = args;
+                    return imagePath;
+                },
                 getImagePath: function (args) {
                     imageManagement.getImagePathSpy = args;
                     var deferred = $q.defer();
@@ -730,7 +736,7 @@ describe('image-management', function () {
                 }
             };
 
-            directive = BinImageDirectiveFactory(imageManagement);
+            directive = BinImageDirectiveFactory(imageManagement, binarta);
         }));
 
         it('restrict', function () {
@@ -832,10 +838,11 @@ describe('image-management', function () {
 
             getImagePathDeferred = $q.defer();
             imageManagement = {
-                getImagePath: jasmine.createSpy('getImagePath').and.returnValue(getImagePathDeferred.promise)
+                getImagePath: jasmine.createSpy('getImagePath').and.returnValue(getImagePathDeferred.promise),
+                getImageUrl: jasmine.createSpy('getImageUrl').and.returnValue('img-url')
             };
 
-            directive = BinBackgroundImageDirectiveFactory(imageManagement);
+            directive = BinBackgroundImageDirectiveFactory(imageManagement, binarta);
         }));
 
         it('restrict', function () {
@@ -861,7 +868,24 @@ describe('image-management', function () {
             });
 
             it('get image path', function () {
-                expect(imageManagement.getImagePath).toHaveBeenCalledWith({code: 'test.img', width: 100});
+                expect(imageManagement.getImageUrl).toHaveBeenCalledWith({code: 'test.img', width: 100});
+                expect(imageManagement.getImageUrl.calls.count()).toEqual(1);
+            });
+
+            it('get image path refreshes on signin', function () {
+                binarta.checkpoint.profile.refresh();
+                expect(imageManagement.getImageUrl.calls.count()).toEqual(2);
+            });
+
+            it('get image path refreshes on signout', function () {
+                binarta.checkpoint.profile.signout();
+                expect(imageManagement.getImageUrl.calls.count()).toEqual(2);
+            });
+
+            it('get image path stops listening to profile events when scope is destroyed', function () {
+                scope.$destroy();
+                binarta.checkpoint.profile.refresh();
+                expect(imageManagement.getImageUrl.calls.count()).toEqual(1);
             });
 
             describe('on get image path success', function () {
@@ -885,7 +909,7 @@ describe('image-management', function () {
                     it('set background image', function () {
                         expect(cssSpy).toEqual({
                             key: 'background-image',
-                            value: 'url("'+ imagePath + '")'
+                            value: 'url("img-url")'
                         });
                     });
                 });
@@ -955,7 +979,8 @@ describe('image-management', function () {
                 unbind: function (e) {
                     event[e] = undefined;
                 },
-                is: function () {}
+                is: function () {
+                }
             };
 
             registry = topicRegistryMock;
@@ -1150,7 +1175,7 @@ describe('image-management', function () {
                                 });
 
                                 it('custom event is triggered', function () {
-                                    expect(scope.onEdit).toHaveBeenCalledWith({isFirstImage : false});
+                                    expect(scope.onEdit).toHaveBeenCalledWith({isFirstImage: false});
                                 });
                             });
 
@@ -1161,7 +1186,7 @@ describe('image-management', function () {
                                 });
 
                                 it('custom event is triggered', function () {
-                                    expect(scope.onEdit).toHaveBeenCalledWith({isFirstImage : true});
+                                    expect(scope.onEdit).toHaveBeenCalledWith({isFirstImage: true});
                                 });
                             });
                         });
@@ -1252,10 +1277,10 @@ describe('image-management', function () {
                                         });
                                     });
 
-                                    describe('on submit without image type', function() {
+                                    describe('on submit without image type', function () {
                                         var matchOn;
 
-                                        beforeEach(function() {
+                                        beforeEach(function () {
                                             element.is = function (m) {
                                                 matchOn = m;
                                                 return true;
@@ -1268,7 +1293,7 @@ describe('image-management', function () {
                                             expect(matchOn).toEqual('img');
                                         });
 
-                                        it('test', function() {
+                                        it('test', function () {
                                             expect(imageManagement.uploadSpy.imageType).toEqual('foreground');
                                         });
                                     });
@@ -1396,15 +1421,15 @@ describe('image-management', function () {
                 {actual: 1921, expected: 4096},
                 {actual: 4096, expected: 4096}
             ].forEach(function (value) {
-                    describe('and parent width ' + value.actual + ' is given', function () {
-                        it('then width ' + value.expected + ' is appended', function () {
-                            args.parentWidth = value.actual;
-                            var path = builder(args);
-                            var ts = timestamp ? '&' + timestamp : '';
-                            expect(path).toEqual(args.path + '?width=' + value.expected + ts);
-                        });
+                describe('and parent width ' + value.actual + ' is given', function () {
+                    it('then width ' + value.expected + ' is appended', function () {
+                        args.parentWidth = value.actual;
+                        var path = builder(args);
+                        var ts = timestamp ? '&' + timestamp : '';
+                        expect(path).toEqual(args.path + '?width=' + value.expected + ts);
                     });
                 });
+            });
         }
 
         describe('with cache enabled', function () {
@@ -1489,9 +1514,11 @@ describe('image-management', function () {
                 $scope: scope,
                 config: config,
                 uploader: uploader,
-                $templateCache: {removeAll: function () {
-                    cacheControl.cleared = true;
-                }},
+                $templateCache: {
+                    removeAll: function () {
+                        cacheControl.cleared = true;
+                    }
+                },
                 topicMessageDispatcher: dispatcherMock,
                 imagePathBuilder: function () {
                     return rootScope.image.uploaded[uploader.path];
@@ -1516,25 +1543,25 @@ describe('image-management', function () {
             expect(scope.selecting).toEqual(false);
         });
 
-        describe('adding a file to the uploader', function() {
-            beforeEach(function() {
+        describe('adding a file to the uploader', function () {
+            beforeEach(function () {
                 ctrl.add(file, path);
             });
 
-            it('populates scope', function() {
+            it('populates scope', function () {
                 expect(scope.name).toEqual(_file.name);
                 expect(scope.canUpload).toEqual(true);
                 expect(uploader.file).toEqual(_file);
                 expect(uploader.path).toEqual(path);
             });
 
-            describe('under the size limit', function() {
-                beforeEach(function() {
+            describe('under the size limit', function () {
+                beforeEach(function () {
                     file.files[0].size = 1023;
                     ctrl.add(file, path);
                 });
 
-                it('fire notification', function() {
+                it('fire notification', function () {
                     expect(scope.hasError).toBeTruthy();
                     expect(topics).toEqual([
                         {
@@ -1547,9 +1574,9 @@ describe('image-management', function () {
                     ])
                 });
 
-                it('with configured lowerbound then fire notification', function() {
+                it('with configured lowerbound then fire notification', function () {
                     topics = [];
-                    config.image = {upload: { lowerbound: 10}};
+                    config.image = {upload: {lowerbound: 10}};
                     file.files[0].size = 9;
                     ctrl.add(file, path);
 
@@ -1567,13 +1594,13 @@ describe('image-management', function () {
 
             });
 
-            describe('above the size limit', function() {
-                beforeEach(function() {
+            describe('above the size limit', function () {
+                beforeEach(function () {
                     file.files[0].size = 10485761;
                     ctrl.add(file, path);
                 });
 
-                it('then execute rejection', function() {
+                it('then execute rejection', function () {
                     expect(scope.hasError).toBeTruthy();
                     expect(topics).toEqual([
                         {
@@ -1586,9 +1613,9 @@ describe('image-management', function () {
                     ])
                 });
 
-                it('with configured upperbound then execute rejection', function() {
+                it('with configured upperbound then execute rejection', function () {
                     topics = [];
-                    config.image = {upload: { upperbound: 2000}};
+                    config.image = {upload: {upperbound: 2000}};
                     file.files[0].size = 2001;
                     ctrl.add(file, path);
 

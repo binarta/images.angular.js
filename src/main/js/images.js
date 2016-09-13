@@ -1,8 +1,8 @@
 angular.module('image-management', ['config', 'checkpoint', 'image.rest', 'notifications', 'ui.bootstrap.modal', 'toggle.edit.mode', 'rest.client', 'binarta-checkpointjs-angular1'])
-    .service('imageManagement', ['$q', 'config', 'imagePathBuilder', 'uploader', '$rootScope', '$timeout', 'binarta', ImageManagementService])
+    .service('imageManagement', ['$q', 'config', 'imagePathBuilder', 'uploader', '$rootScope', '$timeout', 'binarta', '$log', ImageManagementService])
     .directive('imageShow', ['config', 'topicRegistry', 'binarta', 'binartaIsInitialised', 'topicMessageDispatcher', '$timeout', '$rootScope', 'imagePathBuilder', ImageShowDirectiveFactory])
-    .directive('binImage', ['imageManagement', BinImageDirectiveFactory])
-    .directive('binBackgroundImage', ['imageManagement', BinBackgroundImageDirectiveFactory])
+    .directive('binImage', ['imageManagement', 'binarta', BinImageDirectiveFactory])
+    .directive('binBackgroundImage', ['imageManagement', 'binarta', BinBackgroundImageDirectiveFactory])
     .factory('imagePathBuilder', ['$rootScope', ImagePathBuilderFactory])
     .controller('ImageUploadDialogController', ['$scope', '$modal', 'config', ImageUploadDialogController])
     .controller('ImageController', ['$scope', 'uploader', 'config', '$rootScope', 'topicMessageDispatcher', 'imagePathBuilder', ImageController])
@@ -35,7 +35,7 @@ angular.module('image-management', ['config', 'checkpoint', 'image.rest', 'notif
         };
     }]);
 
-function ImageManagementService($q, config, imagePathBuilder, uploader, $rootScope, $timeout, binarta) {
+function ImageManagementService($q, config, imagePathBuilder, uploader, $rootScope, $timeout, binarta, $log) {
     var self = this;
 
     this.getLowerbound = function () {
@@ -46,14 +46,7 @@ function ImageManagementService($q, config, imagePathBuilder, uploader, $rootSco
         return config.image && config.image.upload && config.image.upload.upperbound ? config.image.upload.upperbound : 10485760;
     };
 
-    this.getImagePath = function (args) {
-        var deferred = $q.defer();
-
-        if (binarta.checkpoint.profile.hasPermission('image.upload'))
-            deferred.resolve(get(false));
-        else
-            deferred.resolve(get(config.image && config.image.cache));
-
+    this.getImageUrl = function(args) {
         function get(cache) {
             return config.awsPath + imagePathBuilder({
                     cache: cache,
@@ -62,6 +55,16 @@ function ImageManagementService($q, config, imagePathBuilder, uploader, $rootSco
                 });
         }
 
+        if (binarta.checkpoint.profile.hasPermission('image.upload'))
+            return get(false);
+        else
+            return get(config.image && config.image.cache);
+    };
+
+    this.getImagePath = function (args) {
+        $log.warn('@deprecated ImageManagementService.getImagePath - use getImageUrl instead!');
+        var deferred = $q.defer();
+        deferred.resolve(self.getImageUrl(args));
         return deferred.promise;
     };
 
@@ -114,7 +117,7 @@ function ImageManagementService($q, config, imagePathBuilder, uploader, $rootSco
     }
 }
 
-function BinImageDirectiveFactory(imageManagement) {
+function BinImageDirectiveFactory(imageManagement, binarta) {
     return {
         restrict: 'A',
         scope: true,
@@ -125,11 +128,21 @@ function BinImageDirectiveFactory(imageManagement) {
             if (attrs.readOnly == undefined) scope.bindClickEvent();
 
             scope.setDefaultImageSrc = function () {
-                imageManagement.getImagePath({
-                    code: scope.code,
-                    width: parseInt(attrs.width) || getBoxWidth()
-                }).then(function (path) {
-                    element[0].src = path;
+                function loadImg() {
+                    element[0].src = imageManagement.getImageUrl({
+                        code: scope.code,
+                        width: parseInt(attrs.width) || getBoxWidth()
+                    });
+                }
+
+                var listener = {
+                    signedin:loadImg,
+                    signedout:loadImg
+                };
+                loadImg();
+                binarta.checkpoint.profile.eventRegistry.add(listener);
+                scope.$on('$destroy', function() {
+                    binarta.checkpoint.profile.eventRegistry.remove(listener);
                 });
             };
             scope.setDefaultImageSrc();
@@ -151,7 +164,7 @@ function BinImageDirectiveFactory(imageManagement) {
     }
 }
 
-function BinBackgroundImageDirectiveFactory(imageManagement) {
+function BinBackgroundImageDirectiveFactory(imageManagement, binarta) {
     return {
         restrict: 'A',
         scope: true,
@@ -161,7 +174,8 @@ function BinBackgroundImageDirectiveFactory(imageManagement) {
             if (attrs.readOnly == undefined) scope.bindClickEvent();
 
             scope.setDefaultImageSrc = function () {
-                imageManagement.getImagePath({code: scope.code, width: element.width()}).then(function (path) {
+                function loadImg() {
+                    var path = imageManagement.getImageUrl({code: scope.code, width: element.width()});
                     var bindElement = angular.element('<img>').attr('src', path);
 
                     scope.bindImageEvents({
@@ -171,6 +185,16 @@ function BinBackgroundImageDirectiveFactory(imageManagement) {
                     }).finally(function () {
                         bindElement.remove();
                     });
+                }
+
+                var listener = {
+                    signedin:loadImg,
+                    signedout:loadImg
+                };
+                loadImg();
+                binarta.checkpoint.profile.eventRegistry.add(listener);
+                scope.$on('$destroy', function() {
+                    binarta.checkpoint.profile.eventRegistry.remove(listener);
                 });
             };
             scope.setDefaultImageSrc();
@@ -217,10 +241,22 @@ function BinImageController($scope, $element, $q, imageManagement, editModeRende
     };
 
     $scope.bindClickEvent = function () {
-        if (binarta.checkpoint.profile.hasPermission('image.upload'))
-            ngRegisterTopicHandler($scope, 'edit.mode', bindClickEvent);
-        else
-            bindClickEvent(false);
+        var listener = {
+            signedin:function() {
+                if (binarta.checkpoint.profile.hasPermission('image.upload'))
+                    ngRegisterTopicHandler($scope, 'edit.mode', bindClickEvent);
+                else
+                    bindClickEvent(false);
+            },
+            signedout:function() {
+                bindClickEvent(false);
+            }
+        };
+        binarta.checkpoint.profile.eventRegistry.add(listener);
+        listener.signedin();
+        $scope.$on('$destroy', function() {
+            binarta.checkpoint.profile.eventRegistry.remove(listener);
+        });
     };
 
     function bindClickEvent(editMode) {
