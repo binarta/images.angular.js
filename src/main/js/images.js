@@ -244,9 +244,11 @@ function BinImageController($scope, $element, $q, imageManagement, editModeRende
         var listeningToEditModeEvents = false;
         var listener = {
             signedin:function() {
-                if (binarta.checkpoint.profile.hasPermission('image.upload') && !listeningToEditModeEvents) {
-                    listeningToEditModeEvents = true;
-                    ngRegisterTopicHandler($scope, 'edit.mode', bindClickEvent);
+                if (binarta.checkpoint.profile.hasPermission('image.upload')) {
+                    if(!listeningToEditModeEvents) {
+                        listeningToEditModeEvents = true;
+                        ngRegisterTopicHandler($scope, 'edit.mode', bindClickEvent);
+                    }
                 } else
                     bindClickEvent(false);
             },
