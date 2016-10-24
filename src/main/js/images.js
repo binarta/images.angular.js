@@ -4,6 +4,14 @@ angular.module('image-management', ['config', 'checkpoint', 'image.rest', 'notif
     .directive('binImage', ['imageManagement', 'binarta', BinImageDirectiveFactory])
     .directive('binBackgroundImage', ['imageManagement', 'binarta', BinBackgroundImageDirectiveFactory])
     .factory('imagePathBuilder', ['$rootScope', ImagePathBuilderFactory])
+    .component('binImageEnlarged', {
+        bindings: {
+            code: '@'
+        },
+        controller: 'BinImageEnlargedController',
+        template: '<a ng-href="{{::$ctrl.url}}"><img bin-image="{{::$ctrl.code}}"/></a>'
+    })
+    .controller('BinImageEnlargedController', ['imageManagement', '$element', BinImageEnlargedController])
     .controller('ImageUploadDialogController', ['$scope', '$modal', 'config', ImageUploadDialogController])
     .controller('ImageController', ['$scope', 'uploader', 'config', '$rootScope', 'topicMessageDispatcher', 'imagePathBuilder', ImageController])
     .controller('binImageController', ['$scope', '$element', '$q', 'imageManagement', 'editModeRenderer', 'binarta', 'ngRegisterTopicHandler', '$window', BinImageController])
@@ -46,7 +54,7 @@ function ImageManagementService($q, config, imagePathBuilder, uploader, $rootSco
         return config.image && config.image.upload && config.image.upload.upperbound ? config.image.upload.upperbound : 10485760;
     };
 
-    this.getImageUrl = function(args) {
+    this.getImageUrl = function (args) {
         function get(cache) {
             return config.awsPath + imagePathBuilder({
                     cache: cache,
@@ -136,12 +144,12 @@ function BinImageDirectiveFactory(imageManagement, binarta) {
                 }
 
                 var listener = {
-                    signedin:loadImg,
-                    signedout:loadImg
+                    signedin: loadImg,
+                    signedout: loadImg
                 };
                 loadImg();
                 binarta.checkpoint.profile.eventRegistry.add(listener);
-                scope.$on('$destroy', function() {
+                scope.$on('$destroy', function () {
                     binarta.checkpoint.profile.eventRegistry.remove(listener);
                 });
             };
@@ -188,12 +196,12 @@ function BinBackgroundImageDirectiveFactory(imageManagement, binarta) {
                 }
 
                 var listener = {
-                    signedin:loadImg,
-                    signedout:loadImg
+                    signedin: loadImg,
+                    signedout: loadImg
                 };
                 loadImg();
                 binarta.checkpoint.profile.eventRegistry.add(listener);
-                scope.$on('$destroy', function() {
+                scope.$on('$destroy', function () {
                     binarta.checkpoint.profile.eventRegistry.remove(listener);
                 });
             };
@@ -243,22 +251,22 @@ function BinImageController($scope, $element, $q, imageManagement, editModeRende
     $scope.bindClickEvent = function () {
         var listeningToEditModeEvents = false;
         var listener = {
-            signedin:function() {
+            signedin: function () {
                 if (binarta.checkpoint.profile.hasPermission('image.upload')) {
-                    if(!listeningToEditModeEvents) {
+                    if (!listeningToEditModeEvents) {
                         listeningToEditModeEvents = true;
                         ngRegisterTopicHandler($scope, 'edit.mode', bindClickEvent);
                     }
                 } else
                     bindClickEvent(false);
             },
-            signedout:function() {
+            signedout: function () {
                 bindClickEvent(false);
             }
         };
         binarta.checkpoint.profile.eventRegistry.add(listener);
         listener.signedin();
-        $scope.$on('$destroy', function() {
+        $scope.$on('$destroy', function () {
             binarta.checkpoint.profile.eventRegistry.remove(listener);
         });
     };
@@ -652,4 +660,15 @@ function ImagePathBuilderFactory($rootScope) {
             return $rootScope.image.uploaded[args.path] || $rootScope.image.defaultTimeStamp;
         }
     }
+}
+
+function BinImageEnlargedController(imageManagement, $element) {
+    this.url = imageManagement.getImageUrl({code: this.code});
+    $element.find('a').magnificPopup({
+        type: 'image',
+        closeOnContentClick: true,
+        image: {
+            verticalFit: true
+        }
+    });
 }

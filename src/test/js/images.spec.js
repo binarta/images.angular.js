@@ -1797,4 +1797,47 @@ describe('image-management', function () {
             scope.accept();
         }));
     });
+
+    describe('BinImageEnlargedController', function () {
+        var ctrl, findArgs, magnificPopupArgs, imageSpy;
+
+        beforeEach(inject(function ($componentController) {
+            imageSpy = {
+                getImageUrl: jasmine.createSpy('getImageUrl').and.returnValue('img-url')
+            };
+
+            var elementMock = {
+                find: function (element) {
+                    findArgs = element;
+                    return {
+                        magnificPopup: function (config) {
+                            magnificPopupArgs = config;
+                        }
+                    }
+                }
+            };
+            ctrl = $componentController('binImageEnlarged', {
+                imageManagement: imageSpy,
+                $element: elementMock
+            }, {code: 'test.img'});
+        }));
+
+        it('url is correct', function () {
+            expect(imageSpy.getImageUrl).toHaveBeenCalledWith({code: 'test.img'});
+            expect(ctrl.url).toEqual('img-url');
+        });
+
+        it('magnific popup is called correctly', function () {
+            expect(findArgs).toEqual('a');
+            expect(magnificPopupArgs).toEqual({
+                type: 'image',
+                closeOnContentClick: true,
+                image: {
+                    verticalFit: true
+                }
+            });
+
+        });
+    });
+
 });

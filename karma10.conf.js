@@ -17,6 +17,7 @@ module.exports = function(config) {
             {pattern:'bower_components/binartajs-angular1/src/binarta-angular.js'},
             {pattern:'bower_components/binartajs-angular1/src/binarta-checkpoint-angular.js'},
             {pattern:'bower_components/binartajs-angular1/src/binarta-checkpoint-inmem-angular.js'},
+            {pattern: 'bower_components/binarta.web.storage.angular/src/web.storage.js'},
             {pattern:'src/main/js/image.in.memory.js'},
             {pattern:'src/main/js/image.rest.js'},
             {pattern:'src/main/js/images.js'},
