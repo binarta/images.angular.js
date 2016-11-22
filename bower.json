@@ -3,6 +3,7 @@
   "main": [
     "./src/main/js/images.js",
     "./src/main/js/image.rest.js",
+    "./src/images-tpls-bootstrap3.js",
     "./less/images.less",
     "./metadata-system.json",
     "./sources.json"

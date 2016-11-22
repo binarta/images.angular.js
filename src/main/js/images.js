@@ -1,4 +1,4 @@
-angular.module('image-management', ['config', 'checkpoint', 'image.rest', 'notifications', 'ui.bootstrap.modal', 'toggle.edit.mode', 'rest.client', 'binarta-checkpointjs-angular1'])
+angular.module('image-management', ['config', 'checkpoint', 'image.rest', 'notifications', 'ui.bootstrap.modal', 'toggle.edit.mode', 'rest.client', 'binarta-checkpointjs-angular1', 'image-management.templates'])
     .service('imageManagement', ['$q', 'config', 'imagePathBuilder', 'uploader', '$rootScope', '$timeout', 'binarta', '$log', ImageManagementService])
     .directive('imageShow', ['config', 'topicRegistry', 'binarta', 'binartaIsInitialised', 'topicMessageDispatcher', '$timeout', '$rootScope', 'imagePathBuilder', ImageShowDirectiveFactory])
     .directive('binImage', ['imageManagement', 'binarta', BinImageDirectiveFactory])
@@ -11,6 +11,7 @@ angular.module('image-management', ['config', 'checkpoint', 'image.rest', 'notif
         controller: 'BinImageEnlargedController',
         template: '<a ng-href="{{::$ctrl.url}}"><img bin-image="{{::$ctrl.code}}"/></a>'
     })
+    .component('binIcon', new BinIconComponent())
     .controller('BinImageEnlargedController', ['imageManagement', '$element', BinImageEnlargedController])
     .controller('ImageUploadDialogController', ['$scope', '$modal', 'config', ImageUploadDialogController])
     .controller('ImageController', ['$scope', 'uploader', 'config', '$rootScope', 'topicMessageDispatcher', 'imagePathBuilder', ImageController])
@@ -671,4 +672,67 @@ function BinImageEnlargedController(imageManagement, $element) {
             verticalFit: true
         }
     });
+}
+
+function BinIconComponent() {
+
+    this.bindings = {
+        iconCode: '@'
+    };
+
+    this.template = '<i class="fa {{$ctrl.iconValue}}"></i>';
+
+    this.controller = ['i18n', 'editMode', 'editModeRenderer', '$templateCache', '$scope', '$element', 'topicRegistry',
+        function (i18n, editMode, editModeRenderer, $templateCache, $scope, $element, topicRegistry) {
+            var ctrl = this;
+            var ctx = {
+                code: ctrl.iconCode
+            };
+
+            i18n.resolve(ctx).then(function (value) {
+                updateIconValue(value);
+            });
+
+            function onEdit() {
+                var scope = $scope.$new();
+
+                editModeRenderer.open({
+                    template: $templateCache.get('bin-icon.html'),
+                    scope: scope
+                });
+
+                scope.cancel = editModeRenderer.close;
+                scope.submit = function () {
+                    ctx.locale = 'default';
+                    ctx.translation = scope.translation;
+                    i18n.translate(ctx).then(function () {
+                            updateIconValue(ctx.translation);
+                        }
+                    );
+                    scope.cancel();
+                }
+            }
+
+            editMode.bindEvent({
+                scope: $scope,
+                element: $element,
+                permission: 'edit.mode',
+                onClick: onEdit
+            });
+
+            function updateIconValue(newValue) {
+                ctrl.iconValue = newValue;
+            }
+
+            topicRegistry.subscribe('i18n.updated', translationUpdateListener);
+
+            function translationUpdateListener(ctx) {
+                if (ctx.code == ctrl.iconCode) updateIconValue(ctx.translation);
+            }
+
+            ctrl.$onDestroy = function () {
+                topicRegistry.unsubscribe('i18n.updated', translationUpdateListener);
+            };
+        }
+    ];
 }

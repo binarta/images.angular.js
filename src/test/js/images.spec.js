@@ -6,6 +6,9 @@ angular.module('rest.client', [])
 angular.module('toggle.edit.mode', [])
     .service('editModeRenderer', function () {
         return jasmine.createSpyObj('editModeRenderer', ['open', 'close']);
+    })
+    .service('editMode', function () {
+        this.bindEvent = jasmine.createSpy('spy');
     });
 
 describe('image-management', function () {
@@ -21,8 +24,8 @@ describe('image-management', function () {
     beforeEach(module('permissions'));
     beforeEach(module('cache.control'));
     beforeEach(module('notifications'));
-    beforeEach(module('toggle.edit.mode'));
     beforeEach(module('uploader.mock'));
+    beforeEach(module('i18n.mock'));
     beforeEach(inject(function ($injector, $rootScope, _binarta_) {
         binarta = _binarta_;
         rest = {
@@ -1836,8 +1839,114 @@ describe('image-management', function () {
                     verticalFit: true
                 }
             });
-
         });
     });
 
+    describe('binIconComponent', function () {
+        var $scope, ctrl, bindings, editMode, i18n, renderer, ctx, topics;
+        var element = angular.element('<div></div>');
+
+        beforeEach(inject(function ($componentController, $rootScope, _editMode_, _editModeRenderer_, _i18n_, topicRegistryMock) {
+            $scope = $rootScope.$new();
+            bindings = {iconCode: 'testIconCode'};
+            ctrl = $componentController('binIcon', {$element: element, $scope: $scope}, bindings);
+            editMode = _editMode_;
+            i18n = _i18n_;
+            renderer = _editModeRenderer_;
+            ctx = {
+                code: ctrl.iconCode
+            };
+            topics = topicRegistryMock;
+        }));
+
+        describe('when working with an icon', function () {
+
+            describe('icon value', function () {
+                it('is requested', function () {
+                    expect(i18n.resolve).toHaveBeenCalledWith(ctx);
+                });
+
+                it('is resolved', function () {
+                    i18n.resolveDeferred.resolve('testIconValue');
+                    $scope.$digest();
+                    expect(ctrl.iconValue).toEqual('testIconValue');
+                });
+            });
+
+            it('edit mode event is bound', function () {
+                expect(editMode.bindEvent).toHaveBeenCalledWith({
+                    scope: $scope,
+                    element: element,
+                    permission: 'edit.mode',
+                    onClick: jasmine.any(Function)
+                });
+            });
+
+            describe('and user is in edit mode', function () {
+                describe('on click', function () {
+                    var rendererScope;
+                    beforeEach(function () {
+                        editMode.bindEvent.calls.mostRecent().args[0].onClick();
+                        rendererScope = renderer.open.calls.first().args[0].scope;
+                    });
+
+                    it('editModeRenderer is called', function () {
+                        expect(renderer.open).toHaveBeenCalled();
+                    });
+
+                    it('on cancel', function () {
+                        rendererScope.cancel();
+                        expect(renderer.close).toHaveBeenCalled();
+                    });
+
+                    describe('on submit', function () {
+                        beforeEach(function () {
+                            rendererScope.translation = 'fa-test';
+                            rendererScope.submit();
+                        });
+
+                        it('translate gets called with correct arguments', function () {
+                            ctx.locale = 'default';
+                            ctx.translation = rendererScope.translation;
+                            expect(i18n.translate).toHaveBeenCalledWith(ctx);
+                        });
+
+                        it('icon gets updated', function () {
+                            i18n.translateDeferred.resolve();
+                            $scope.$digest();
+                            expect(ctrl.iconValue).toEqual('fa-test');
+                        });
+
+                        it('window is closed', function () {
+                            expect(renderer.close).toHaveBeenCalled();
+                        });
+                    });
+                });
+            });
+
+            describe('topic registry', function () {
+                it('i18n.updated is subscribed with listener', function () {
+                    expect(topics['i18n.updated']).toEqual(jasmine.any(Function));
+                });
+
+                it('icons that have the same code get updated', function () {
+                    ctx.translation = 'fa-new-test';
+                    topics['i18n.updated'](ctx);
+                    expect(ctrl.iconValue).toEqual('fa-new-test');
+                });
+
+                it('icons with other codes do not get updated', function () {
+                    ctx.translation = 'fa-new-test';
+                    ctrl.iconCode = 'otherCode';
+                    topics['i18n.updated'](ctx);
+                    expect(ctrl.iconValue).not.toEqual('fa-new-test');
+                });
+
+                it('on destroy', function () {
+                    ctrl.$onDestroy();
+                    expect(topics['i18n.updated']).toBeUndefined();
+                });
+            });
+        });
+    });
 });

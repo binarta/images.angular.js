@@ -1,5 +1,8 @@
 {
   "devDependencies": {
+    "gulp": "^3.8.10",
+    "gulp-angular-templatecache": "^1.9.1",
+    "gulp-minify-html": "^0.1.8",
     "jasmine-core": "^2.4.1",
     "karma": "^0.13.22",
     "karma-jasmine": "^1.0.2",
