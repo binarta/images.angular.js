@@ -13,7 +13,8 @@
       "upload.image.save.button": "Opslaan",
       "upload.image.cancel.button": "Annuleren",
       "upload.image.add.image.button": "Foto toevoegen",
-      "upload.image.delete.image.button": "Verwijderen"
+      "upload.image.delete.image.button": "Verwijderen",
+      "upload.image.use.image": "Gebruik afbeelding"
     },
     "en":{
       "upload.image.contentLength.lowerbound": "Your image must be at least 1kB.",
@@ -28,7 +29,8 @@
       "upload.image.save.button": "Save",
       "upload.image.cancel.button": "Cancel",
       "upload.image.add.image.button": "Add image",
-      "upload.image.delete.image.button": "Delete"
+      "upload.image.delete.image.button": "Delete",
+      "upload.image.use.image": "Use image"
     },
     "fr":{
       "upload.image.contentLength.lowerbound": "Une image doit peser minimum 1kB.",
@@ -43,7 +45,8 @@
       "upload.image.save.button": "Enregistrer",
       "upload.image.cancel.button": "Annuler",
       "upload.image.add.image.button": "Add image",
-      "upload.image.delete.image.button": "Delete"
+      "upload.image.delete.image.button": "Delete",
+      "upload.image.use.image": "Use image"
     },
     "de":{
       "upload.image.contentLength.lowerbound": "Ein Foto muss eine Mindestgröße von 1kB haben.",
@@ -58,7 +61,8 @@
       "upload.image.save.button": "Speichern",
       "upload.image.cancel.button": "Abbrechen",
       "upload.image.add.image.button": "Add image",
-      "upload.image.delete.image.button": "Delete"
+      "upload.image.delete.image.button": "Delete",
+      "upload.image.use.image": "Use image"
     }
   }
 }

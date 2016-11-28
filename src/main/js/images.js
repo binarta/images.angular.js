@@ -677,41 +677,16 @@ function BinImageEnlargedController(imageManagement, $element) {
 function BinIconComponent() {
 
     this.bindings = {
-        iconCode: '@'
+        iconCode: '@',
+        code: '@'
     };
 
-    this.template = '<i class="fa {{$ctrl.iconValue}}"></i>';
+    this.template = '<span ng-switch="$ctrl.currentConfigValue"><img ng-switch-when="image" src="{{$ctrl.imageSrc}}" read-only><i ng-switch-default class="fa fa-fw {{$ctrl.currentConfigValue}}"></i></span> ';
 
-    this.controller = ['i18n', 'editMode', 'editModeRenderer', '$templateCache', '$scope', '$element', 'topicRegistry',
-        function (i18n, editMode, editModeRenderer, $templateCache, $scope, $element, topicRegistry) {
+    this.controller = ['i18n', 'editMode', 'editModeRenderer', '$templateCache', '$scope', '$element', 'binarta', 'configWriter', 'imageManagement', '$q',
+        function (i18n, editMode, editModeRenderer, $templateCache, $scope, $element, binarta, configWriter, imageManagement, $q) {
+
             var ctrl = this;
-            var ctx = {
-                code: ctrl.iconCode
-            };
-
-            i18n.resolve(ctx).then(function (value) {
-                updateIconValue(value);
-            });
-
-            function onEdit() {
-                var scope = $scope.$new();
-
-                editModeRenderer.open({
-                    template: $templateCache.get('bin-icon.html'),
-                    scope: scope
-                });
-
-                scope.cancel = editModeRenderer.close;
-                scope.submit = function () {
-                    ctx.locale = 'default';
-                    ctx.translation = scope.translation;
-                    i18n.translate(ctx).then(function () {
-                            updateIconValue(ctx.translation);
-                        }
-                    );
-                    scope.cancel();
-                }
-            }
 
             editMode.bindEvent({
                 scope: $scope,
@@ -720,18 +695,78 @@ function BinIconComponent() {
                 onClick: onEdit
             });
 
-            function updateIconValue(newValue) {
-                ctrl.iconValue = newValue;
+            binarta.schedule(function () {
+                binarta.application.config.findPublic(ctrl.code, function (configValue) {
+                    if (!configValue) resolveIconCode();
+                    else ctrl.currentConfigValue = configValue;
+                    if (ctrl.currentConfigValue == 'image') ctrl.imageSrc = getImageSrc();
+                });
+            });
+
+            function onEdit() {
+                var rendererScope = $scope.$new();
+                rendererScope.imageSrc = getImageSrc();
+
+                rendererScope.translation = ctrl.currentConfigValue;
+
+                editModeRenderer.open({
+                    template: $templateCache.get('bin-icon.html'),
+                    scope: rendererScope
+                });
+
+                rendererScope.cancel = editModeRenderer.close;
+
+                rendererScope.submit = function () {
+                    var iconValue = rendererScope.translation;
+                    updateConfig(iconValue);
+                    rendererScope.cancel();
+                };
+
+                rendererScope.useImage = function () {
+                    updateConfig('image');
+                    ctrl.imageSrc = getImageSrc();
+                    rendererScope.cancel();
+                };
+
+                rendererScope.openFileUpload = function () {
+                    imageManagement.fileUpload({
+                        dataType: 'json',
+                        add: function (e, file) {
+                            imageManagement.upload({
+                                file: file,
+                                code: ctrl.code,
+                                imageType: 'foreground'
+                            }).then(function () {
+                                rendererScope.imageSrc = getImageSrc();
+                            })
+                            rendererScope.violations = imageManagement.validate(file);
+                        }
+                    }).click();
+                }
             }
 
-            topicRegistry.subscribe('i18n.updated', translationUpdateListener);
-
-            function translationUpdateListener(ctx) {
-                if (ctx.code == ctrl.iconCode) updateIconValue(ctx.translation);
+            function getImageSrc() {
+                return imageManagement.getImageUrl({code: ctrl.code});
             }
 
-            ctrl.$onDestroy = function () {
-                topicRegistry.unsubscribe('i18n.updated', translationUpdateListener);
+            function resolveIconCode() {
+                var ctx = {code: ctrl.iconCode};
+                i18n.resolve(ctx).then(function (iconValue) {
+                    ctrl.iconValue = iconValue;
+                    updateConfig(iconValue);
+                });
+            };
+
+            function updateConfig(value) {
+                if (ctrl.currentConfigValue != value) {
+                    ctrl.currentConfigValue = value;
+                    configWriter({
+                        $scope: {},
+                        scope: 'public',
+                        key: ctrl.code,
+                        value: value
+                    });
+                }
             };
         }
     ];

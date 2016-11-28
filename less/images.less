@@ -10,6 +10,7 @@ img {
   opacity: 1;
   transition: opacity 0.3s ease-out, outline 0.3s ease-out;
 }
+
 [bin-image] {
   &.working,
   &.not-found {
@@ -19,6 +20,7 @@ img {
     visibility: hidden;
   }
 }
+
 [editmode="true"] {
   [bin-image].not-found {
     height: inherit;
@@ -43,11 +45,37 @@ img {
 }
 
 #bin-menu {
-  .bin-image-preview{
+  .bin-image-preview {
     img {
       max-width: 200px;
       max-height: 100px;
       margin: 10px 10px 0 0;
     }
+  }
+
+  .bin-icon-image {
+    border-bottom: 1px solid #d3d3d3;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+
+    img {
+      max-width: 360px;
+      margin: 10px 10px 0 0;
+      border-radius: 3px;
+    }
+
+    .btn {
+      display: table-cell;
+      vertical-align: bottom;
+    }
+  }
+}
+
+bin-icon {
+  display: inline-block;
+
+  img{
+    width:100%;
+    height: 100%;
   }
 }

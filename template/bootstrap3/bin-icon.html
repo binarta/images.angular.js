@@ -1,3 +1,10 @@
+<div class="bin-icon-image">
+<bin-violations class="bin-icon-violations" src="violations" fade-after="7000" code-prefix="upload.image"></bin-violations>
+<img ng-src="{{imageSrc}}" read-only ng-click="openFileUpload()">
+<button type='submit' class='btn btn-success' ng-click='useImage()' i18n code="upload.image.use.image" read-only>
+    {{var}}
+</button>
+</div>
 <form name="i18nForm" ng-submit="submit()" class="ng-pristine ng-valid ng-scope">
     <div class="bin-menu-edit-body">
         <div class="icons-list">
