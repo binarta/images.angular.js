@@ -14,7 +14,11 @@
       "upload.image.cancel.button": "Annuleren",
       "upload.image.add.image.button": "Foto toevoegen",
       "upload.image.delete.image.button": "Verwijderen",
-      "upload.image.use.image": "Gebruik afbeelding"
+      "upload.image.advice": "Voor het beste resultaat gebruik vierkante of ronde afbeelding",
+      "bin.icon.back.icons": "Terug naar icoontjes",
+      "bin.icon.upload.image": "Afbeelding toevoegen",
+      "bin.icon.ok": "OK",
+      "bin.icon.new.image": "Nieuwe afbeelding"
     },
     "en":{
       "upload.image.contentLength.lowerbound": "Your image must be at least 1kB.",
@@ -30,7 +34,11 @@
       "upload.image.cancel.button": "Cancel",
       "upload.image.add.image.button": "Add image",
       "upload.image.delete.image.button": "Delete",
-      "upload.image.use.image": "Use image"
+      "upload.image.advice": "For best results, use a square or a round image",
+      "bin.icon.back.icons": "Back to icons",
+      "bin.icon.upload.image": "Upload an image",
+      "bin.icon.ok": "OK",
+      "bin.icon.new.image": "New image"
     },
     "fr":{
       "upload.image.contentLength.lowerbound": "Une image doit peser minimum 1kB.",
@@ -46,7 +54,11 @@
       "upload.image.cancel.button": "Annuler",
       "upload.image.add.image.button": "Add image",
       "upload.image.delete.image.button": "Delete",
-      "upload.image.use.image": "Use image"
+      "upload.image.advice": "For best results, use a square or a round image",
+      "bin.icon.back.icons": "Back to icons",
+      "bin.icon.upload.image": "Upload an image",
+      "bin.icon.ok": "OK",
+      "bin.icon.new.image": "New image"
     },
     "de":{
       "upload.image.contentLength.lowerbound": "Ein Foto muss eine Mindestgröße von 1kB haben.",
@@ -62,7 +74,11 @@
       "upload.image.cancel.button": "Abbrechen",
       "upload.image.add.image.button": "Add image",
       "upload.image.delete.image.button": "Delete",
-      "upload.image.use.image": "Use image"
+      "upload.image.advice": "For best results, use a square or a round image",
+      "bin.icon.back.icons": "Back to icons",
+      "bin.icon.upload.image": "Upload an image",
+      "bin.icon.ok": "OK",
+      "bin.icon.new.image": "New image"
     }
   }
 }

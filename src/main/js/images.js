@@ -700,14 +700,14 @@ function BinIconComponent() {
                     if (!configValue) resolveIconCode();
                     else ctrl.currentConfigValue = configValue;
                     if (ctrl.currentConfigValue == 'image') ctrl.imageSrc = getImageSrc();
+                    setView(ctrl.currentConfigValue);
                 });
             });
 
             function onEdit() {
                 var rendererScope = $scope.$new();
                 rendererScope.imageSrc = getImageSrc();
-
-                rendererScope.translation = ctrl.currentConfigValue;
+                setView(ctrl.currentConfigValue);
 
                 editModeRenderer.open({
                     template: $templateCache.get('bin-icon.html'),
@@ -716,9 +716,13 @@ function BinIconComponent() {
 
                 rendererScope.cancel = editModeRenderer.close;
 
-                rendererScope.submit = function () {
-                    var iconValue = rendererScope.translation;
-                    updateConfig(iconValue);
+                if (ctrl.currentConfigValue != 'image') {
+                    rendererScope.translation = ctrl.currentConfigValue;
+                }
+
+                rendererScope.submit = function (value) {
+                    rendererScope.translation = value;
+                    updateConfig(value);
                     rendererScope.cancel();
                 };
 
@@ -729,17 +733,24 @@ function BinIconComponent() {
                 };
 
                 rendererScope.openFileUpload = function () {
+
                     imageManagement.fileUpload({
                         dataType: 'json',
                         add: function (e, file) {
+                            rendererScope.state = 'uploading';
                             imageManagement.upload({
                                 file: file,
                                 code: ctrl.code,
                                 imageType: 'foreground'
                             }).then(function () {
                                 rendererScope.imageSrc = getImageSrc();
+                                rendererScope.state = '';
                             })
                             rendererScope.violations = imageManagement.validate(file);
+
+                            if (rendererScope.violations.length > 0) {
+                                rendererScope.state = '';
+                            }
                         }
                     }).click();
                 }
@@ -767,7 +778,11 @@ function BinIconComponent() {
                         value: value
                     });
                 }
-            };
+            }
+
+            function setView(value) {
+                value == 'image' ? ctrl.view = 'image' : ctrl.view = 'icon';
+            }
         }
     ];
 }

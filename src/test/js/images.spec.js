@@ -1886,6 +1886,10 @@ describe('image-management', function () {
                 expect(i18n.resolve).toHaveBeenCalledWith(ctx);
             });
 
+            it('state is set to icon', function () {
+                expect(ctrl.view).toEqual('icon');
+            });
+
             describe('icon value is resolved', function () {
                 beforeEach(function () {
                     i18n.resolveDeferred.resolve('fa-test');
@@ -1929,6 +1933,10 @@ describe('image-management', function () {
                 it('currentConfigValue is set to image', function () {
                     expect(ctrl.currentConfigValue).toEqual('image');
                 });
+
+                it('view is set to image', function () {
+                    expect(ctrl.view).toEqual('image');
+                });
             });
 
             describe('when icon is active', function () {
@@ -1940,6 +1948,10 @@ describe('image-management', function () {
                 it('icon value is available on ctrl', function () {
                     expect(ctrl.currentConfigValue).toEqual('fa-bike');
                 });
+
+                it('view is set to icon', function () {
+                    expect(ctrl.view).toEqual('icon');
+                });
             });
         });
 
@@ -1948,6 +1960,7 @@ describe('image-management', function () {
                 var rendererScope;
 
                 beforeEach(function () {
+                    ctrl.currentConfigValue = 'fa-test';
                     editMode.bindEvent.calls.mostRecent().args[0].onClick();
                     rendererScope = renderer.open.calls.first().args[0].scope;
                 });
@@ -1965,12 +1978,19 @@ describe('image-management', function () {
                     expect(renderer.close).toHaveBeenCalled();
                 });
 
-                describe('when using an icon', function () {
+                it('when current choice is an icon, translation is available on the scope', function () {
+                    expect(rendererScope.translation).toEqual('fa-test');
+                });
+
+                it('view is set to according to the currentConfigValue', function () {
+                    expect(ctrl.view).toEqual('icon');
+                });
+
+                describe('when setting an icon', function () {
 
                     describe('on submit', function () {
                         beforeEach(function () {
-                            rendererScope.translation = 'fa-pencil';
-                            rendererScope.submit();
+                            rendererScope.submit('fa-pencil');
                         });
 
                         it('new icon code is used', function () {
@@ -1993,7 +2013,7 @@ describe('image-management', function () {
                     });
                 });
 
-                describe('when using an image', function () {
+                describe('when setting an image', function () {
                     var deferred;
                     beforeEach(function () {
                         binarta.application.gateway.addPublicConfig({id: 'test.code', value: 'image'});
@@ -2024,15 +2044,24 @@ describe('image-management', function () {
                             });
                         });
 
+                        it('state is set to uploading', function () {
+                            imageManagement.fileUpload.calls.mostRecent().args[0].add(null, file);
+                            expect(rendererScope.state).toEqual('uploading');
+                        });
+
                         describe('and upload succeeded', function () {
                             beforeEach(function () {
                                 imageManagement.fileUpload.calls.mostRecent().args[0].add(null, file);
+                                deferred.resolve();
+                                $scope.$digest();
                             });
 
                             it('image source is set on scope', function () {
-                                deferred.resolve();
-                                $scope.$digest();
                                 expect(rendererScope.imageSrc).toEqual('www.image.url');
+                            });
+
+                            it('uploading state is removed', function () {
+                                expect(rendererScope.state).toEqual('');
                             });
                         });
 
@@ -2049,6 +2078,10 @@ describe('image-management', function () {
 
                             it('image source is not updated', function () {
                                 expect(rendererScope.imageSrc).toEqual('www.old-value.com');
+                            });
+
+                            it('uploading state is removed', function () {
+                                expect(rendererScope.state).toEqual('');
                             });
                         });
                     });
