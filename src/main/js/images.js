@@ -681,7 +681,7 @@ function BinIconComponent() {
         code: '@'
     };
 
-    this.template = '<span ng-switch="$ctrl.currentConfigValue"><img ng-switch-when="image" src="{{$ctrl.imageSrc}}" read-only><i ng-switch-default class="fa fa-fw {{$ctrl.currentConfigValue}}"></i></span> ';
+    this.templateUrl = 'bin-icon.html';
 
     this.controller = ['i18n', 'editMode', 'editModeRenderer', '$templateCache', '$scope', '$element', 'binarta', 'configWriter', 'imageManagement', '$q',
         function (i18n, editMode, editModeRenderer, $templateCache, $scope, $element, binarta, configWriter, imageManagement, $q) {
@@ -698,62 +698,13 @@ function BinIconComponent() {
             binarta.schedule(function () {
                 binarta.application.config.findPublic(ctrl.code, function (configValue) {
                     if (!configValue) resolveIconCode();
-                    else ctrl.currentConfigValue = configValue;
-                    if (ctrl.currentConfigValue == 'image') ctrl.imageSrc = getImageSrc();
-                    setView(ctrl.currentConfigValue);
+                    else ctrl.iconValue = configValue;
+                    if (isImage()) ctrl.imageSrc = getImageSrc();
                 });
             });
 
-            function onEdit() {
-                var rendererScope = $scope.$new();
-                rendererScope.imageSrc = getImageSrc();
-                setView(ctrl.currentConfigValue);
-
-                editModeRenderer.open({
-                    template: $templateCache.get('bin-icon.html'),
-                    scope: rendererScope
-                });
-
-                rendererScope.cancel = editModeRenderer.close;
-
-                if (ctrl.currentConfigValue != 'image') {
-                    rendererScope.translation = ctrl.currentConfigValue;
-                }
-
-                rendererScope.submit = function (value) {
-                    rendererScope.translation = value;
-                    updateConfig(value);
-                    rendererScope.cancel();
-                };
-
-                rendererScope.useImage = function () {
-                    updateConfig('image');
-                    ctrl.imageSrc = getImageSrc();
-                    rendererScope.cancel();
-                };
-
-                rendererScope.openFileUpload = function () {
-
-                    imageManagement.fileUpload({
-                        dataType: 'json',
-                        add: function (e, file) {
-                            rendererScope.state = 'uploading';
-                            imageManagement.upload({
-                                file: file,
-                                code: ctrl.code,
-                                imageType: 'foreground'
-                            }).then(function () {
-                                rendererScope.imageSrc = getImageSrc();
-                                rendererScope.state = '';
-                            })
-                            rendererScope.violations = imageManagement.validate(file);
-
-                            if (rendererScope.violations.length > 0) {
-                                rendererScope.state = '';
-                            }
-                        }
-                    }).click();
-                }
+            function isImage() {
+                return ctrl.iconValue == 'image';
             }
 
             function getImageSrc() {
@@ -763,25 +714,105 @@ function BinIconComponent() {
             function resolveIconCode() {
                 var ctx = {code: ctrl.iconCode};
                 i18n.resolve(ctx).then(function (iconValue) {
+                    updateConfig({value: iconValue});
                     ctrl.iconValue = iconValue;
-                    updateConfig(iconValue);
                 });
-            };
+            }
 
-            function updateConfig(value) {
-                if (ctrl.currentConfigValue != value) {
-                    ctrl.currentConfigValue = value;
+            function updateConfig(args) {
+                if (ctrl.iconValue == args.value) onSuccess();
+                else {
                     configWriter({
-                        $scope: {},
                         scope: 'public',
                         key: ctrl.code,
-                        value: value
+                        value: args.value
+                    }).then(function () {
+                        ctrl.iconValue = args.value;
+                        onSuccess();
                     });
+                }
+
+                function onSuccess() {
+                    if (args.success) args.success();
                 }
             }
 
-            function setView(value) {
-                value == 'image' ? ctrl.view = 'image' : ctrl.view = 'icon';
+            function onEdit() {
+                var rendererScope = $scope.$new();
+                rendererScope.cancel = editModeRenderer.close;
+                rendererScope.state = isImage() ? new ImageState() : new IconState();
+
+                rendererScope.submit = function () {
+                    rendererScope.state.submit();
+                };
+
+                rendererScope.changeView = function () {
+                    rendererScope.state.changeView();
+                };
+
+                rendererScope.upload = function () {
+                    rendererScope.state.upload();
+                };
+
+                function IconState() {
+                    this.name = 'icon';
+                    this.icon = ctrl.iconValue == 'image' ? '' : ctrl.iconValue;
+
+                    this.submit = function () {
+                        updateConfig({value: this.icon, success: rendererScope.cancel});
+                    };
+
+                    this.changeView = function () {
+                        rendererScope.state = new ImageState();
+                    };
+
+                    this.upload = function () {
+                    };
+                }
+
+                function ImageState() {
+                    this.name = 'image';
+                    this.imageSrc = getImageSrc();
+
+                    this.submit = function () {
+                        updateConfig({value:'image', success: function(){
+                            ctrl.imageSrc = getImageSrc();
+                            rendererScope.cancel();
+                        }});
+                    };
+
+                    this.changeView = function () {
+                        rendererScope.state = new IconState();
+                    };
+
+                    this.upload = function () {
+                        imageManagement.fileUpload({
+                            dataType: 'json',
+                            add: function (e, file) {
+                                rendererScope.violations = imageManagement.validate(file);
+                                if (rendererScope.violations.length <= 0) {
+                                    rendererScope.uploading = true;
+                                    imageManagement.upload({
+                                        file: file,
+                                        code: ctrl.code,
+                                        imageType: 'foreground'
+                                    }).then(function () {
+                                        rendererScope.imageSrc = getImageSrc();
+                                    }, function (reason) {
+                                        rendererScope.violations = [reason];
+                                    }).finally(function () {
+                                        rendererScope.uploading = false;
+                                    });
+                                }
+                            }
+                        }).click();
+                    };
+                }
+
+                editModeRenderer.open({
+                    templateUrl: 'bin-icon-edit.html',
+                    scope: rendererScope
+                });
             }
         }
     ];

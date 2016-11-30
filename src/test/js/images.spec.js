@@ -1841,8 +1841,8 @@ describe('image-management', function () {
         });
     });
 
-    describe('binIconComponent', function () {
-        var $scope, ctrl, editMode, renderer, i18n, imageManagement, configWriter, $q;
+    describe('binIcon component', function () {
+        var $scope, ctrl, editMode, renderer, i18n, imageManagement, configWriter, $q, imageSrc, configWriterDeferred;
         var element = angular.element('<div></div>');
         var bindings = {iconCode: 'test.icon', code: 'test.code'};
 
@@ -1852,10 +1852,13 @@ describe('image-management', function () {
             editMode = _editMode_;
             renderer = _editModeRenderer_;
             i18n = _i18n_;
-            configWriter = _configWriter_;
             imageManagement = _imageManagement_;
+            configWriter = _configWriter_;
             $q = _$q_;
-            spyOn(imageManagement, 'getImageUrl').and.returnValue('www.image.url');
+            configWriterDeferred = $q.defer();
+            configWriter.and.returnValue(configWriterDeferred.promise);
+            imageSrc ='www.image.url';
+            spyOn(imageManagement, 'getImageUrl').and.returnValue(imageSrc);
         }));
 
         function triggerBinartaSchedule() {
@@ -1871,11 +1874,10 @@ describe('image-management', function () {
             });
         });
 
-        describe('when config does not contain the key', function () {
+        describe('when public config does not contain any value', function () {
             var ctx;
 
             beforeEach(function () {
-                binarta.application.gateway.addPublicConfig({});
                 triggerBinartaSchedule();
                 ctx = {
                     code: ctrl.iconCode
@@ -1884,10 +1886,6 @@ describe('image-management', function () {
 
             it('icon value is requested', function () {
                 expect(i18n.resolve).toHaveBeenCalledWith(ctx);
-            });
-
-            it('state is set to icon', function () {
-                expect(ctrl.view).toEqual('icon');
             });
 
             describe('icon value is resolved', function () {
@@ -1902,15 +1900,14 @@ describe('image-management', function () {
 
                 it('config is updated', function () {
                     expect(configWriter).toHaveBeenCalledWith({
-                        $scope: {},
                         scope: 'public',
                         key: 'test.code',
                         value: 'fa-test'
                     });
                 });
 
-                it('correct currentConfigValue is set', function () {
-                    expect(ctrl.currentConfigValue).toEqual('fa-test');
+                it('correct iconValue is set', function () {
+                    expect(ctrl.iconValue).toEqual('fa-test');
                 });
             });
         });
@@ -1930,12 +1927,8 @@ describe('image-management', function () {
                     expect(ctrl.imageSrc).toEqual('www.image.url');
                 });
 
-                it('currentConfigValue is set to image', function () {
-                    expect(ctrl.currentConfigValue).toEqual('image');
-                });
-
-                it('view is set to image', function () {
-                    expect(ctrl.view).toEqual('image');
+                it('iconValue is set to image', function () {
+                    expect(ctrl.iconValue).toEqual('image');
                 });
             });
 
@@ -1946,11 +1939,7 @@ describe('image-management', function () {
                 });
 
                 it('icon value is available on ctrl', function () {
-                    expect(ctrl.currentConfigValue).toEqual('fa-bike');
-                });
-
-                it('view is set to icon', function () {
-                    expect(ctrl.view).toEqual('icon');
+                    expect(ctrl.iconValue).toEqual('fa-bike');
                 });
             });
         });
@@ -1959,73 +1948,183 @@ describe('image-management', function () {
             describe('on click', function () {
                 var rendererScope;
 
-                beforeEach(function () {
-                    ctrl.currentConfigValue = 'fa-test';
-                    editMode.bindEvent.calls.mostRecent().args[0].onClick();
-                    rendererScope = renderer.open.calls.first().args[0].scope;
+                describe('when an icon was displayed on a page', function () {
+                    beforeEach(function () {
+                        ctrl.iconValue = 'fa-test';
+                        editMode.bindEvent.calls.mostRecent().args[0].onClick();
+                        rendererScope = renderer.open.calls.first().args[0].scope;
+                    });
+
+                    it('editModeRenderer is called', function () {
+                        expect(renderer.open).toHaveBeenCalledWith({
+                            scope: rendererScope,
+                            templateUrl: 'bin-icon-edit.html'
+                        });
+                    });
+
+                    it('is in icon state', function () {
+                        expect(rendererScope.state.name).toEqual('icon');
+                    });
+
+                    it('icon is available on the state', function () {
+                        expect(rendererScope.state.icon).toEqual('fa-test');
+                    });
+
+                    it('image source is not on state', function(){
+                        expect(rendererScope.state.imageSrc).toBeUndefined();
+                    });
+
+                    it('on cancel', function () {
+                        rendererScope.cancel();
+                        expect(renderer.close).toHaveBeenCalled();
+                    });
+
+                    describe('when switching to an image state', function () {
+                        beforeEach(function () {
+                            rendererScope.changeView();
+                        });
+
+                        it('is in image state', function () {
+                            expect(rendererScope.state.name).toEqual('image');
+                        });
+
+                        it('imageSrc is available', function(){
+                            expect(rendererScope.state.imageSrc).toEqual(imageSrc);
+                        });
+
+                        it('icon is not available on the state', function () {
+                            expect(rendererScope.state.icon).toBeUndefined();
+                        });
+                    });
                 });
 
-                it('editModeRenderer is called', function () {
-                    expect(renderer.open).toHaveBeenCalled();
-                });
+                describe('when an image was displayed on a page', function () {
+                    beforeEach(function () {
+                        ctrl.iconValue = 'image';
+                        editMode.bindEvent.calls.mostRecent().args[0].onClick();
+                        rendererScope = renderer.open.calls.first().args[0].scope;
+                    });
 
-                it('image src is available on renderer', function () {
-                    expect(rendererScope.imageSrc).toEqual('www.image.url');
-                });
 
-                it('on cancel', function () {
-                    rendererScope.cancel();
-                    expect(renderer.close).toHaveBeenCalled();
-                });
+                    it('state is set to image', function () {
+                        expect(rendererScope.state.name).toEqual('image');
+                    });
 
-                it('when current choice is an icon, translation is available on the scope', function () {
-                    expect(rendererScope.translation).toEqual('fa-test');
-                });
+                    it('editModeRenderer is called', function () {
+                        expect(renderer.open).toHaveBeenCalledWith({
+                            scope: rendererScope,
+                            templateUrl: 'bin-icon-edit.html'
+                        });
+                    });
 
-                it('view is set to according to the currentConfigValue', function () {
-                    expect(ctrl.view).toEqual('icon');
+                    it('icon is not available on the state', function () {
+                        expect(rendererScope.state.icon).toBeUndefined();
+                    });
+
+                    it('image src is available on the state', function () {
+                        expect(rendererScope.state.imageSrc).toEqual(imageSrc);
+                    });
+
+                    it('on cancel', function () {
+                        rendererScope.cancel();
+                        expect(renderer.close).toHaveBeenCalled();
+                    });
+
+                    describe('when switching to an icon state', function () {
+                        beforeEach(function () {
+                            rendererScope.changeView();
+                        });
+
+                        it('is in icon state', function () {
+                            expect(rendererScope.state.name).toEqual('icon');
+                        });
+
+                        it('imageSrc is not available', function(){
+                            expect(rendererScope.state.imageSrc).toBeUndefined();
+                        });
+
+                        it('no specific icon value was set', function () {
+                            expect(rendererScope.state.icon).toEqual('');
+                        });
+                    });
                 });
 
                 describe('when setting an icon', function () {
+                    beforeEach(function () {
+                        ctrl.iconValue = 'f';
+                        editMode.bindEvent.calls.mostRecent().args[0].onClick();
+                        rendererScope = renderer.open.calls.first().args[0].scope;
+                    });
 
                     describe('on submit', function () {
                         beforeEach(function () {
-                            rendererScope.submit('fa-pencil');
-                        });
-
-                        it('new icon code is used', function () {
-                            expect(ctrl.currentConfigValue).toEqual('fa-pencil');
+                            rendererScope.state.icon = 'fa-pencil';
+                            rendererScope.submit();
                         });
 
                         it('config is updated with the new icon value', function () {
                             expect(configWriter).toHaveBeenCalledWith({
-                                $scope: {},
                                 scope: 'public',
                                 key: 'test.code',
                                 value: 'fa-pencil'
                             });
                         });
 
-                        it('window is closed', function () {
-                            expect(renderer.close).toHaveBeenCalled();
+                        describe('on config updated', function(){
+                            beforeEach(function(){
+                                configWriterDeferred.resolve();
+                                $scope.$digest();
+                            });
+
+                            it('new icon code is used', function () {
+                                expect(ctrl.iconValue).toEqual('fa-pencil');
+                            });
+
+                            it('renderer is closed', function () {
+                                expect(renderer.close).toHaveBeenCalled();
+                            });
+                        });
+
+                        describe('on config update failure', function(){
+                            beforeEach(function(){
+                                configWriterDeferred.reject();
+                                $scope.$digest();
+                            });
+
+                            it('new icon code is not used', function () {
+                                expect(ctrl.iconValue).toEqual('f');
+                            });
+
+                            //TODO check violations
+
+                            it('renderer is not closed', function () {
+                                expect(renderer.close).not.toHaveBeenCalled();
+                            });
                         });
 
                     });
                 });
 
                 describe('when setting an image', function () {
-                    var deferred;
+                    var uploadDeferred;
+
                     beforeEach(function () {
-                        binarta.application.gateway.addPublicConfig({id: 'test.code', value: 'image'});
-                        triggerBinartaSchedule();
+                        editMode.bindEvent.calls.mostRecent().args[0].onClick();
+                        rendererScope = renderer.open.calls.first().args[0].scope;
+                        rendererScope.changeView();
+                    });
+
+                    it('state is set to image', function () {
+                       expect(rendererScope.state.name).toEqual('image');
                     });
 
                     describe('on uploading new image', function () {
                         beforeEach(function () {
-                            deferred = $q.defer();
-                            spyOn(imageManagement, 'upload').and.returnValue(deferred.promise);
+                            uploadDeferred = $q.defer();
+                            spyOn(imageManagement, 'upload').and.returnValue(uploadDeferred.promise);
                             spyOn(imageManagement, 'fileUpload').and.returnValue({click: jasmine.createSpy('spy')});
-                            rendererScope.openFileUpload();
+                            rendererScope.upload();
+                            imageManagement.fileUpload.calls.mostRecent().args[0].add(null, file);
                         });
 
                         it('fileUpload function is triggered', function () {
@@ -2035,33 +2134,47 @@ describe('image-management', function () {
                             });
                         });
 
-                        it('upload is called with correct parameters', function () {
-                            imageManagement.fileUpload.calls.mostRecent().args[0].add(null, file);
-                            expect(imageManagement.upload).toHaveBeenCalledWith({
-                                file: file,
-                                code: 'test.code',
-                                imageType: 'foreground'
-                            });
-                        });
-
-                        it('state is set to uploading', function () {
-                            imageManagement.fileUpload.calls.mostRecent().args[0].add(null, file);
-                            expect(rendererScope.state).toEqual('uploading');
-                        });
-
-                        describe('and upload succeeded', function () {
+                        describe('and file is valid', function () {
                             beforeEach(function () {
-                                imageManagement.fileUpload.calls.mostRecent().args[0].add(null, file);
-                                deferred.resolve();
-                                $scope.$digest();
+                                spyOn(imageManagement, 'validate').and.returnValue([]);
                             });
 
-                            it('image source is set on scope', function () {
-                                expect(rendererScope.imageSrc).toEqual('www.image.url');
+                            it('upload is called with correct parameters', function () {
+                                expect(imageManagement.upload).toHaveBeenCalledWith({
+                                    file: file,
+                                    code: 'test.code',
+                                    imageType: 'foreground'
+                                });
                             });
 
-                            it('uploading state is removed', function () {
-                                expect(rendererScope.state).toEqual('');
+                            it('is uploading', function () {
+                                expect(rendererScope.uploading).toBeTruthy();
+                            });
+
+                            describe('and upload succeeded', function () {
+                                beforeEach(function () {
+                                    uploadDeferred.resolve();
+                                    $scope.$digest();
+                                });
+
+                                it('image source is set on scope', function () {
+                                    expect(rendererScope.imageSrc).toEqual(imageSrc);
+                                });
+
+                                it('not uploading anymore', function () {
+                                    expect(rendererScope.uploading).toBeFalsy();
+                                });
+                            });
+
+                            describe('and upload failed', function () {
+                                beforeEach(function () {
+                                    uploadDeferred.reject('upload.failed');
+                                    $scope.$digest();
+                                });
+
+                                it('correct violation is set on scope ', function () {
+                                    expect(rendererScope.violations).toEqual(['upload.failed']);
+                                });
                             });
                         });
 
@@ -2075,46 +2188,30 @@ describe('image-management', function () {
                             it('violations are set on scope', function () {
                                 expect(rendererScope.violations).toEqual(['invalid']);
                             });
-
-                            it('image source is not updated', function () {
-                                expect(rendererScope.imageSrc).toEqual('www.old-value.com');
-                            });
-
-                            it('uploading state is removed', function () {
-                                expect(rendererScope.state).toEqual('');
-                            });
                         });
                     });
 
                     describe('on confirming image use', function () {
+                        beforeEach(function () {
+                           imageManagement.getImageUrl.calls.reset();
+                        });
 
-                        it('image source on gets updated', function () {
+                        it('image source gets updated', function () {
                             ctrl.imageSrc = 'www.old-value.com';
-                            rendererScope.useImage();
+                            rendererScope.submit();
+                            configWriterDeferred.resolve();
+                            rendererScope.$digest();
                             expect(imageManagement.getImageUrl).toHaveBeenCalled();
-                            expect(ctrl.imageSrc).toEqual('www.image.url');
+                            expect(ctrl.imageSrc).toEqual(imageSrc);
+                            expect(ctrl.iconValue).toEqual('image');
+                            expect(rendererScope.cancel).toHaveBeenCalled();
                         });
 
                         it('config does not get updated when switching from image to a different image', function () {
-                            ctrl.currentConfigValue = 'image';
-                            rendererScope.useImage();
+                            ctrl.iconValue = 'image';
+                            rendererScope.submit();
                             expect(configWriter).not.toHaveBeenCalled();
-                        });
-
-                        it('config gets updated when switching from an icon to an image', function () {
-                            ctrl.currentConfigValue = 'fa-bike';
-                            rendererScope.useImage();
-                            expect(configWriter).toHaveBeenCalledWith({
-                                $scope: {},
-                                scope: 'public',
-                                key: 'test.code',
-                                value: 'image'
-                            });
-                            expect(ctrl.currentConfigValue).toEqual('image');
-                        });
-
-                        it('window is closed', function () {
-                            rendererScope.useImage();
+                            expect(imageManagement.getImageUrl).toHaveBeenCalled();
                             expect(rendererScope.cancel).toHaveBeenCalled();
                         });
                     });
