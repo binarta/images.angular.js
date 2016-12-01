@@ -683,8 +683,8 @@ function BinIconComponent() {
 
     this.templateUrl = 'bin-icon.html';
 
-    this.controller = ['i18n', 'editMode', 'editModeRenderer', '$templateCache', '$scope', '$element', 'binarta', 'configWriter', 'imageManagement', '$q',
-        function (i18n, editMode, editModeRenderer, $templateCache, $scope, $element, binarta, configWriter, imageManagement, $q) {
+    this.controller = ['i18n', 'editMode', 'editModeRenderer', '$scope', '$element', 'binarta', 'configWriter', 'imageManagement',
+        function (i18n, editMode, editModeRenderer, $scope, $element, binarta, configWriter, imageManagement) {
             var ctrl = this;
             var code = 'icons'+ctrl.code;
 
