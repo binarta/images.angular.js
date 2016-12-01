@@ -1,2 +1,2 @@
-<img ng-if="$ctrl.iconValue == 'image'" src="{{$ctrl.imageSrc}}" read-only>
-<i ng-if="$ctrl.iconValue != 'image'" class="fa fa-fw {{$ctrl.iconValue}}"></i>
+<img ng-if="$ctrl.iconValue == 'image'" class="bin-icon" ng-src="{{$ctrl.imageSrc}}">
+<i ng-if="$ctrl.iconValue != 'image'" class="bin-icon fa fa-fw" ng-class="$ctrl.iconValue"></i>
