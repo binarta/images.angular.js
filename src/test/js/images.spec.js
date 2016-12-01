@@ -1844,7 +1844,7 @@ describe('image-management', function () {
     describe('binIcon component', function () {
         var $scope, ctrl, editMode, renderer, i18n, imageManagement, configWriter, $q, imageSrc, configWriterDeferred;
         var element = angular.element('<div></div>');
-        var bindings = {iconCode: 'test.icon', code: 'test.code'};
+        var bindings = {iconCode: 'test.icon', code: '/test.code'};
 
         beforeEach(inject(function ($componentController, $rootScope, _editMode_, _editModeRenderer_, _i18n_, _configWriter_, _imageManagement_, _$q_) {
             $scope = $rootScope.$new();
@@ -1857,7 +1857,7 @@ describe('image-management', function () {
             $q = _$q_;
             configWriterDeferred = $q.defer();
             configWriter.and.returnValue(configWriterDeferred.promise);
-            imageSrc ='www.image.url';
+            imageSrc = 'www.image.url';
             spyOn(imageManagement, 'getImageUrl').and.returnValue(imageSrc);
         }));
 
@@ -1901,7 +1901,7 @@ describe('image-management', function () {
                 it('config is updated', function () {
                     expect(configWriter).toHaveBeenCalledWith({
                         scope: 'public',
-                        key: 'test.code',
+                        key: 'icons/test.code',
                         value: 'fa-test'
                     });
                 });
@@ -1915,12 +1915,12 @@ describe('image-management', function () {
         describe('correct media is rendered according to type', function () {
             describe('when image is active', function () {
                 beforeEach(function () {
-                    binarta.application.gateway.addPublicConfig({id: 'test.code', value: 'image'});
+                    binarta.application.gateway.addPublicConfig({id: 'icons/test.code', value: 'image'});
                     triggerBinartaSchedule();
                 });
 
                 it('imageUrl is requested', function () {
-                    expect(imageManagement.getImageUrl).toHaveBeenCalledWith({code: 'test.code'});
+                    expect(imageManagement.getImageUrl).toHaveBeenCalledWith({code: 'icons/test.code'});
                 });
 
                 it('image source is set on ctrl', function () {
@@ -1934,7 +1934,7 @@ describe('image-management', function () {
 
             describe('when icon is active', function () {
                 beforeEach(function () {
-                    binarta.application.gateway.addPublicConfig({id: 'test.code', value: 'fa-bike'});
+                    binarta.application.gateway.addPublicConfig({id: 'icons/test.code', value: 'fa-bike'});
                     triggerBinartaSchedule();
                 });
 
@@ -1970,7 +1970,7 @@ describe('image-management', function () {
                         expect(rendererScope.state.icon).toEqual('fa-test');
                     });
 
-                    it('image source is not on state', function(){
+                    it('image source is not on state', function () {
                         expect(rendererScope.state.imageSrc).toBeUndefined();
                     });
 
@@ -1988,7 +1988,7 @@ describe('image-management', function () {
                             expect(rendererScope.state.name).toEqual('image');
                         });
 
-                        it('imageSrc is available', function(){
+                        it('imageSrc is available', function () {
                             expect(rendererScope.state.imageSrc).toEqual(imageSrc);
                         });
 
@@ -2001,6 +2001,7 @@ describe('image-management', function () {
                 describe('when an image was displayed on a page', function () {
                     beforeEach(function () {
                         ctrl.iconValue = 'image';
+                        ctrl.imageSrc = 'another.url';
                         editMode.bindEvent.calls.mostRecent().args[0].onClick();
                         rendererScope = renderer.open.calls.first().args[0].scope;
                     });
@@ -2022,7 +2023,7 @@ describe('image-management', function () {
                     });
 
                     it('image src is available on the state', function () {
-                        expect(rendererScope.state.imageSrc).toEqual(imageSrc);
+                        expect(rendererScope.state.imageSrc).toEqual('another.url');
                     });
 
                     it('on cancel', function () {
@@ -2039,7 +2040,7 @@ describe('image-management', function () {
                             expect(rendererScope.state.name).toEqual('icon');
                         });
 
-                        it('imageSrc is not available', function(){
+                        it('imageSrc is not available', function () {
                             expect(rendererScope.state.imageSrc).toBeUndefined();
                         });
 
@@ -2065,13 +2066,13 @@ describe('image-management', function () {
                         it('config is updated with the new icon value', function () {
                             expect(configWriter).toHaveBeenCalledWith({
                                 scope: 'public',
-                                key: 'test.code',
+                                key: 'icons/test.code',
                                 value: 'fa-pencil'
                             });
                         });
 
-                        describe('on config updated', function(){
-                            beforeEach(function(){
+                        describe('on config updated', function () {
+                            beforeEach(function () {
                                 configWriterDeferred.resolve();
                                 $scope.$digest();
                             });
@@ -2085,8 +2086,8 @@ describe('image-management', function () {
                             });
                         });
 
-                        describe('on config update failure', function(){
-                            beforeEach(function(){
+                        describe('on config update failure', function () {
+                            beforeEach(function () {
                                 configWriterDeferred.reject();
                                 $scope.$digest();
                             });
@@ -2095,7 +2096,9 @@ describe('image-management', function () {
                                 expect(ctrl.iconValue).toEqual('f');
                             });
 
-                            //TODO check violations
+                            it('violations are set on scope', function () {
+                                expect(rendererScope.state.violations).toEqual(['update.failed']);
+                            });
 
                             it('renderer is not closed', function () {
                                 expect(renderer.close).not.toHaveBeenCalled();
@@ -2109,13 +2112,18 @@ describe('image-management', function () {
                     var uploadDeferred;
 
                     beforeEach(function () {
+                        binarta.application.gateway.addPublicConfig({id: 'icons/test.code', value: 'image'});
+                        triggerBinartaSchedule();
                         editMode.bindEvent.calls.mostRecent().args[0].onClick();
                         rendererScope = renderer.open.calls.first().args[0].scope;
-                        rendererScope.changeView();
+                    });
+
+                    it('previous image source exists', function () {
+                        expect(ctrl.imageSrc).toEqual(imageSrc);
                     });
 
                     it('state is set to image', function () {
-                       expect(rendererScope.state.name).toEqual('image');
+                        expect(rendererScope.state.name).toEqual('image');
                     });
 
                     describe('on uploading new image', function () {
@@ -2142,27 +2150,37 @@ describe('image-management', function () {
                             it('upload is called with correct parameters', function () {
                                 expect(imageManagement.upload).toHaveBeenCalledWith({
                                     file: file,
-                                    code: 'test.code',
+                                    code: 'icons/test.code',
                                     imageType: 'foreground'
                                 });
                             });
 
                             it('is uploading', function () {
-                                expect(rendererScope.uploading).toBeTruthy();
+                                expect(rendererScope.state.uploading).toBeTruthy();
                             });
 
                             describe('and upload succeeded', function () {
+                                var newImageSrc = 'new-image.url';
                                 beforeEach(function () {
+                                    imageManagement.getImageUrl.and.returnValue(newImageSrc);
                                     uploadDeferred.resolve();
                                     $scope.$digest();
                                 });
 
-                                it('image source is set on scope', function () {
-                                    expect(rendererScope.imageSrc).toEqual(imageSrc);
+                                it('image source is set on state', function () {
+                                    expect(rendererScope.state.imageSrc).toEqual(newImageSrc);
                                 });
 
                                 it('not uploading anymore', function () {
-                                    expect(rendererScope.uploading).toBeFalsy();
+                                    expect(rendererScope.state.uploading).toBeFalsy();
+                                });
+
+                                it('new image source is set on ctrl', function () {
+                                    expect(ctrl.imageSrc).toEqual(newImageSrc);
+                                });
+
+                                it('renderer is closed', function () {
+                                    expect(renderer.close).toHaveBeenCalled();
                                 });
                             });
 
@@ -2173,7 +2191,7 @@ describe('image-management', function () {
                                 });
 
                                 it('correct violation is set on scope ', function () {
-                                    expect(rendererScope.violations).toEqual(['upload.failed']);
+                                    expect(rendererScope.state.violations).toEqual(['upload.failed']);
                                 });
                             });
                         });
@@ -2186,33 +2204,8 @@ describe('image-management', function () {
                             });
 
                             it('violations are set on scope', function () {
-                                expect(rendererScope.violations).toEqual(['invalid']);
+                                expect(rendererScope.state.violations).toEqual(['invalid']);
                             });
-                        });
-                    });
-
-                    describe('on confirming image use', function () {
-                        beforeEach(function () {
-                           imageManagement.getImageUrl.calls.reset();
-                        });
-
-                        it('image source gets updated', function () {
-                            ctrl.imageSrc = 'www.old-value.com';
-                            rendererScope.submit();
-                            configWriterDeferred.resolve();
-                            rendererScope.$digest();
-                            expect(imageManagement.getImageUrl).toHaveBeenCalled();
-                            expect(ctrl.imageSrc).toEqual(imageSrc);
-                            expect(ctrl.iconValue).toEqual('image');
-                            expect(rendererScope.cancel).toHaveBeenCalled();
-                        });
-
-                        it('config does not get updated when switching from image to a different image', function () {
-                            ctrl.iconValue = 'image';
-                            rendererScope.submit();
-                            expect(configWriter).not.toHaveBeenCalled();
-                            expect(imageManagement.getImageUrl).toHaveBeenCalled();
-                            expect(rendererScope.cancel).toHaveBeenCalled();
                         });
                     });
                 });

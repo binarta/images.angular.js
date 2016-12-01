@@ -1,2 +1,2 @@
-<span ng-switch="$ctrl.iconValue"><img ng-switch-when="image" src="{{$ctrl.imageSrc}}" read-only><i
-        ng-switch-default class="fa fa-fw {{$ctrl.iconValue}}"></i></span>
+<img ng-if="$ctrl.iconValue == 'image'" src="{{$ctrl.imageSrc}}" read-only>
+<i ng-if="$ctrl.iconValue != 'image'" class="fa fa-fw {{$ctrl.iconValue}}"></i>

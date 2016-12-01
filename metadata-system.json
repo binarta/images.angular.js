@@ -4,7 +4,7 @@
       "upload.image.contentLength.lowerbound": "De foto moet minimum 1kB groot zijn.",
       "upload.image.contentLength.upperbound": "De foto mag maximum 10MB groot zijn.",
       "upload.image.contentType.whitelist": "Ongeldige foto.",
-      "upload.image.upload.failed": "De upload is mislukt vanwege problemen met het netwerk. Gelieve opnieuw te proberen.",
+      "upload.image.upload.failed": "De upload is mislukt vanwege netwerkproblemen. Gelieve opnieuw te proberen.",
       "upload.image.images.upperbound": "Het maximum aantal foto's is bereikt.",
       "upload.image.images.lowerbound": "Er moet minstens 1 foto zijn.",
       "upload.image.no.images.yet": "Er zijn nog geen foto's.",
@@ -15,10 +15,11 @@
       "upload.image.add.image.button": "Foto toevoegen",
       "upload.image.delete.image.button": "Verwijderen",
       "upload.image.advice": "Voor het beste resultaat gebruik vierkante of ronde afbeelding",
-      "bin.icon.back.icons": "Terug naar icoontjes",
+      "bin.icon.back.icons": "Icoontjes",
       "bin.icon.upload.image": "Afbeelding toevoegen",
       "bin.icon.ok": "OK",
-      "bin.icon.new.image": "Nieuwe afbeelding"
+      "bin.icon.new.image": "Nieuwe afbeelding",
+      "bin.icon.update.failed": "De update is mislukt vanwege netwerkproblemen. Gelieve opnieuw te proberen."
     },
     "en":{
       "upload.image.contentLength.lowerbound": "Your image must be at least 1kB.",
@@ -38,7 +39,8 @@
       "bin.icon.back.icons": "Back to icons",
       "bin.icon.upload.image": "Upload an image",
       "bin.icon.ok": "OK",
-      "bin.icon.new.image": "New image"
+      "bin.icon.new.image": "New image",
+      "bin.icon.update.failed": "The update failed due to network problems. Please try again."
     },
     "fr":{
       "upload.image.contentLength.lowerbound": "Une image doit peser minimum 1kB.",
@@ -58,7 +60,8 @@
       "bin.icon.back.icons": "Back to icons",
       "bin.icon.upload.image": "Upload an image",
       "bin.icon.ok": "OK",
-      "bin.icon.new.image": "New image"
+      "bin.icon.new.image": "New image",
+      "bin.icon.update.failed": "The update failed due to network problems. Please try again."
     },
     "de":{
       "upload.image.contentLength.lowerbound": "Ein Foto muss eine Mindestgröße von 1kB haben.",
@@ -78,7 +81,8 @@
       "bin.icon.back.icons": "Back to icons",
       "bin.icon.upload.image": "Upload an image",
       "bin.icon.ok": "OK",
-      "bin.icon.new.image": "New image"
+      "bin.icon.new.image": "New image",
+      "bin.icon.update.failed": "The update failed due to network problems. Please try again."
     }
   }
 }

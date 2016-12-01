@@ -685,8 +685,8 @@ function BinIconComponent() {
 
     this.controller = ['i18n', 'editMode', 'editModeRenderer', '$templateCache', '$scope', '$element', 'binarta', 'configWriter', 'imageManagement', '$q',
         function (i18n, editMode, editModeRenderer, $templateCache, $scope, $element, binarta, configWriter, imageManagement, $q) {
-
             var ctrl = this;
+            var code = 'icons'+ctrl.code;
 
             editMode.bindEvent({
                 scope: $scope,
@@ -696,7 +696,7 @@ function BinIconComponent() {
             });
 
             binarta.schedule(function () {
-                binarta.application.config.findPublic(ctrl.code, function (configValue) {
+                binarta.application.config.findPublic(code, function (configValue) {
                     if (!configValue) resolveIconCode();
                     else ctrl.iconValue = configValue;
                     if (isImage()) ctrl.imageSrc = getImageSrc();
@@ -708,7 +708,7 @@ function BinIconComponent() {
             }
 
             function getImageSrc() {
-                return imageManagement.getImageUrl({code: ctrl.code});
+                return imageManagement.getImageUrl({code: code});
             }
 
             function resolveIconCode() {
@@ -724,11 +724,13 @@ function BinIconComponent() {
                 else {
                     configWriter({
                         scope: 'public',
-                        key: ctrl.code,
+                        key: code,
                         value: args.value
                     }).then(function () {
                         ctrl.iconValue = args.value;
                         onSuccess();
+                    }, function () {
+                        if (args.error) args.error();
                     });
                 }
 
@@ -755,11 +757,16 @@ function BinIconComponent() {
                 };
 
                 function IconState() {
+                    var state = this;
                     this.name = 'icon';
                     this.icon = ctrl.iconValue == 'image' ? '' : ctrl.iconValue;
 
                     this.submit = function () {
-                        updateConfig({value: this.icon, success: rendererScope.cancel});
+                        updateConfig({
+                            value: this.icon, success: rendererScope.cancel, error: function () {
+                                state.violations = ['update.failed'];
+                            }
+                        });
                     };
 
                     this.changeView = function () {
@@ -771,14 +778,17 @@ function BinIconComponent() {
                 }
 
                 function ImageState() {
+                    var state = this;
                     this.name = 'image';
-                    this.imageSrc = getImageSrc();
+                    this.imageSrc = ctrl.imageSrc ? ctrl.imageSrc : getImageSrc();
 
                     this.submit = function () {
-                        updateConfig({value:'image', success: function(){
-                            ctrl.imageSrc = getImageSrc();
-                            rendererScope.cancel();
-                        }});
+                        updateConfig({
+                            value: 'image', success: function () {
+                                ctrl.imageSrc = getImageSrc();
+                                rendererScope.cancel();
+                            }
+                        });
                     };
 
                     this.changeView = function () {
@@ -789,21 +799,23 @@ function BinIconComponent() {
                         imageManagement.fileUpload({
                             dataType: 'json',
                             add: function (e, file) {
-                                rendererScope.violations = imageManagement.validate(file);
-                                if (rendererScope.violations.length <= 0) {
-                                    rendererScope.uploading = true;
+                                state.violations = imageManagement.validate(file);
+                                if (state.violations.length <= 0) {
+                                    state.uploading = true;
                                     imageManagement.upload({
                                         file: file,
-                                        code: ctrl.code,
+                                        code: code,
                                         imageType: 'foreground'
                                     }).then(function () {
-                                        rendererScope.imageSrc = getImageSrc();
+                                        state.imageSrc = getImageSrc();
+                                        state.submit();
                                     }, function (reason) {
-                                        rendererScope.violations = [reason];
+                                        state.violations = [reason];
                                     }).finally(function () {
-                                        rendererScope.uploading = false;
+                                        state.uploading = false;
                                     });
                                 }
+                                rendererScope.$apply();
                             }
                         }).click();
                     };

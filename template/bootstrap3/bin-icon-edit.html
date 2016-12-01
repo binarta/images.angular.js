@@ -11,9 +11,9 @@
                         <button type='button' class='btn btn-success' ng-click='upload()' i18n
                                 code="bin.icon.new.image" read-only ng-bind="var"></button>
                         <p i18n code="upload.image.advice" read-only><i class='fa fa-fw fa-info-circle '></i>{{var}}</p>
-                        <bin-violations class="bin-icon-violations" src="violations" fade-after="7000"
+                        <bin-violations class="bin-icon-violations" src="state.violations" fade-after="7000"
                                         code-prefix="upload.image"></bin-violations>
-                        <p ng-if='state == "uploading"' i18n code="upload.image.uploading"
+                        <p ng-if='state.uploading' i18n code="upload.image.uploading"
                            default="Bezig met uploaden..." read-only><i class='fa fa-spinner fa-spin fa-fw'></i> {{var}}
                         </p>
                     </div>
@@ -22,6 +22,8 @@
         </div>
 
         <div ng-switch-default>
+            <bin-violations class="bin-icon-violations" src="state.violations" fade-after="7000"
+                            code-prefix="bin.icon"></bin-violations>
             <div class="icons-list">
                 <button ng-click="state.icon='fa-'" title="" ng-class="{'active':state.icon == 'fa-'}"><i
                         class="fa fa- fa-fw"></i></button>
