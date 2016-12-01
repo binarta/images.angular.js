@@ -714,7 +714,6 @@ function BinIconComponent() {
             function resolveIconCode() {
                 var ctx = {code: ctrl.iconCode};
                 i18n.resolve(ctx).then(function (iconValue) {
-                    updateConfig({value: iconValue});
                     ctrl.iconValue = iconValue;
                 });
             }
@@ -763,7 +762,9 @@ function BinIconComponent() {
 
                     this.submit = function () {
                         updateConfig({
-                            value: this.icon, success: rendererScope.cancel, error: function () {
+                            value: this.icon,
+                            success: rendererScope.cancel,
+                            error: function () {
                                 state.violations = ['update.failed'];
                             }
                         });
@@ -784,7 +785,8 @@ function BinIconComponent() {
 
                     this.submit = function () {
                         updateConfig({
-                            value: 'image', success: function () {
+                            value: 'image',
+                            success: function () {
                                 ctrl.imageSrc = getImageSrc();
                                 rendererScope.cancel();
                             }

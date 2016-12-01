@@ -1898,14 +1898,6 @@ describe('image-management', function () {
                     expect(ctrl.iconValue).toEqual('fa-test');
                 });
 
-                it('config is updated', function () {
-                    expect(configWriter).toHaveBeenCalledWith({
-                        scope: 'public',
-                        key: 'icons/test.code',
-                        value: 'fa-test'
-                    });
-                });
-
                 it('correct iconValue is set', function () {
                     expect(ctrl.iconValue).toEqual('fa-test');
                 });
