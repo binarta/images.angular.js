@@ -1938,10 +1938,11 @@ describe('image-management', function () {
 
         describe('when user is in edit mode', function () {
             describe('on click', function () {
-                var rendererScope;
+                var rendererScope, permission;
 
                 describe('when an icon was displayed on a page', function () {
                     beforeEach(function () {
+                        permission = 'video.config.update';
                         ctrl.iconValue = 'fa-test';
                         editMode.bindEvent.calls.mostRecent().args[0].onClick();
                         rendererScope = renderer.open.calls.first().args[0].scope;
@@ -1971,21 +1972,50 @@ describe('image-management', function () {
                         expect(renderer.close).toHaveBeenCalled();
                     });
 
-                    describe('when switching to an image state', function () {
+                    describe('when user has no permission', function () {
+                        it('upload is not permitted', function () {
+                            expect(rendererScope.state.isUploadPermitted).toBeFalsy();
+                        });
+
+                        describe('and switching to an image state', function () {
+                            beforeEach(function () {
+                                rendererScope.changeView();
+                            });
+
+                            it('is still in icon state', function () {
+                                expect(rendererScope.state.name).toEqual('icon');
+                            });
+                        });
+                    });
+
+                    describe('when user has permission', function () {
                         beforeEach(function () {
-                            rendererScope.changeView();
+                            binarta.checkpoint.gateway.addPermission(permission);
+                            binarta.checkpoint.profile.refresh();
                         });
 
-                        it('is in image state', function () {
-                            expect(rendererScope.state.name).toEqual('image');
+                        it('upload is permitted', function () {
+                            editMode.bindEvent.calls.mostRecent().args[0].onClick();
+                            rendererScope = renderer.open.calls.mostRecent().args[0].scope;
+                            expect(rendererScope.state.isUploadPermitted).toBeTruthy();
                         });
 
-                        it('imageSrc is available', function () {
-                            expect(rendererScope.state.imageSrc).toEqual(imageSrc);
-                        });
+                        describe('and switching to an image state', function () {
+                            beforeEach(function () {
+                                rendererScope.changeView();
+                            });
 
-                        it('icon is not available on the state', function () {
-                            expect(rendererScope.state.icon).toBeUndefined();
+                            it('is in image state', function () {
+                                expect(rendererScope.state.name).toEqual('image');
+                            });
+
+                            it('imageSrc is available', function () {
+                                expect(rendererScope.state.imageSrc).toEqual(imageSrc);
+                            });
+
+                            it('icon is not available on the state', function () {
+                                expect(rendererScope.state.icon).toBeUndefined();
+                            });
                         });
                     });
                 });
@@ -1994,50 +2024,68 @@ describe('image-management', function () {
                     beforeEach(function () {
                         ctrl.iconValue = 'image';
                         ctrl.imageSrc = 'another.url';
-                        editMode.bindEvent.calls.mostRecent().args[0].onClick();
-                        rendererScope = renderer.open.calls.first().args[0].scope;
+
                     });
 
-
-                    it('state is set to image', function () {
-                        expect(rendererScope.state.name).toEqual('image');
-                    });
-
-                    it('editModeRenderer is called', function () {
-                        expect(renderer.open).toHaveBeenCalledWith({
-                            scope: rendererScope,
-                            templateUrl: 'bin-icon-edit.html'
-                        });
-                    });
-
-                    it('icon is not available on the state', function () {
-                        expect(rendererScope.state.icon).toBeUndefined();
-                    });
-
-                    it('image src is available on the state', function () {
-                        expect(rendererScope.state.imageSrc).toEqual('another.url');
-                    });
-
-                    it('on cancel', function () {
-                        rendererScope.cancel();
-                        expect(renderer.close).toHaveBeenCalled();
-                    });
-
-                    describe('when switching to an icon state', function () {
+                    describe('and user has no permission', function () {
                         beforeEach(function () {
-                            rendererScope.changeView();
+                            editMode.bindEvent.calls.mostRecent().args[0].onClick();
+                            rendererScope = renderer.open.calls.first().args[0].scope;
                         });
 
                         it('is in icon state', function () {
                             expect(rendererScope.state.name).toEqual('icon');
                         });
+                    });
 
-                        it('imageSrc is not available', function () {
-                            expect(rendererScope.state.imageSrc).toBeUndefined();
+                    describe('and user has permission', function () {
+                        beforeEach(function () {
+                            binarta.checkpoint.gateway.addPermission(permission);
+                            binarta.checkpoint.profile.refresh();
+                            editMode.bindEvent.calls.mostRecent().args[0].onClick();
+                            rendererScope = renderer.open.calls.first().args[0].scope;
                         });
 
-                        it('no specific icon value was set', function () {
-                            expect(rendererScope.state.icon).toEqual('');
+                        it('state is set to image', function () {
+                            expect(rendererScope.state.name).toEqual('image');
+                        });
+
+                        it('editModeRenderer is called', function () {
+                            expect(renderer.open).toHaveBeenCalledWith({
+                                scope: rendererScope,
+                                templateUrl: 'bin-icon-edit.html'
+                            });
+                        });
+
+                        it('icon is not available on the state', function () {
+                            expect(rendererScope.state.icon).toBeUndefined();
+                        });
+
+                        it('image src is available on the state', function () {
+                            expect(rendererScope.state.imageSrc).toEqual('another.url');
+                        });
+
+                        it('on cancel', function () {
+                            rendererScope.cancel();
+                            expect(renderer.close).toHaveBeenCalled();
+                        });
+
+                        describe('when switching to an icon state', function () {
+                            beforeEach(function () {
+                                rendererScope.changeView();
+                            });
+
+                            it('is in icon state', function () {
+                                expect(rendererScope.state.name).toEqual('icon');
+                            });
+
+                            it('imageSrc is not available', function () {
+                                expect(rendererScope.state.imageSrc).toBeUndefined();
+                            });
+
+                            it('no specific icon value was set', function () {
+                                expect(rendererScope.state.icon).toEqual('');
+                            });
                         });
                     });
                 });
@@ -2104,6 +2152,8 @@ describe('image-management', function () {
                     var uploadDeferred;
 
                     beforeEach(function () {
+                        binarta.checkpoint.gateway.addPermission(permission);
+                        binarta.checkpoint.profile.refresh();
                         binarta.application.gateway.addPublicConfig({id: 'icons/test.code', value: 'image'});
                         triggerBinartaSchedule();
                         editMode.bindEvent.calls.mostRecent().args[0].onClick();

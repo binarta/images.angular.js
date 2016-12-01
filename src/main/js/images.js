@@ -741,7 +741,7 @@ function BinIconComponent() {
             function onEdit() {
                 var rendererScope = $scope.$new();
                 rendererScope.cancel = editModeRenderer.close;
-                rendererScope.state = isImage() ? new ImageState() : new IconState();
+                rendererScope.state = isImage() && isUploadPermitted() ? new ImageState() : new IconState();
 
                 rendererScope.submit = function () {
                     rendererScope.state.submit();
@@ -759,6 +759,7 @@ function BinIconComponent() {
                     var state = this;
                     this.name = 'icon';
                     this.icon = ctrl.iconValue == 'image' ? '' : ctrl.iconValue;
+                    this.isUploadPermitted = isUploadPermitted();
 
                     this.submit = function () {
                         updateConfig({
@@ -771,7 +772,7 @@ function BinIconComponent() {
                     };
 
                     this.changeView = function () {
-                        rendererScope.state = new ImageState();
+                        if (isUploadPermitted()) rendererScope.state = new ImageState();
                     };
 
                     this.upload = function () {
@@ -798,29 +799,33 @@ function BinIconComponent() {
                     };
 
                     this.upload = function () {
-                        imageManagement.fileUpload({
-                            dataType: 'json',
-                            add: function (e, file) {
-                                state.violations = imageManagement.validate(file);
-                                if (state.violations.length <= 0) {
-                                    state.uploading = true;
-                                    imageManagement.upload({
-                                        file: file,
-                                        code: code,
-                                        imageType: 'foreground'
-                                    }).then(function () {
-                                        state.imageSrc = getImageSrc();
-                                        state.submit();
-                                    }, function (reason) {
-                                        state.violations = [reason];
-                                    }).finally(function () {
-                                        state.uploading = false;
-                                    });
-                                }
-                                rendererScope.$apply();
-                            }
-                        }).click();
+                        imageManagement.fileUpload({dataType: 'json', add: fileSelection}).click();
                     };
+
+                    function fileSelection(e, file) {
+                        state.violations = imageManagement.validate(file);
+                        if (state.violations.length <= 0) {
+                            state.uploading = true;
+                            imageManagement.upload({
+                                file: file,
+                                code: code,
+                                imageType: 'foreground'
+                            }).then(function () {
+                                state.imageSrc = getImageSrc();
+                                state.submit();
+                            }, function (reason) {
+                                state.violations = [reason];
+                            }).finally(function () {
+                                state.uploading = false;
+                            });
+                        }
+                        rendererScope.$apply();
+                    }
+                }
+
+                function isUploadPermitted() {
+                    //TODO: update to icon.upload when this permission becomes available
+                    return binarta.checkpoint.profile.hasPermission('video.config.update');
                 }
 
                 editModeRenderer.open({

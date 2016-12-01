@@ -80,14 +80,15 @@
             </div>
         </div>
     </div>
-    <div ng-switch="state.name" class="bin-menu-edit-actions">
-        <button ng-switch-when="image" class="btn btn-default pull-left" ng-click="changeView()"
+    <div class="bin-menu-edit-actions">
+        <button ng-if="state.name == 'image'" class="btn btn-default pull-left" ng-click="changeView()"
                 i18n code="bin.icon.back.icons" read-only ng-bind="var"></button>
-        <button ng-switch-default class="btn btn-default pull-left" ng-click="changeView()"
+        <button ng-if="state.name != 'image' && state.isUploadPermitted"
+                class="btn btn-default pull-left" ng-click="changeView()"
                 i18n code="bin.icon.upload.image" read-only ng-bind="var"></button>
         <button type="reset" class="btn btn-default pull-right" ng-click="cancel()"
                 i18n code="i18n.menu.cancel.button" read-only ng-bind="var"></button>
-        <button ng-switch-when="image" type="submit" class='btn btn-primary pull-right'
+        <button ng-if="state.name == 'image'" type="submit" class='btn btn-primary pull-right'
                 i18n code="bin.icon.ok" read-only ng-bind="var"></button>
     </div>
 </form>
