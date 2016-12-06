@@ -678,7 +678,8 @@ function BinIconComponent() {
 
     this.bindings = {
         iconCode: '@',
-        code: '@'
+        code: '@',
+        height: '@'
     };
 
     this.templateUrl = 'bin-icon.html';
@@ -708,7 +709,7 @@ function BinIconComponent() {
             }
 
             function getImageSrc() {
-                return imageManagement.getImageUrl({code: code});
+                return imageManagement.getImageUrl({code: code + ($ctrl.height ? '?height=' + $ctrl.height : '')});
             }
 
             function resolveIconCode() {

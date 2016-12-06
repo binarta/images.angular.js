@@ -1842,12 +1842,14 @@ describe('image-management', function () {
     });
 
     describe('binIcon component', function () {
-        var $scope, ctrl, editMode, renderer, i18n, imageManagement, configWriter, $q, imageSrc, configWriterDeferred;
+        var $scope, $componentController, ctrl, editMode, renderer, i18n, imageManagement, configWriter, $q, imageSrc, configWriterDeferred;
         var element = angular.element('<div></div>');
-        var bindings = {iconCode: 'test.icon', code: '/test.code'};
+        var bindings;
 
-        beforeEach(inject(function ($componentController, $rootScope, _editMode_, _editModeRenderer_, _i18n_, _configWriter_, _imageManagement_, _$q_) {
+        beforeEach(inject(function (_$componentController_, $rootScope, _editMode_, _editModeRenderer_, _i18n_, _configWriter_, _imageManagement_, _$q_) {
             $scope = $rootScope.$new();
+            $componentController = _$componentController_;
+            bindings = {iconCode: 'test.icon', code: '/test.code'};
             ctrl = $componentController('binIcon', {$element: element, $scope: $scope}, bindings);
             editMode = _editMode_;
             renderer = _editModeRenderer_;
@@ -1911,16 +1913,28 @@ describe('image-management', function () {
                     triggerBinartaSchedule();
                 });
 
-                it('imageUrl is requested', function () {
-                    expect(imageManagement.getImageUrl).toHaveBeenCalledWith({code: 'icons/test.code'});
-                });
-
                 it('image source is set on ctrl', function () {
                     expect(ctrl.imageSrc).toEqual('www.image.url');
                 });
 
                 it('iconValue is set to image', function () {
                     expect(ctrl.iconValue).toEqual('image');
+                });
+
+                it('imageUrl is requested', function () {
+                    expect(imageManagement.getImageUrl).toHaveBeenCalledWith({code: 'icons/test.code'});
+                });
+
+                describe('when height attribute is given', function () {
+                    beforeEach(function () {
+                        imageManagement.getImageUrl.calls.reset();
+                        bindings.height = 100;
+                        ctrl = $componentController('binIcon', {$element: element, $scope: $scope}, bindings);
+                    });
+
+                    it('imageUrl is requested with height param', function () {
+                        expect(imageManagement.getImageUrl).toHaveBeenCalledWith({code: 'icons/test.code?height=100'});
+                    });
                 });
             });
 
