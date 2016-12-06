@@ -685,8 +685,8 @@ function BinIconComponent() {
 
     this.controller = ['i18n', 'editMode', 'editModeRenderer', '$scope', '$element', 'binarta', 'configWriter', 'imageManagement',
         function (i18n, editMode, editModeRenderer, $scope, $element, binarta, configWriter, imageManagement) {
-            var ctrl = this;
-            var code = 'icons'+ctrl.code;
+            var $ctrl = this;
+            var code = 'icons' + $ctrl.code;
 
             editMode.bindEvent({
                 scope: $scope,
@@ -698,13 +698,13 @@ function BinIconComponent() {
             binarta.schedule(function () {
                 binarta.application.config.findPublic(code, function (configValue) {
                     if (!configValue) resolveIconCode();
-                    else ctrl.iconValue = configValue;
-                    if (isImage()) ctrl.imageSrc = getImageSrc();
+                    else $ctrl.iconValue = configValue;
+                    if (isImage()) $ctrl.imageSrc = getImageSrc();
                 });
             });
 
             function isImage() {
-                return ctrl.iconValue == 'image';
+                return $ctrl.iconValue == 'image';
             }
 
             function getImageSrc() {
@@ -712,21 +712,21 @@ function BinIconComponent() {
             }
 
             function resolveIconCode() {
-                var ctx = {code: ctrl.iconCode};
+                var ctx = {code: $ctrl.iconCode};
                 i18n.resolve(ctx).then(function (iconValue) {
-                    ctrl.iconValue = iconValue;
+                    $ctrl.iconValue = iconValue;
                 });
             }
 
             function updateConfig(args) {
-                if (ctrl.iconValue == args.value) onSuccess();
+                if ($ctrl.iconValue == args.value) onSuccess();
                 else {
                     configWriter({
                         scope: 'public',
                         key: code,
                         value: args.value
                     }).then(function () {
-                        ctrl.iconValue = args.value;
+                        $ctrl.iconValue = args.value;
                         onSuccess();
                     }, function () {
                         if (args.error) args.error();
@@ -758,7 +758,7 @@ function BinIconComponent() {
                 function IconState() {
                     var state = this;
                     this.name = 'icon';
-                    this.icon = ctrl.iconValue == 'image' ? '' : ctrl.iconValue;
+                    this.icon = $ctrl.iconValue == 'image' ? '' : $ctrl.iconValue;
                     this.isUploadPermitted = isUploadPermitted();
 
                     this.submit = function () {
@@ -782,13 +782,13 @@ function BinIconComponent() {
                 function ImageState() {
                     var state = this;
                     this.name = 'image';
-                    this.imageSrc = ctrl.imageSrc ? ctrl.imageSrc : getImageSrc();
+                    this.imageSrc = $ctrl.imageSrc ? $ctrl.imageSrc : getImageSrc();
 
                     this.submit = function () {
                         updateConfig({
                             value: 'image',
                             success: function () {
-                                ctrl.imageSrc = getImageSrc();
+                                $ctrl.imageSrc = getImageSrc();
                                 rendererScope.cancel();
                             }
                         });
