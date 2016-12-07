@@ -1849,7 +1849,7 @@ describe('image-management', function () {
         beforeEach(inject(function (_$componentController_, $rootScope, _editMode_, _editModeRenderer_, _i18n_, _configWriter_, _imageManagement_, _$q_) {
             $scope = $rootScope.$new();
             $componentController = _$componentController_;
-            bindings = {iconCode: 'test.icon', code: '/test.code'};
+            bindings = {iconCode: 'test.icon', code: '/test.code', default: 'default'};
             ctrl = $componentController('binIcon', {$element: element, $scope: $scope}, bindings);
             editMode = _editMode_;
             renderer = _editModeRenderer_;
@@ -1890,7 +1890,7 @@ describe('image-management', function () {
                 expect(i18n.resolve).toHaveBeenCalledWith(ctx);
             });
 
-            describe('icon value is resolved', function () {
+            describe('icon value is resolved from i18n', function () {
                 beforeEach(function () {
                     i18n.resolveDeferred.resolve('fa-test');
                     $scope.$digest();
@@ -1899,9 +1899,16 @@ describe('image-management', function () {
                 it('icon value is available on ctrl', function () {
                     expect(ctrl.iconValue).toEqual('fa-test');
                 });
+            });
 
-                it('correct iconValue is set', function () {
-                    expect(ctrl.iconValue).toEqual('fa-test');
+            describe('icon value cannot be resolved from i18n', function () {
+                beforeEach(function () {
+                    i18n.resolveDeferred.reject();
+                    $scope.$digest();
+                });
+
+                it('default icon value is available on ctrl', function () {
+                    expect(ctrl.iconValue).toEqual('default');
                 });
             });
         });

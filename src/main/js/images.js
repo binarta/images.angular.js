@@ -679,6 +679,7 @@ function BinIconComponent() {
     this.bindings = {
         iconCode: '@',
         code: '@',
+        default: '@',
         height: '@'
     };
 
@@ -716,6 +717,8 @@ function BinIconComponent() {
                 var ctx = {code: $ctrl.iconCode};
                 i18n.resolve(ctx).then(function (iconValue) {
                     $ctrl.iconValue = iconValue;
+                }, function () {
+                    $ctrl.iconValue = $ctrl.default;
                 });
             }
 
