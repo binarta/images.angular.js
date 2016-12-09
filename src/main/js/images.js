@@ -675,12 +675,13 @@ function BinImageEnlargedController(imageManagement, $element) {
 }
 
 function BinIconComponent() {
-
     this.bindings = {
         iconCode: '@',
         code: '@',
         default: '@',
-        height: '@'
+        height: '@',
+        link: '<?',
+        linkTarget: '<?'
     };
 
     this.templateUrl = 'bin-icon.html';
