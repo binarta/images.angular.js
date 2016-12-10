@@ -686,8 +686,8 @@ function BinIconComponent() {
 
     this.templateUrl = 'bin-icon.html';
 
-    this.controller = ['i18n', 'editMode', 'editModeRenderer', '$scope', '$element', 'binarta', 'configWriter', 'imageManagement',
-        function (i18n, editMode, editModeRenderer, $scope, $element, binarta, configWriter, imageManagement) {
+    this.controller = ['editMode', 'editModeRenderer', '$scope', '$element', 'binarta', 'configWriter', 'imageManagement',
+        function (editMode, editModeRenderer, $scope, $element, binarta, configWriter, imageManagement) {
             var $ctrl = this;
             var code = 'icons' + $ctrl.code;
 
@@ -700,7 +700,7 @@ function BinIconComponent() {
 
             binarta.schedule(function () {
                 binarta.application.config.findPublic(code, function (configValue) {
-                    if (!configValue) resolveIconCode();
+                    if (!configValue) setDefaultIconValue();
                     else $ctrl.iconValue = configValue;
                     if (isImage()) $ctrl.imageSrc = getImageSrc();
                 });
@@ -714,13 +714,8 @@ function BinIconComponent() {
                 return imageManagement.getImageUrl({code: code + ($ctrl.height ? '?height=' + $ctrl.height : '')});
             }
 
-            function resolveIconCode() {
-                var ctx = {code: $ctrl.iconCode};
-                i18n.resolve(ctx).then(function (iconValue) {
-                    $ctrl.iconValue = iconValue;
-                }, function () {
-                    $ctrl.iconValue = $ctrl.default;
-                });
+            function setDefaultIconValue() {
+                $ctrl.iconValue = $ctrl.default;
             }
 
             function updateConfig(args) {

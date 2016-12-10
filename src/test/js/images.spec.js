@@ -1842,18 +1842,17 @@ describe('image-management', function () {
     });
 
     describe('binIcon component', function () {
-        var $scope, $componentController, ctrl, editMode, renderer, i18n, imageManagement, configWriter, $q, imageSrc, configWriterDeferred;
+        var $scope, $componentController, ctrl, editMode, renderer, imageManagement, configWriter, $q, imageSrc, configWriterDeferred;
         var element = angular.element('<div></div>');
         var bindings;
 
-        beforeEach(inject(function (_$componentController_, $rootScope, _editMode_, _editModeRenderer_, _i18n_, _configWriter_, _imageManagement_, _$q_) {
+        beforeEach(inject(function (_$componentController_, $rootScope, _editMode_, _editModeRenderer_, _configWriter_, _imageManagement_, _$q_) {
             $scope = $rootScope.$new();
             $componentController = _$componentController_;
             bindings = {iconCode: 'test.icon', code: '/test.code', default: 'default'};
             ctrl = $componentController('binIcon', {$element: element, $scope: $scope}, bindings);
             editMode = _editMode_;
             renderer = _editModeRenderer_;
-            i18n = _i18n_;
             imageManagement = _imageManagement_;
             configWriter = _configWriter_;
             $q = _$q_;
@@ -1877,39 +1876,12 @@ describe('image-management', function () {
         });
 
         describe('when public config does not contain any value', function () {
-            var ctx;
-
             beforeEach(function () {
                 triggerBinartaSchedule();
-                ctx = {
-                    code: ctrl.iconCode
-                };
             });
 
-            it('icon value is requested', function () {
-                expect(i18n.resolve).toHaveBeenCalledWith(ctx);
-            });
-
-            describe('icon value is resolved from i18n', function () {
-                beforeEach(function () {
-                    i18n.resolveDeferred.resolve('fa-test');
-                    $scope.$digest();
-                });
-
-                it('icon value is available on ctrl', function () {
-                    expect(ctrl.iconValue).toEqual('fa-test');
-                });
-            });
-
-            describe('icon value cannot be resolved from i18n', function () {
-                beforeEach(function () {
-                    i18n.resolveDeferred.reject();
-                    $scope.$digest();
-                });
-
-                it('default icon value is available on ctrl', function () {
-                    expect(ctrl.iconValue).toEqual('default');
-                });
+            it('default icon value is used', function () {
+                expect(ctrl.iconValue).toEqual('default');
             });
         });
 
