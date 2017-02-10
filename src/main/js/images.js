@@ -1,20 +1,18 @@
 angular.module('image-management', ['config', 'image.rest', 'notifications', 'toggle.edit.mode', 'binarta-checkpointjs-angular1', 'image-management.templates'])
-    .service('imageManagement', ['$q', 'config', 'imagePathBuilder', 'uploader', '$rootScope', '$timeout', 'binarta', '$log', ImageManagementService])
+    .service('imageManagement', ['$q', 'config', 'uploader', '$timeout', 'binarta', '$log', ImageManagementService])
     .directive('binImage', ['imageManagement', 'binarta', BinImageDirectiveFactory])
     .directive('binBackgroundImage', ['imageManagement', 'binarta', BinBackgroundImageDirectiveFactory])
-    .factory('imagePathBuilder', ['$rootScope', ImagePathBuilderFactory])
     .component('binImageEnlarged', new BinImageEnlargedComponent())
     .component('binIcon', new BinIconComponent())
-    .controller('binImageController', ['$scope', '$element', '$q', 'imageManagement', 'editModeRenderer', 'binarta', 'ngRegisterTopicHandler', '$window', BinImageController])
-    .run(['$rootScope', function ($rootScope) {
-        $rootScope.image = {
-            uploaded: [],
-            defaultTimeStamp: new Date().getTime()
-        };
-    }]);
+    .controller('binImageController', ['$scope', '$element', '$q', 'imageManagement', 'editModeRenderer', 'binarta', 'ngRegisterTopicHandler', '$window', BinImageController]);
 
-function ImageManagementService($q, config, imagePathBuilder, uploader, $rootScope, $timeout, binarta, $log) {
+function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
     var self = this;
+
+    this.image = {
+        uploaded: [],
+        defaultTimeStamp: new Date().getTime()
+    };
 
     this.getLowerbound = function () {
         return config.image && config.image.upload && config.image.upload.lowerbound ? config.image.upload.lowerbound : 1024;
@@ -25,18 +23,7 @@ function ImageManagementService($q, config, imagePathBuilder, uploader, $rootSco
     };
 
     this.getImageUrl = function (args) {
-        function get(cache) {
-            return config.awsPath + imagePathBuilder({
-                    cache: cache,
-                    path: args.code,
-                    parentWidth: args.width
-                });
-        }
-
-        if (binarta.checkpoint.profile.hasPermission('image.upload'))
-            return get(false);
-        else
-            return get(config.image && config.image.cache);
+        return config.awsPath + getImagePath({path: args.code, width: args.width});
     };
 
     this.getImagePath = function (args) {
@@ -65,7 +52,7 @@ function ImageManagementService($q, config, imagePathBuilder, uploader, $rootSco
 
         uploader.upload({
             success: function (payload) {
-                $rootScope.image.uploaded[args.code] = new Date().getTime();
+                self.image.uploaded[args.code] = new Date().getTime();
                 deferred.resolve(payload);
             },
             rejected: function () {
@@ -83,6 +70,60 @@ function ImageManagementService($q, config, imagePathBuilder, uploader, $rootSco
     this.triggerFileUpload = function () {
         getFileUploadElement().click();
     };
+
+    function getImagePath(args) {
+        var path = args.width != undefined ? getSizedImage(args) : args.path;
+        if (requiresTimestampedUrl(args.path)) path += getSeparator(path) + getTimeStamp(args.path);
+        return path;
+    }
+
+    function getSizedImage(args) {
+        return args.path + '?width=' + convertToRangedWidth(args.width)
+    }
+
+    function convertToRangedWidth(width) {
+        var w;
+        [
+            {lowerbound: 0, upperbound: 60, actual: 60},
+            {lowerbound: 61, upperbound: 160, actual: 160},
+            {lowerbound: 161, upperbound: 320, actual: 320},
+            {lowerbound: 321, upperbound: 480, actual: 480},
+            {lowerbound: 481, upperbound: 768, actual: 768},
+            {lowerbound: 769, upperbound: 992, actual: 992},
+            {lowerbound: 993, upperbound: 1200, actual: 1200},
+            {lowerbound: 1201, upperbound: 1920, actual: 1920},
+            {lowerbound: 1921, upperbound: 4096, actual: 4096}
+        ].forEach(function (v) {
+            if (width >= v.lowerbound && width <= v.upperbound) {
+                w = v.actual;
+            }
+        });
+        return w || 1024;
+    }
+
+    function requiresTimestampedUrl(code) {
+        return !isCacheEnabled() || hasImageBeenUploaded(code);
+    }
+
+    function getSeparator(path) {
+        return pathDoesNotContainQueryString(path) ? '?' : '&';
+    }
+
+    function pathDoesNotContainQueryString(path) {
+        return path.indexOf('?') == -1;
+    }
+
+    function isCacheEnabled() {
+        return binarta.checkpoint.profile.hasPermission('image.upload') ? false : config.image && config.image.cache;
+    }
+
+    function hasImageBeenUploaded(code) {
+        return self.image.uploaded[code];
+    }
+
+    function getTimeStamp(code) {
+        return self.image.uploaded[code] || self.image.defaultTimeStamp;
+    }
 
     function getFileUploadElement() {
         var body = angular.element(document.body);
@@ -335,62 +376,6 @@ function BinImageController($scope, $element, $q, imageManagement, editModeRende
                 rendererScope.$apply(openEditModeMenu());
             }
         }).click();
-    }
-}
-
-function ImagePathBuilderFactory($rootScope) {
-    return function (args) {
-        var path = args.parentWidth != undefined ? getSizedImage() : args.path;
-        if (requiresTimestampedUrl()) path += getSeparator() + getTimeStamp();
-        return path;
-
-        function getSizedImage() {
-            return args.path + '?width=' + convertParentWidthToRangedWidth()
-        }
-
-        function convertParentWidthToRangedWidth() {
-            var width;
-            [
-                {lowerbound: 0, upperbound: 60, actual: 60},
-                {lowerbound: 61, upperbound: 160, actual: 160},
-                {lowerbound: 161, upperbound: 320, actual: 320},
-                {lowerbound: 321, upperbound: 480, actual: 480},
-                {lowerbound: 481, upperbound: 768, actual: 768},
-                {lowerbound: 769, upperbound: 992, actual: 992},
-                {lowerbound: 993, upperbound: 1200, actual: 1200},
-                {lowerbound: 1201, upperbound: 1920, actual: 1920},
-                {lowerbound: 1921, upperbound: 4096, actual: 4096}
-            ].forEach(function (v) {
-                if (args.parentWidth >= v.lowerbound && args.parentWidth <= v.upperbound) {
-                    width = v.actual;
-                }
-            });
-            return width || 1024;
-        }
-
-        function requiresTimestampedUrl() {
-            return isCacheDisabled() || hasImageBeenUploaded();
-        }
-
-        function isCacheDisabled() {
-            return !args.cache;
-        }
-
-        function hasImageBeenUploaded() {
-            return $rootScope.image.uploaded[args.path];
-        }
-
-        function getSeparator() {
-            return pathDoesNotContainQueryString() ? '?' : '&';
-        }
-
-        function pathDoesNotContainQueryString() {
-            return path.indexOf('?') == -1;
-        }
-
-        function getTimeStamp() {
-            return $rootScope.image.uploaded[args.path] || $rootScope.image.defaultTimeStamp;
-        }
     }
 }
 

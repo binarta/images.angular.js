@@ -46,23 +46,52 @@ describe('image-management', function () {
     });
 
     describe('imageManagement service', function () {
-        var imageManagement, config, code, boxWidth, $rootScope;
+        var imageManagement, config, code, boxWidth;
 
-        beforeEach(inject(function (_imageManagement_, _config_, _$rootScope_) {
+        beforeEach(inject(function (_imageManagement_, _config_) {
             imageManagement = _imageManagement_;
             config = _config_;
-            $rootScope = _$rootScope_;
             config.awsPath = 'http://aws/path/';
             code = 'test.img';
             imageType = 'image-type';
             boxWidth = '100';
         }));
 
-        describe('getImagePath', function () {
+        describe('getImageUrl', function () {
             function assertImagePathIsTimestamped() {
-                var promise = imageManagement.getImagePath({code: code, width: boxWidth});
-                promise.then(function (path) {
-                    expect(path).toMatch(/http:\/\/aws\/path\/test.img\?width=160&\d+/);
+                var path = imageManagement.getImageUrl({code: code, width: boxWidth});
+                expect(path).toMatch(/http:\/\/aws\/path\/test.img\?width=160&\d+/);
+            }
+
+            function testImagePath(timestamp) {
+                [
+                    {actual: 0, expected: 60},
+                    {actual: 1, expected: 60},
+                    {actual: 60, expected: 60},
+                    {actual: 61, expected: 160},
+                    {actual: 160, expected: 160},
+                    {actual: 161, expected: 320},
+                    {actual: 320, expected: 320},
+                    {actual: 321, expected: 480},
+                    {actual: 480, expected: 480},
+                    {actual: 481, expected: 768},
+                    {actual: 768, expected: 768},
+                    {actual: 769, expected: 992},
+                    {actual: 992, expected: 992},
+                    {actual: 993, expected: 1200},
+                    {actual: 1200, expected: 1200},
+                    {actual: 1201, expected: 1920},
+                    {actual: 1920, expected: 1920},
+                    {actual: 1921, expected: 4096},
+                    {actual: 4096, expected: 4096}
+                ].forEach(function (value) {
+                    describe('and parent width ' + value.actual + ' is given', function () {
+                        it('then width ' + value.expected + ' is appended', function () {
+                            var path = imageManagement.getImageUrl({code: code, width: value.actual});
+                            var ts = timestamp ? '&' + timestamp : '';
+                            expect(path).toEqual(config.awsPath + code + '?width=' + value.expected + ts);
+                        });
+                    });
                 });
             }
 
@@ -71,12 +100,22 @@ describe('image-management', function () {
                     config.image = {cache: true};
                 });
 
+                testImagePath();
+
+                describe('and image was uploaded then image timestamp gets appended', function () {
+                    var timestamp = 'T';
+
+                    beforeEach(function () {
+                        imageManagement.image.uploaded[code] = timestamp;
+                    });
+
+                    testImagePath(timestamp);
+                });
+
                 describe('and user has no permission', function () {
                     it('image path is not timestamped', function () {
-                        var promise = imageManagement.getImagePath({code: code, width: boxWidth});
-                        promise.then(function (path) {
-                            expect(path).toEqual('http://aws/path/test.img?width=160');
-                        });
+                        var path = imageManagement.getImageUrl({code: code, width: boxWidth});
+                        expect(path).toEqual('http://aws/path/test.img?width=160');
                     });
                 });
 
@@ -95,6 +134,26 @@ describe('image-management', function () {
             describe('with caching disabled', function () {
                 beforeEach(function () {
                     config.image = {cache: false};
+                });
+
+                describe('and no image uploaded then use default timestamp', function () {
+                    var timestamp = 'D';
+
+                    beforeEach(function () {
+                        imageManagement.image.defaultTimeStamp = timestamp;
+                    });
+
+                    testImagePath(timestamp);
+                });
+
+                describe('and image uploaded then use image timestamp', function () {
+                    var timestamp = 'TT';
+
+                    beforeEach(function () {
+                        imageManagement.image.uploaded[code] = timestamp;
+                    });
+
+                    testImagePath(timestamp);
                 });
 
                 describe('and user has no permission', function () {
@@ -169,8 +228,8 @@ describe('image-management', function () {
                     uploader.spy.upload.success('ok');
                 });
 
-                it('update timestamp of uploaded image on rootScope', function () {
-                    expect($rootScope.image.uploaded[code]).toMatch(/\d+/);
+                it('update timestamp of uploaded image', function () {
+                    expect(imageManagement.image.uploaded[code]).toMatch(/\d+/);
                 });
             });
 
@@ -892,89 +951,6 @@ describe('image-management', function () {
                 it('unbind element from click bindEvent', function () {
                     expect(event['click']).toBeUndefined();
                 });
-            });
-        });
-    });
-
-    describe('ImagePathBuilder', function () {
-        var builder;
-        var args = {};
-
-        beforeEach(inject(function (imagePathBuilder, $rootScope) {
-            builder = imagePathBuilder;
-            args.path = 'P';
-            $rootScope.image = {uploaded: {}, defaultTimeStamp: 'D'};
-        }));
-
-        function testImagePath(timestamp) {
-            [
-                {actual: 0, expected: 60},
-                {actual: 1, expected: 60},
-                {actual: 60, expected: 60},
-                {actual: 61, expected: 160},
-                {actual: 160, expected: 160},
-                {actual: 161, expected: 320},
-                {actual: 320, expected: 320},
-                {actual: 321, expected: 480},
-                {actual: 480, expected: 480},
-                {actual: 481, expected: 768},
-                {actual: 768, expected: 768},
-                {actual: 769, expected: 992},
-                {actual: 992, expected: 992},
-                {actual: 993, expected: 1200},
-                {actual: 1200, expected: 1200},
-                {actual: 1201, expected: 1920},
-                {actual: 1920, expected: 1920},
-                {actual: 1921, expected: 4096},
-                {actual: 4096, expected: 4096}
-            ].forEach(function (value) {
-                describe('and parent width ' + value.actual + ' is given', function () {
-                    it('then width ' + value.expected + ' is appended', function () {
-                        args.parentWidth = value.actual;
-                        var path = builder(args);
-                        var ts = timestamp ? '&' + timestamp : '';
-                        expect(path).toEqual(args.path + '?width=' + value.expected + ts);
-                    });
-                });
-            });
-        }
-
-        describe('with cache enabled', function () {
-            beforeEach(function () {
-                args.cache = true;
-            });
-
-            testImagePath();
-
-            describe('and image was uploaded then image timestamp gets appended', function () {
-                var timestamp = 'T';
-
-                beforeEach(inject(function ($rootScope) {
-                    $rootScope.image.uploaded[args.path] = timestamp;
-                }));
-
-                testImagePath(timestamp);
-            });
-        });
-
-        describe('with cache disabled', function () {
-            beforeEach(function () {
-                args.cache = false;
-            });
-
-            describe('and no image uploaded then use default timestamp', function () {
-                var timestamp = 'D';
-                testImagePath(timestamp);
-            });
-
-            describe('and image uploaded then use image timestamp', function () {
-                var timestamp = 'TT';
-
-                beforeEach(inject(function ($rootScope) {
-                    $rootScope.image.uploaded[args.path] = timestamp;
-                }));
-
-                testImagePath(timestamp);
             });
         });
     });
