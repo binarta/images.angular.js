@@ -6,28 +6,7 @@ angular.module('image-management', ['config', 'image.rest', 'notifications', 'to
     .component('binImageEnlarged', new BinImageEnlargedComponent())
     .component('binIcon', new BinIconComponent())
     .controller('binImageController', ['$scope', '$element', '$q', 'imageManagement', 'editModeRenderer', 'binarta', 'ngRegisterTopicHandler', '$window', BinImageController])
-    .run(['$rootScope', '$location', 'topicRegistry', 'topicMessageDispatcher', function ($rootScope, $location, topicRegistry, topicMessageDispatcher) {
-        var imageCount = 0;
-
-        $rootScope.$watch(function () {
-            return $location.path();
-        }, function () {
-            imageCount = 0;
-        });
-
-        topicRegistry.subscribe('image.loading', function (topic) {
-            if (topic == 'loading') {
-                imageCount++;
-            } else {
-                if (imageCount > 0) reduceImageCount();
-            }
-        });
-
-        function reduceImageCount() {
-            imageCount--;
-            if (imageCount == 0) topicMessageDispatcher.fire('images.loaded', 'ok');
-        }
-
+    .run(['$rootScope', function ($rootScope) {
         $rootScope.image = {
             uploaded: [],
             defaultTimeStamp: new Date().getTime()
