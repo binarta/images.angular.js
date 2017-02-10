@@ -3,15 +3,8 @@ angular.module('image-management', ['config', 'image.rest', 'notifications', 'to
     .directive('binImage', ['imageManagement', 'binarta', BinImageDirectiveFactory])
     .directive('binBackgroundImage', ['imageManagement', 'binarta', BinBackgroundImageDirectiveFactory])
     .factory('imagePathBuilder', ['$rootScope', ImagePathBuilderFactory])
-    .component('binImageEnlarged', {
-        bindings: {
-            code: '@'
-        },
-        controller: 'BinImageEnlargedController',
-        template: '<a ng-href="{{::$ctrl.url}}"><img bin-image="{{::$ctrl.code}}"/></a>'
-    })
+    .component('binImageEnlarged', new BinImageEnlargedComponent())
     .component('binIcon', new BinIconComponent())
-    .controller('BinImageEnlargedController', ['imageManagement', '$element', BinImageEnlargedController])
     .controller('binImageController', ['$scope', '$element', '$q', 'imageManagement', 'editModeRenderer', 'binarta', 'ngRegisterTopicHandler', '$window', BinImageController])
     .run(['$rootScope', '$location', 'topicRegistry', 'topicMessageDispatcher', function ($rootScope, $location, topicRegistry, topicMessageDispatcher) {
         var imageCount = 0;
@@ -422,15 +415,21 @@ function ImagePathBuilderFactory($rootScope) {
     }
 }
 
-function BinImageEnlargedController(imageManagement, $element) {
-    this.url = imageManagement.getImageUrl({code: this.code});
-    $element.find('a').magnificPopup({
-        type: 'image',
-        closeOnContentClick: true,
-        image: {
-            verticalFit: true
-        }
-    });
+function BinImageEnlargedComponent() {
+    this.template = '<a ng-href="{{::$ctrl.url}}"><img bin-image="{{::$ctrl.code}}"/></a>';
+    this.bindings = {
+        code: '@'
+    };
+    this.controller = ['imageManagement', '$element', function (imageManagement, $element) {
+        this.url = imageManagement.getImageUrl({code: this.code});
+        $element.find('a').magnificPopup({
+            type: 'image',
+            closeOnContentClick: true,
+            image: {
+                verticalFit: true
+            }
+        });
+    }];
 }
 
 function BinIconComponent() {
