@@ -321,6 +321,37 @@ describe('image-management', function () {
 
                     expect(uploader.spy.add.carouselImage).toBeTruthy();
                 });
+
+                describe('with onUploaded listeners', function () {
+                    var uploadCb1, uploadCb2, unsubscribeUploadCb1, unsubscribeUploadCb2;
+
+                    beforeEach(function () {
+                        uploadCb1 = jasmine.createSpy('spy');
+                        uploadCb2 = jasmine.createSpy('spy');
+                        unsubscribeUploadCb1 = imageManagement.onUploaded(uploadCb1);
+                        unsubscribeUploadCb2 = imageManagement.onUploaded(uploadCb2);
+                        uploader.spy.upload.success('ok');
+                    });
+
+                    it('callbacks are executed', function () {
+                        expect(uploadCb1).toHaveBeenCalledWith(code);
+                        expect(uploadCb2).toHaveBeenCalledWith(code);
+                    });
+
+                    describe('on unsubscribe listeners', function () {
+                        beforeEach(function () {
+                            uploadCb1.calls.reset();
+                            uploadCb2.calls.reset();
+                            unsubscribeUploadCb1();
+                            uploader.spy.upload.success('ok');
+                        });
+
+                        it('callbacks are executed', function () {
+                            expect(uploadCb1).not.toHaveBeenCalled();
+                            expect(uploadCb2).toHaveBeenCalledWith(code);
+                        });
+                    });
+                });
             });
         });
     });
@@ -592,12 +623,10 @@ describe('image-management', function () {
     });
 
     describe('binImageController', function () {
-        var scope, element, event, editModeRenderer, editModeRendererSpy, imageManagement, addedClass, removedClass, permitter, registry, $window;
-        var imagePath = 'image/path.jpg';
+        var element, event, editModeRenderer, editModeRendererSpy, imageManagement, addedClass, removedClass,
+            registry, $window, unsubscribeOnUploadedSpy;
 
-        beforeEach(inject(function ($rootScope, $q, activeUserHasPermission, activeUserHasPermissionHelper, ngRegisterTopicHandler, topicRegistryMock, _$window_) {
-            scope = $rootScope.$new();
-
+        beforeEach(inject(function (ngRegisterTopicHandler, topicRegistryMock, _$window_) {
             scope.setImageSrc = function (src) {
                 scope.setImageSrcSpy = src;
             };
@@ -608,7 +637,6 @@ describe('image-management', function () {
 
             scope.code = 'test.img';
 
-            permitter = activeUserHasPermissionHelper;
             addedClass = [];
             removedClass = [];
             event = [];
@@ -630,6 +658,8 @@ describe('image-management', function () {
             };
 
             registry = topicRegistryMock;
+
+            unsubscribeOnUploadedSpy = jasmine.createSpy('spy');
 
             imageManagement = {
                 fileUploadSpy: {},
@@ -654,7 +684,8 @@ describe('image-management', function () {
                     var deferred = $q.defer();
                     deferred.resolve('');
                     return deferred.promise;
-                }
+                },
+                onUploaded: jasmine.createSpy('spy').and.returnValue(unsubscribeOnUploadedSpy)
             };
 
             editModeRendererSpy = {};
@@ -1031,6 +1062,42 @@ describe('image-management', function () {
                 it('unbind element from click bindEvent', function () {
                     expect(event['click']).toBeUndefined();
                 });
+            });
+        });
+
+        it('subscribes to new uploads', function () {
+            expect(imageManagement.onUploaded).toHaveBeenCalled();
+        });
+
+        describe('on new upload', function () {
+            beforeEach(function () {
+                scope.setDefaultImageSrcCalled = false;
+                imageManagement.onUploaded.calls.mostRecent().args[0](scope.code);
+            });
+
+            it('reset image src', function () {
+                expect(scope.setDefaultImageSrcCalled).toBeTruthy();
+            });
+        });
+
+        describe('on new upload for other image', function () {
+            beforeEach(function () {
+                scope.setDefaultImageSrcCalled = false;
+                imageManagement.onUploaded.calls.mostRecent().args[0]('other');
+            });
+
+            it('reset image src', function () {
+                expect(scope.setDefaultImageSrcCalled).toBeFalsy();
+            });
+        });
+
+        describe('on destroy', function () {
+            beforeEach(function () {
+                scope.$destroy();
+            });
+
+            it('on uploaded listener is unsubscribed', function () {
+                expect(unsubscribeOnUploadedSpy).toHaveBeenCalled();
             });
         });
     });

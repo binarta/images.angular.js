@@ -8,7 +8,7 @@ angular.module('image-management', ['config', 'image.rest', 'notifications', 'to
     .controller('binImageController', ['$scope', '$element', '$q', 'imageManagement', 'editModeRenderer', 'binarta', 'ngRegisterTopicHandler', '$window', BinImageController]);
 
 function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
-    var self = this;
+    var self = this, uploadCallbacks = [];
 
     this.image = {
         uploaded: [],
@@ -55,6 +55,7 @@ function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
             uploader.upload({
                 success: function (payload) {
                     self.image.uploaded[args.code] = new Date().getTime();
+                    executeUploadCallbacks(args.code);
                     deferred.resolve(payload);
                 },
                 rejected: function () {
@@ -75,6 +76,19 @@ function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
     this.triggerFileUpload = function () {
         getFileUploadElement().click();
     };
+
+    this.onUploaded = function (cb) {
+        uploadCallbacks.push(cb);
+        return function () {
+            uploadCallbacks.splice(uploadCallbacks.indexOf(cb), 1);
+        };
+    };
+
+    function executeUploadCallbacks(code) {
+        angular.forEach(uploadCallbacks, function (cb) {
+            cb(code);
+        });
+    }
 
     function getImagePath(args) {
         var path = args.code;
@@ -307,6 +321,10 @@ function BinImageController($scope, $element, $q, imageManagement, editModeRende
         });
     };
 
+    var unsubscribeOnUploadedListener = imageManagement.onUploaded(function (code) {
+        if (code == $scope.code) $scope.setDefaultImageSrc();
+    });
+
     function bindClickEvent(editMode) {
         if (editMode) {
             $element.bind("click", function () {
@@ -402,6 +420,10 @@ function BinImageController($scope, $element, $q, imageManagement, editModeRende
             }
         }).click();
     }
+
+    $scope.$on('$destroy', function () {
+       unsubscribeOnUploadedListener();
+    });
 }
 
 function BinImageEnlargedComponent() {
