@@ -23,7 +23,7 @@ function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
     };
 
     this.getImageUrl = function (args) {
-        return config.awsPath + getImagePath({path: args.code, width: args.width});
+        return config.awsPath + getImagePath({code: args.code, width: args.width, height: args.height});
     };
 
     this.getImagePath = function (args) {
@@ -72,13 +72,29 @@ function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
     };
 
     function getImagePath(args) {
-        var path = args.width != undefined ? getSizedImage(args) : args.path;
-        if (requiresTimestampedUrl(args.path)) path += getSeparator(path) + getTimeStamp(args.path);
+        var path = args.code;
+        if (args.width != undefined) {
+            var width = args.height != undefined ? args.width : convertToRangedWidth(args.width);
+            path += getSeparator(path);
+            path += getWidthQueryString(width);
+        }
+        if (args.height != undefined) {
+            path += getSeparator(path);
+            path += getHeightQueryString(args.height);
+        }
+        if (requiresTimestampedUrl(args.code)) {
+            path += getSeparator(path);
+            path += getTimeStamp(args.code);
+        }
         return path;
     }
 
-    function getSizedImage(args) {
-        return args.path + '?width=' + convertToRangedWidth(args.width)
+    function getWidthQueryString(width) {
+        return 'width=' + width;
+    }
+
+    function getHeightQueryString(height) {
+        return 'height=' + height;
     }
 
     function convertToRangedWidth(width) {

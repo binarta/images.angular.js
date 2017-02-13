@@ -63,7 +63,7 @@ describe('image-management', function () {
                 expect(path).toMatch(/http:\/\/aws\/path\/test.img\?width=160&\d+/);
             }
 
-            function testImagePath(timestamp) {
+            function assertPathWithRangedWidth(timestamp) {
                 [
                     {actual: 0, expected: 60},
                     {actual: 1, expected: 60},
@@ -95,12 +95,32 @@ describe('image-management', function () {
                 });
             }
 
+            function assertPathWithHeight(timestamp) {
+                var path = imageManagement.getImageUrl({code: code, height: 100});
+                var ts = timestamp ? '&' + timestamp : '';
+                expect(path).toEqual(config.awsPath + code + '?height=100' + ts);
+            }
+
+            function assertPathWithWidthAndHeight(timestamp) {
+                var path = imageManagement.getImageUrl({code: code, width: 200, height: 100});
+                var ts = timestamp ? '&' + timestamp : '';
+                expect(path).toEqual(config.awsPath + code + '?width=200&height=100' + ts);
+            }
+
             describe('with caching enabled', function () {
                 beforeEach(function () {
                     config.image = {cache: true};
                 });
 
-                testImagePath();
+                assertPathWithRangedWidth();
+
+                it('when height is given', function () {
+                    assertPathWithHeight();
+                });
+
+                it('when width and height is given, width is not altered', function () {
+                    assertPathWithWidthAndHeight();
+                });
 
                 describe('and image was uploaded then image timestamp gets appended', function () {
                     var timestamp = 'T';
@@ -109,7 +129,15 @@ describe('image-management', function () {
                         imageManagement.image.uploaded[code] = timestamp;
                     });
 
-                    testImagePath(timestamp);
+                    assertPathWithRangedWidth(timestamp);
+
+                    it('when height is given', function () {
+                        assertPathWithHeight(timestamp);
+                    });
+
+                    it('when width and height is given, width is not altered', function () {
+                        assertPathWithWidthAndHeight(timestamp);
+                    });
                 });
 
                 describe('and user has no permission', function () {
@@ -143,7 +171,15 @@ describe('image-management', function () {
                         imageManagement.image.defaultTimeStamp = timestamp;
                     });
 
-                    testImagePath(timestamp);
+                    assertPathWithRangedWidth(timestamp);
+
+                    it('when height is given', function () {
+                        assertPathWithHeight(timestamp);
+                    });
+
+                    it('when width and height is given, width is not altered', function () {
+                        assertPathWithWidthAndHeight(timestamp);
+                    });
                 });
 
                 describe('and image uploaded then use image timestamp', function () {
@@ -153,7 +189,15 @@ describe('image-management', function () {
                         imageManagement.image.uploaded[code] = timestamp;
                     });
 
-                    testImagePath(timestamp);
+                    assertPathWithRangedWidth(timestamp);
+
+                    it('when height is given', function () {
+                        assertPathWithHeight(timestamp);
+                    });
+
+                    it('when width and height is given, width is not altered', function () {
+                        assertPathWithWidthAndHeight(timestamp);
+                    });
                 });
 
                 describe('and user has no permission', function () {
