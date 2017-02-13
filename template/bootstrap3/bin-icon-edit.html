@@ -1,32 +1,11 @@
 <form ng-submit="submit()" class="ng-pristine ng-valid ng-scope">
     <div class="bin-menu-edit-body" ng-switch="state.name">
         <div ng-switch-when="image">
-            <div class="bin-image-preview">
-                <div class="row">
-                    <div class="col-xs-12 col-md-4 col-lg-4">
-                        <img ng-src="{{state.imageSrc}}" read-only ng-click="upload()">
-                    </div>
-                    <div class="col-xs-12 col-md-8 col-lg-8">
-                        <p>
-                            <button type="button" class="btn btn-success" ng-click="upload()"
-                                    i18n code="bin.icon.new.image" read-only>
-                                <i class="fa fa-upload fa-fw"></i> <span ng-bind="::var"></span>
-                            </button>
-                        </p>
-                        <p i18n code="upload.image.advice" read-only>
-                            <i class="fa fa-fw fa-info-circle"></i> <span ng-bind="::var"></span>
-                        </p>
-
-                        <bin-violations class="bin-icon-violations" src="state.violations" fade-after="7000"
-                                        code-prefix="upload.image">
-                        </bin-violations>
-
-                        <p ng-if="state.uploading" i18n code="upload.image.uploading" read-only>
-                            <i class="fa fa-spinner fa-spin fa-fw"></i> <span ng-bind="::var"></span>
-                        </p>
-                    </div>
-                </div>
-            </div>
+            <bin-image-uploader image-code="{{'icons' + $ctrl.code}}"
+                                image-height="{{::$ctrl.height}}"
+                                i18n-help-code="upload.image.advice"
+                                on-upload="state.submit()">
+            </bin-image-uploader>
         </div>
 
         <div ng-switch-default>

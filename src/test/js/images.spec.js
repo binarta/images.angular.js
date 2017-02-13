@@ -8,7 +8,7 @@ angular.module('toggle.edit.mode', [])
 
 describe('image-management', function () {
     var binarta, scope, ctrl, directive, notifications, config;
-    var $httpBackend;
+    var $httpBackend, $componentController, $q;
     var uploader;
     var _file;
     var file;
@@ -22,8 +22,10 @@ describe('image-management', function () {
     beforeEach(module('uploader.mock'));
     beforeEach(module('i18n.mock'));
     beforeEach(module('config'));
-    beforeEach(inject(function ($injector, $rootScope, _binarta_) {
+    beforeEach(inject(function ($injector, $rootScope, _binarta_, _$componentController_, _$q_) {
         binarta = _binarta_;
+        $componentController = _$componentController_;
+        $q = _$q_;
         scope = $rootScope.$new();
         $httpBackend = $injector.get('$httpBackend');
         _file = {
@@ -1040,21 +1042,196 @@ describe('image-management', function () {
         });
     });
 
+    describe('binImageUploader component', function () {
+        var $ctrl, bindings, imageManagement, imageSrc, fileUploadClickSpy, uploadDeferred;
+
+        beforeEach(inject(function (_imageManagement_) {
+            imageManagement = _imageManagement_;
+            imageSrc = 'www.image.url';
+            fileUploadClickSpy = jasmine.createSpy('spy');
+            uploadDeferred = $q.defer();
+            spyOn(imageManagement, 'getImageUrl').and.returnValue(imageSrc);
+            spyOn(imageManagement, 'fileUpload').and.returnValue({click: fileUploadClickSpy});
+            spyOn(imageManagement, 'upload').and.returnValue(uploadDeferred.promise);
+        }));
+
+        describe('with only required bindings', function () {
+            beforeEach(function () {
+                bindings = {
+                    imageCode: 'code'
+                };
+                $ctrl = $componentController('binImageUploader', undefined, bindings);
+                $ctrl.$onInit();
+            });
+
+            it('image url is requested with code', function () {
+                expect(imageManagement.getImageUrl).toHaveBeenCalledWith({code: 'code', height: undefined});
+            });
+
+            it('image src is available', function () {
+                expect($ctrl.imageSrc).toEqual(imageSrc);
+            });
+
+            describe('on upload', function () {
+                beforeEach(function () {
+                    $ctrl.upload();
+                });
+
+                it('fileUpload is called', function () {
+                    expect(imageManagement.fileUpload).toHaveBeenCalledWith({
+                        dataType: 'json',
+                        add: jasmine.any(Function)
+                    });
+                });
+
+                it('fileUpload is triggered', function () {
+                    expect(fileUploadClickSpy).toHaveBeenCalled();
+                });
+
+                describe('and file is valid', function () {
+                    beforeEach(function () {
+                        spyOn(imageManagement, 'validate').and.returnValue([]);
+                        imageManagement.fileUpload.calls.mostRecent().args[0].add(null, file);
+                    });
+
+                    it('file is validated', function () {
+                        expect(imageManagement.validate).toHaveBeenCalledWith(file);
+                    });
+
+                    it('upload is called', function () {
+                        expect(imageManagement.upload).toHaveBeenCalledWith({
+                            file: file,
+                            code: 'code',
+                            imageType: 'foreground'
+                        });
+                    });
+
+                    it('is working', function () {
+                        expect($ctrl.working).toBeTruthy();
+                    });
+
+                    describe('and upload succeeded', function () {
+                        var newImageSrc = 'new-image.url';
+
+                        beforeEach(function () {
+                            imageManagement.getImageUrl.and.returnValue(newImageSrc);
+                            uploadDeferred.resolve();
+                            scope.$digest();
+                        });
+
+                        it('new image source is available', function () {
+                            expect($ctrl.imageSrc).toEqual(newImageSrc);
+                        });
+
+                        it('not working anymore', function () {
+                            expect($ctrl.working).toBeFalsy();
+                        });
+                    });
+
+                    describe('and upload failed', function () {
+                        beforeEach(function () {
+                            uploadDeferred.reject('upload.failed');
+                            scope.$digest();
+                        });
+
+                        it('violation is set', function () {
+                            expect($ctrl.violations).toEqual(['upload.failed']);
+                        });
+
+                        it('not working anymore', function () {
+                            expect($ctrl.working).toBeFalsy();
+                        });
+                    });
+                });
+
+                describe('and file is invalid', function () {
+                    beforeEach(function () {
+                        $ctrl.imageSrc = 'www.old-value.com';
+                        spyOn(imageManagement, 'validate').and.returnValue(['invalid']);
+                        imageManagement.fileUpload.calls.mostRecent().args[0].add(null, file);
+                    });
+
+                    it('violations are set', function () {
+                        expect($ctrl.violations).toEqual(['invalid']);
+                    });
+
+                    it('not working anymore', function () {
+                        expect($ctrl.working).toBeFalsy();
+                    });
+                });
+            });
+        });
+
+        describe('when onUpload callback is given', function () {
+            var onUploadSpy;
+
+            beforeEach(function () {
+                onUploadSpy = jasmine.createSpy('spy');
+                bindings = {
+                    imageCode: 'code',
+                    onUpload: onUploadSpy
+                };
+                $ctrl = $componentController('binImageUploader', undefined, bindings);
+                $ctrl.$onInit();
+            });
+
+            describe('on upload', function () {
+                beforeEach(function () {
+                    $ctrl.upload();
+                });
+
+                describe('and file is valid', function () {
+                    beforeEach(function () {
+                        spyOn(imageManagement, 'validate').and.returnValue([]);
+                        imageManagement.fileUpload.calls.mostRecent().args[0].add(null, file);
+                    });
+
+                    describe('and upload succeeded', function () {
+                        var newImageSrc = 'new-image.url';
+
+                        beforeEach(function () {
+                            imageManagement.getImageUrl.and.returnValue(newImageSrc);
+                            uploadDeferred.resolve();
+                            scope.$digest();
+                        });
+
+                        it('on upload handler is called', function () {
+                            expect(onUploadSpy).toHaveBeenCalledWith(newImageSrc);
+                        });
+                    });
+                });
+            });
+        });
+
+        describe('when image height is given', function () {
+            beforeEach(function () {
+                bindings = {
+                    imageCode: 'code',
+                    imageHeight: '100'
+                };
+
+                $ctrl = $componentController('binImageUploader', undefined, bindings);
+                $ctrl.$onInit();
+            });
+
+            it('image url is requested with code', function () {
+                expect(imageManagement.getImageUrl).toHaveBeenCalledWith({code: 'code', height: '100'});
+            });
+        });
+    });
+
     describe('binIcon component', function () {
-        var $scope, $componentController, ctrl, editMode, renderer, imageManagement, configWriter, $q, imageSrc, configWriterDeferred;
+        var $ctrl, editMode, renderer, imageManagement, configWriter, imageSrc, configWriterDeferred;
         var element = angular.element('<div></div>');
         var bindings;
 
-        beforeEach(inject(function (_$componentController_, $rootScope, _editMode_, _editModeRenderer_, _configWriter_, _imageManagement_, _$q_) {
-            $scope = $rootScope.$new();
-            $componentController = _$componentController_;
+        beforeEach(inject(function ($rootScope, _editMode_, _editModeRenderer_, _configWriter_, _imageManagement_) {
             bindings = {iconCode: 'test.icon', code: '/test.code', default: 'default'};
-            ctrl = $componentController('binIcon', {$element: element, $scope: $scope}, bindings);
+            $ctrl = $componentController('binIcon', {$element: element, $scope: scope}, bindings);
             editMode = _editMode_;
             renderer = _editModeRenderer_;
             imageManagement = _imageManagement_;
             configWriter = _configWriter_;
-            $q = _$q_;
             configWriterDeferred = $q.defer();
             configWriter.and.returnValue(configWriterDeferred.promise);
             imageSrc = 'www.image.url';
@@ -1067,7 +1244,7 @@ describe('image-management', function () {
 
         it('edit mode event is bound', function () {
             expect(editMode.bindEvent).toHaveBeenCalledWith({
-                scope: $scope,
+                scope: scope,
                 element: element,
                 permission: 'edit.mode',
                 onClick: jasmine.any(Function)
@@ -1080,7 +1257,7 @@ describe('image-management', function () {
             });
 
             it('default icon value is used', function () {
-                expect(ctrl.iconValue).toEqual('default');
+                expect($ctrl.iconValue).toEqual('default');
             });
         });
 
@@ -1092,11 +1269,11 @@ describe('image-management', function () {
                 });
 
                 it('image source is set on ctrl', function () {
-                    expect(ctrl.imageSrc).toEqual('www.image.url');
+                    expect($ctrl.imageSrc).toEqual('www.image.url');
                 });
 
                 it('iconValue is set to image', function () {
-                    expect(ctrl.iconValue).toEqual('image');
+                    expect($ctrl.iconValue).toEqual('image');
                 });
 
                 it('imageUrl is requested', function () {
@@ -1107,7 +1284,7 @@ describe('image-management', function () {
                     beforeEach(function () {
                         imageManagement.getImageUrl.calls.reset();
                         bindings.height = 100;
-                        ctrl = $componentController('binIcon', {$element: element, $scope: $scope}, bindings);
+                        $ctrl = $componentController('binIcon', {$element: element, $scope: scope}, bindings);
                     });
 
                     it('imageUrl is requested with height', function () {
@@ -1123,7 +1300,7 @@ describe('image-management', function () {
                 });
 
                 it('icon value is available on ctrl', function () {
-                    expect(ctrl.iconValue).toEqual('fa-bike');
+                    expect($ctrl.iconValue).toEqual('fa-bike');
                 });
             });
         });
@@ -1132,10 +1309,13 @@ describe('image-management', function () {
             describe('on click', function () {
                 var rendererScope, permission;
 
+                beforeEach(function () {
+                    permission = 'video.config.update';
+                });
+
                 describe('when an icon was displayed on a page', function () {
                     beforeEach(function () {
-                        permission = 'video.config.update';
-                        ctrl.iconValue = 'fa-test';
+                        $ctrl.iconValue = 'fa-test';
                         editMode.bindEvent.calls.mostRecent().args[0].onClick();
                         rendererScope = renderer.open.calls.first().args[0].scope;
                     });
@@ -1201,10 +1381,6 @@ describe('image-management', function () {
                                 expect(rendererScope.state.name).toEqual('image');
                             });
 
-                            it('imageSrc is available', function () {
-                                expect(rendererScope.state.imageSrc).toEqual(imageSrc);
-                            });
-
                             it('icon is not available on the state', function () {
                                 expect(rendererScope.state.icon).toBeUndefined();
                             });
@@ -1214,8 +1390,8 @@ describe('image-management', function () {
 
                 describe('when an image was displayed on a page', function () {
                     beforeEach(function () {
-                        ctrl.iconValue = 'image';
-                        ctrl.imageSrc = 'another.url';
+                        $ctrl.iconValue = 'image';
+                        $ctrl.imageSrc = 'another.url';
 
                     });
 
@@ -1253,10 +1429,6 @@ describe('image-management', function () {
                             expect(rendererScope.state.icon).toBeUndefined();
                         });
 
-                        it('image src is available on the state', function () {
-                            expect(rendererScope.state.imageSrc).toEqual('another.url');
-                        });
-
                         it('on cancel', function () {
                             rendererScope.cancel();
                             expect(renderer.close).toHaveBeenCalled();
@@ -1284,7 +1456,7 @@ describe('image-management', function () {
 
                 describe('when setting an icon', function () {
                     beforeEach(function () {
-                        ctrl.iconValue = 'f';
+                        $ctrl.iconValue = 'f';
                         editMode.bindEvent.calls.mostRecent().args[0].onClick();
                         rendererScope = renderer.open.calls.first().args[0].scope;
                     });
@@ -1306,11 +1478,11 @@ describe('image-management', function () {
                         describe('on config updated', function () {
                             beforeEach(function () {
                                 configWriterDeferred.resolve();
-                                $scope.$digest();
+                                scope.$digest();
                             });
 
                             it('new icon code is used', function () {
-                                expect(ctrl.iconValue).toEqual('fa-pencil');
+                                expect($ctrl.iconValue).toEqual('fa-pencil');
                             });
 
                             it('renderer is closed', function () {
@@ -1321,11 +1493,11 @@ describe('image-management', function () {
                         describe('on config update failure', function () {
                             beforeEach(function () {
                                 configWriterDeferred.reject();
-                                $scope.$digest();
+                                scope.$digest();
                             });
 
                             it('new icon code is not used', function () {
-                                expect(ctrl.iconValue).toEqual('f');
+                                expect($ctrl.iconValue).toEqual('f');
                             });
 
                             it('violations are set on scope', function () {
@@ -1341,8 +1513,6 @@ describe('image-management', function () {
                 });
 
                 describe('when setting an image', function () {
-                    var uploadDeferred;
-
                     beforeEach(function () {
                         binarta.checkpoint.gateway.addPermission(permission);
                         binarta.checkpoint.profile.refresh();
@@ -1353,93 +1523,21 @@ describe('image-management', function () {
                     });
 
                     it('previous image source exists', function () {
-                        expect(ctrl.imageSrc).toEqual(imageSrc);
+                        expect($ctrl.imageSrc).toEqual(imageSrc);
                     });
 
                     it('state is set to image', function () {
                         expect(rendererScope.state.name).toEqual('image');
                     });
 
-                    describe('on uploading new image', function () {
+                    describe('on submit', function () {
                         beforeEach(function () {
-                            uploadDeferred = $q.defer();
-                            spyOn(imageManagement, 'upload').and.returnValue(uploadDeferred.promise);
-                            spyOn(imageManagement, 'fileUpload').and.returnValue({click: jasmine.createSpy('spy')});
-                            rendererScope.upload();
-                            imageManagement.fileUpload.calls.mostRecent().args[0].add(null, file);
+                            imageManagement.getImageUrl.and.returnValue('new');
+                            rendererScope.submit();
                         });
 
-                        it('fileUpload function is triggered', function () {
-                            expect(imageManagement.fileUpload).toHaveBeenCalledWith({
-                                dataType: 'json',
-                                add: jasmine.any(Function)
-                            });
-                        });
-
-                        describe('and file is valid', function () {
-                            beforeEach(function () {
-                                spyOn(imageManagement, 'validate').and.returnValue([]);
-                            });
-
-                            it('upload is called with correct parameters', function () {
-                                expect(imageManagement.upload).toHaveBeenCalledWith({
-                                    file: file,
-                                    code: 'icons/test.code',
-                                    imageType: 'foreground'
-                                });
-                            });
-
-                            it('is uploading', function () {
-                                expect(rendererScope.state.uploading).toBeTruthy();
-                            });
-
-                            describe('and upload succeeded', function () {
-                                var newImageSrc = 'new-image.url';
-                                beforeEach(function () {
-                                    imageManagement.getImageUrl.and.returnValue(newImageSrc);
-                                    uploadDeferred.resolve();
-                                    $scope.$digest();
-                                });
-
-                                it('image source is set on state', function () {
-                                    expect(rendererScope.state.imageSrc).toEqual(newImageSrc);
-                                });
-
-                                it('not uploading anymore', function () {
-                                    expect(rendererScope.state.uploading).toBeFalsy();
-                                });
-
-                                it('new image source is set on ctrl', function () {
-                                    expect(ctrl.imageSrc).toEqual(newImageSrc);
-                                });
-
-                                it('renderer is closed', function () {
-                                    expect(renderer.close).toHaveBeenCalled();
-                                });
-                            });
-
-                            describe('and upload failed', function () {
-                                beforeEach(function () {
-                                    uploadDeferred.reject('upload.failed');
-                                    $scope.$digest();
-                                });
-
-                                it('correct violation is set on scope ', function () {
-                                    expect(rendererScope.state.violations).toEqual(['upload.failed']);
-                                });
-                            });
-                        });
-
-                        describe('and file is invalid', function () {
-                            beforeEach(function () {
-                                rendererScope.imageSrc = 'www.old-value.com';
-                                spyOn(imageManagement, 'validate').and.returnValue(['invalid']);
-                                imageManagement.fileUpload.calls.mostRecent().args[0].add(null, file);
-                            });
-
-                            it('violations are set on scope', function () {
-                                expect(rendererScope.state.violations).toEqual(['invalid']);
-                            });
+                        it('new image url is set', function () {
+                            expect($ctrl.imageSrc).toEqual('new');
                         });
                     });
                 });

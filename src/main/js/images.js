@@ -3,6 +3,7 @@ angular.module('image-management', ['config', 'image.rest', 'notifications', 'to
     .directive('binImage', ['imageManagement', 'binarta', BinImageDirectiveFactory])
     .directive('binBackgroundImage', ['imageManagement', 'binarta', BinBackgroundImageDirectiveFactory])
     .component('binImageEnlarged', new BinImageEnlargedComponent())
+    .component('binImageUploader', new BinImageUploader)
     .component('binIcon', new BinIconComponent())
     .controller('binImageController', ['$scope', '$element', '$q', 'imageManagement', 'editModeRenderer', 'binarta', 'ngRegisterTopicHandler', '$window', BinImageController]);
 
@@ -412,6 +413,52 @@ function BinImageEnlargedComponent() {
     }];
 }
 
+function BinImageUploader() {
+    this.templateUrl = 'bin-image-uploader.html';
+    this.bindings = {
+        imageCode: '@',
+        imageHeight: '@',
+        i18nHelpCode: '@',
+        onUpload: '&?'
+    };
+    this.controller = ['$scope', 'imageManagement', function ($scope, imageManagement) {
+        var $ctrl = this;
+
+        $ctrl.$onInit = function () {
+            $ctrl.imageSrc = getImageSrc();
+
+            $ctrl.upload = function () {
+                imageManagement.fileUpload({dataType: 'json', add: fileSelection}).click();
+            };
+
+            function getImageSrc() {
+                return imageManagement.getImageUrl({code: $ctrl.imageCode, height: $ctrl.imageHeight});
+            }
+
+            function fileSelection(e, file) {
+                $ctrl.violations = imageManagement.validate(file);
+
+                if ($ctrl.violations.length <= 0) {
+                    $ctrl.working = true;
+                    imageManagement.upload({
+                        file: file,
+                        code: $ctrl.imageCode,
+                        imageType: 'foreground'
+                    }).then(function () {
+                        $ctrl.imageSrc = getImageSrc();
+                        if ($ctrl.onUpload) $ctrl.onUpload($ctrl.imageSrc);
+                    }, function (reason) {
+                        $ctrl.violations = [reason];
+                    }).finally(function () {
+                        $ctrl.working = false;
+                    });
+                }
+                $scope.$apply();
+            }
+        };
+    }];
+}
+
 function BinIconComponent() {
     this.bindings = {
         iconCode: '@',
@@ -489,10 +536,6 @@ function BinIconComponent() {
                     rendererScope.state.changeView();
                 };
 
-                rendererScope.upload = function () {
-                    rendererScope.state.upload();
-                };
-
                 function IconState() {
                     var state = this;
                     this.name = 'icon';
@@ -512,15 +555,11 @@ function BinIconComponent() {
                     this.changeView = function () {
                         if (isUploadPermitted()) rendererScope.state = new ImageState();
                     };
-
-                    this.upload = function () {
-                    };
                 }
 
                 function ImageState() {
                     var state = this;
                     this.name = 'image';
-                    this.imageSrc = $ctrl.imageSrc ? $ctrl.imageSrc : getImageSrc();
 
                     this.submit = function () {
                         updateConfig({
@@ -535,30 +574,6 @@ function BinIconComponent() {
                     this.changeView = function () {
                         rendererScope.state = new IconState();
                     };
-
-                    this.upload = function () {
-                        imageManagement.fileUpload({dataType: 'json', add: fileSelection}).click();
-                    };
-
-                    function fileSelection(e, file) {
-                        state.violations = imageManagement.validate(file);
-                        if (state.violations.length <= 0) {
-                            state.uploading = true;
-                            imageManagement.upload({
-                                file: file,
-                                code: code,
-                                imageType: 'foreground'
-                            }).then(function () {
-                                state.imageSrc = getImageSrc();
-                                state.submit();
-                            }, function (reason) {
-                                state.violations = [reason];
-                            }).finally(function () {
-                                state.uploading = false;
-                            });
-                        }
-                        rendererScope.$apply();
-                    }
                 }
 
                 function isUploadPermitted() {

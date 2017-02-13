@@ -1,0 +1,24 @@
+<div class="row">
+    <div class="col-xs-12 col-md-4 col-lg-4">
+        <img ng-src="{{$ctrl.imageSrc}}" read-only ng-click="$ctrl.upload()">
+    </div>
+    <div class="col-xs-12 col-md-8 col-lg-8">
+        <p>
+            <button type="button" class="btn btn-success" ng-click="$ctrl.upload()"
+                    i18n code="bin.icon.new.image" read-only>
+                <i class="fa fa-upload fa-fw"></i> <span ng-bind="::var"></span>
+            </button>
+        </p>
+        <p i18n code="{{::$ctrl.i18nHelpCode}}" read-only>
+            <i class="fa fa-fw fa-info-circle"></i> <span ng-bind="::var"></span>
+        </p>
+
+        <bin-violations class="bin-icon-violations" src="$ctrl.violations" fade-after="7000"
+                        code-prefix="upload.image">
+        </bin-violations>
+
+        <p ng-if="$ctrl.working" i18n code="upload.image.uploading" read-only>
+            <i class="fa fa-spinner fa-spin fa-fw"></i> <span ng-bind="::var"></span>
+        </p>
+    </div>
+</div>
