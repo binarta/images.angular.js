@@ -1100,7 +1100,7 @@ describe('image-management', function () {
                 });
 
                 it('imageUrl is requested', function () {
-                    expect(imageManagement.getImageUrl).toHaveBeenCalledWith({code: 'icons/test.code'});
+                    expect(imageManagement.getImageUrl).toHaveBeenCalledWith({code: 'icons/test.code', height: undefined});
                 });
 
                 describe('when height attribute is given', function () {
@@ -1110,8 +1110,8 @@ describe('image-management', function () {
                         ctrl = $componentController('binIcon', {$element: element, $scope: $scope}, bindings);
                     });
 
-                    it('imageUrl is requested with height param', function () {
-                        expect(imageManagement.getImageUrl).toHaveBeenCalledWith({code: 'icons/test.code?height=100'});
+                    it('imageUrl is requested with height', function () {
+                        expect(imageManagement.getImageUrl).toHaveBeenCalledWith({code: 'icons/test.code', height: 100});
                     });
                 });
             });

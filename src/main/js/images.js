@@ -449,7 +449,7 @@ function BinIconComponent() {
             }
 
             function getImageSrc() {
-                return imageManagement.getImageUrl({code: code + ($ctrl.height ? '?height=' + $ctrl.height : '')});
+                return imageManagement.getImageUrl({code: code, height: $ctrl.height});
             }
 
             function setDefaultIconValue() {
