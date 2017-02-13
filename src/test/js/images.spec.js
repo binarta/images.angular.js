@@ -252,41 +252,75 @@ describe('image-management', function () {
 
             beforeEach(inject(function (_uploader_) {
                 uploader = _uploader_;
-
-                promise = imageManagement.upload({file: file, code: code, imageType: imageType})
-                    .then(function (payload) {
-                            expect(payload).toEqual('ok');
-                        }, function (reason) {
-                            expect(reason).toEqual('upload.failed');
-                        }
-                    );
             }));
 
-            it('pass values to uploader', function () {
-                expect(uploader.spy.add.file).toEqual(file);
-                expect(uploader.spy.add.path).toEqual(code);
-                expect(uploader.spy.add.imageType).toEqual(imageType);
-                expect(uploader.spy.add.carouselImage).toBeFalsy();
-            });
+            describe('when user has no permission', function () {
+                var rejectedSpy;
 
-            describe('when upload succeeded', function () {
                 beforeEach(function () {
-                    uploader.spy.upload.success('ok');
+                    rejectedSpy = jasmine.createSpy('spy');
+
+                    promise = imageManagement.upload({file: file, code: code, imageType: imageType})
+                        .then(function () {}, rejectedSpy);
+                    scope.$digest();
                 });
 
-                it('update timestamp of uploaded image', function () {
-                    expect(imageManagement.image.uploaded[code]).toMatch(/\d+/);
+                it('is rejected', function () {
+                    expect(rejectedSpy).toHaveBeenCalledWith('unauthorized');
                 });
             });
 
-            it('when upload failed', function () {
-                uploader.spy.upload.rejected('upload.failed');
-            });
+            describe('when user has image.upload permission', function () {
+                var successSpy, rejectedSpy;
 
-            it('upload carousel image', function () {
-                imageManagement.upload({file: file, code: code, imageType: imageType, carouselImage: true});
+                beforeEach(function () {
+                    binarta.checkpoint.gateway.addPermission('image.upload');
+                    binarta.checkpoint.profile.refresh();
+                    successSpy = jasmine.createSpy('spy');
+                    rejectedSpy = jasmine.createSpy('spy');
 
-                expect(uploader.spy.add.carouselImage).toBeTruthy();
+                    promise = imageManagement.upload({file: file, code: code, imageType: imageType})
+                        .then(successSpy, rejectedSpy);
+                });
+
+                it('pass values to uploader', function () {
+                    expect(uploader.spy.add.file).toEqual(file);
+                    expect(uploader.spy.add.path).toEqual(code);
+                    expect(uploader.spy.add.imageType).toEqual(imageType);
+                    expect(uploader.spy.add.carouselImage).toBeFalsy();
+                });
+
+                describe('when upload succeeded', function () {
+                    beforeEach(function () {
+                        uploader.spy.upload.success('ok');
+                        scope.$digest();
+                    });
+
+                    it('is resolved', function () {
+                        expect(successSpy).toHaveBeenCalledWith('ok');
+                    });
+
+                    it('update timestamp of uploaded image', function () {
+                        expect(imageManagement.image.uploaded[code]).toMatch(/\d+/);
+                    });
+                });
+
+                describe('when upload failed', function () {
+                    beforeEach(function () {
+                        uploader.spy.upload.rejected();
+                        scope.$digest();
+                    });
+
+                    it('is rejected', function () {
+                        expect(rejectedSpy).toHaveBeenCalledWith('upload.failed');
+                    });
+                });
+
+                it('upload carousel image', function () {
+                    imageManagement.upload({file: file, code: code, imageType: imageType, carouselImage: true});
+
+                    expect(uploader.spy.add.carouselImage).toBeTruthy();
+                });
             });
         });
     });

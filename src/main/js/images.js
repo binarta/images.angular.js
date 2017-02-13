@@ -45,21 +45,25 @@ function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
     this.upload = function (args) {
         var deferred = $q.defer();
 
-        $timeout(function () {
-            deferred.notify('uploading');
-        }, 0);
+        if (isUploadPermitted()) {
+            $timeout(function () {
+                deferred.notify('uploading');
+            }, 0);
 
-        uploader.add(args.file, args.code, args.imageType, args.carouselImage);
+            uploader.add(args.file, args.code, args.imageType, args.carouselImage);
 
-        uploader.upload({
-            success: function (payload) {
-                self.image.uploaded[args.code] = new Date().getTime();
-                deferred.resolve(payload);
-            },
-            rejected: function () {
-                deferred.reject('upload.failed');
-            }
-        });
+            uploader.upload({
+                success: function (payload) {
+                    self.image.uploaded[args.code] = new Date().getTime();
+                    deferred.resolve(payload);
+                },
+                rejected: function () {
+                    deferred.reject('upload.failed');
+                }
+            });
+        } else {
+            deferred.reject('unauthorized');
+        }
 
         return deferred.promise;
     };
@@ -131,7 +135,11 @@ function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
     }
 
     function isCacheEnabled() {
-        return binarta.checkpoint.profile.hasPermission('image.upload') ? false : config.image && config.image.cache;
+        return isUploadPermitted() ? false : config.image && config.image.cache;
+    }
+
+    function isUploadPermitted() {
+        return binarta.checkpoint.profile.hasPermission('image.upload');
     }
 
     function hasImageBeenUploaded(code) {
