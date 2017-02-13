@@ -458,15 +458,9 @@ function BinImageUploader() {
         var $ctrl = this;
 
         $ctrl.$onInit = function () {
-            $ctrl.imageSrc = getImageSrc();
-
             $ctrl.upload = function () {
                 imageManagement.fileUpload({dataType: 'json', add: fileSelection}).click();
             };
-
-            function getImageSrc() {
-                return imageManagement.getImageUrl({code: $ctrl.imageCode, height: $ctrl.imageHeight});
-            }
 
             function fileSelection(e, file) {
                 $ctrl.violations = imageManagement.validate(file);
@@ -478,8 +472,7 @@ function BinImageUploader() {
                         code: $ctrl.imageCode,
                         imageType: 'foreground'
                     }).then(function () {
-                        $ctrl.imageSrc = getImageSrc();
-                        if ($ctrl.onUpload) $ctrl.onUpload({src: $ctrl.imageSrc});
+                        if ($ctrl.onUpload) $ctrl.onUpload();
                     }, function (reason) {
                         $ctrl.violations = [reason];
                     }).finally(function () {
@@ -494,7 +487,6 @@ function BinImageUploader() {
 
 function BinIconComponent() {
     this.bindings = {
-        iconCode: '@',
         code: '@',
         default: '@',
         height: '@',
@@ -520,16 +512,11 @@ function BinIconComponent() {
                 binarta.application.config.findPublic(code, function (configValue) {
                     if (!configValue) setDefaultIconValue();
                     else $ctrl.iconValue = configValue;
-                    if (isImage()) $ctrl.imageSrc = getImageSrc();
                 });
             });
 
             function isImage() {
                 return $ctrl.iconValue == 'image';
-            }
-
-            function getImageSrc() {
-                return imageManagement.getImageUrl({code: code, height: $ctrl.height});
             }
 
             function setDefaultIconValue() {
@@ -561,8 +548,8 @@ function BinIconComponent() {
                 rendererScope.cancel = editModeRenderer.close;
                 rendererScope.state = isImage() && isUploadPermitted() ? new ImageState() : new IconState();
 
-                rendererScope.submit = function (src) {
-                    rendererScope.state.submit(src);
+                rendererScope.submit = function () {
+                    rendererScope.state.submit();
                 };
 
                 rendererScope.changeView = function () {
@@ -591,17 +578,10 @@ function BinIconComponent() {
                 }
 
                 function ImageState() {
-                    var state = this;
                     this.name = 'image';
 
-                    this.submit = function (src) {
-                        updateConfig({
-                            value: 'image',
-                            success: function () {
-                                $ctrl.imageSrc = src || getImageSrc();
-                                rendererScope.cancel();
-                            }
-                        });
+                    this.submit = function () {
+                        updateConfig({value: 'image', success: rendererScope.cancel});
                     };
 
                     this.changeView = function () {

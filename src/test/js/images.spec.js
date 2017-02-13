@@ -1185,14 +1185,6 @@ describe('image-management', function () {
                 $ctrl.$onInit();
             });
 
-            it('image url is requested with code', function () {
-                expect(imageManagement.getImageUrl).toHaveBeenCalledWith({code: 'code', height: undefined});
-            });
-
-            it('image src is available', function () {
-                expect($ctrl.imageSrc).toEqual(imageSrc);
-            });
-
             describe('on upload', function () {
                 beforeEach(function () {
                     $ctrl.upload();
@@ -1232,16 +1224,9 @@ describe('image-management', function () {
                     });
 
                     describe('and upload succeeded', function () {
-                        var newImageSrc = 'new-image.url';
-
                         beforeEach(function () {
-                            imageManagement.getImageUrl.and.returnValue(newImageSrc);
                             uploadDeferred.resolve();
                             scope.$digest();
-                        });
-
-                        it('new image source is available', function () {
-                            expect($ctrl.imageSrc).toEqual(newImageSrc);
                         });
 
                         it('not working anymore', function () {
@@ -1267,7 +1252,6 @@ describe('image-management', function () {
 
                 describe('and file is invalid', function () {
                     beforeEach(function () {
-                        $ctrl.imageSrc = 'www.old-value.com';
                         spyOn(imageManagement, 'validate').and.returnValue(['invalid']);
                         imageManagement.fileUpload.calls.mostRecent().args[0].add(null, file);
                     });
@@ -1308,41 +1292,22 @@ describe('image-management', function () {
                     });
 
                     describe('and upload succeeded', function () {
-                        var newImageSrc = 'new-image.url';
-
                         beforeEach(function () {
-                            imageManagement.getImageUrl.and.returnValue(newImageSrc);
                             uploadDeferred.resolve();
                             scope.$digest();
                         });
 
                         it('on upload handler is called', function () {
-                            expect(onUploadSpy).toHaveBeenCalledWith({src: newImageSrc});
+                            expect(onUploadSpy).toHaveBeenCalled();
                         });
                     });
                 });
             });
         });
-
-        describe('when image height is given', function () {
-            beforeEach(function () {
-                bindings = {
-                    imageCode: 'code',
-                    imageHeight: '100'
-                };
-
-                $ctrl = $componentController('binImageUploader', undefined, bindings);
-                $ctrl.$onInit();
-            });
-
-            it('image url is requested with code', function () {
-                expect(imageManagement.getImageUrl).toHaveBeenCalledWith({code: 'code', height: '100'});
-            });
-        });
     });
 
     describe('binIcon component', function () {
-        var $ctrl, editMode, renderer, imageManagement, configWriter, imageSrc, configWriterDeferred;
+        var $ctrl, editMode, renderer, imageManagement, configWriter, configWriterDeferred;
         var element = angular.element('<div></div>');
         var bindings;
 
@@ -1355,8 +1320,6 @@ describe('image-management', function () {
             configWriter = _configWriter_;
             configWriterDeferred = $q.defer();
             configWriter.and.returnValue(configWriterDeferred.promise);
-            imageSrc = 'www.image.url';
-            spyOn(imageManagement, 'getImageUrl').and.returnValue(imageSrc);
         }));
 
         function triggerBinartaSchedule() {
@@ -1389,28 +1352,8 @@ describe('image-management', function () {
                     triggerBinartaSchedule();
                 });
 
-                it('image source is set on ctrl', function () {
-                    expect($ctrl.imageSrc).toEqual('www.image.url');
-                });
-
                 it('iconValue is set to image', function () {
                     expect($ctrl.iconValue).toEqual('image');
-                });
-
-                it('imageUrl is requested', function () {
-                    expect(imageManagement.getImageUrl).toHaveBeenCalledWith({code: 'icons/test.code', height: undefined});
-                });
-
-                describe('when height attribute is given', function () {
-                    beforeEach(function () {
-                        imageManagement.getImageUrl.calls.reset();
-                        bindings.height = 100;
-                        $ctrl = $componentController('binIcon', {$element: element, $scope: scope}, bindings);
-                    });
-
-                    it('imageUrl is requested with height', function () {
-                        expect(imageManagement.getImageUrl).toHaveBeenCalledWith({code: 'icons/test.code', height: 100});
-                    });
                 });
             });
 
@@ -1512,8 +1455,6 @@ describe('image-management', function () {
                 describe('when an image was displayed on a page', function () {
                     beforeEach(function () {
                         $ctrl.iconValue = 'image';
-                        $ctrl.imageSrc = 'another.url';
-
                     });
 
                     describe('and user has no permission', function () {
@@ -1643,21 +1584,18 @@ describe('image-management', function () {
                         rendererScope = renderer.open.calls.first().args[0].scope;
                     });
 
-                    it('previous image source exists', function () {
-                        expect($ctrl.imageSrc).toEqual(imageSrc);
-                    });
-
                     it('state is set to image', function () {
                         expect(rendererScope.state.name).toEqual('image');
                     });
 
                     describe('on submit', function () {
                         beforeEach(function () {
+                            renderer.close.calls.reset();
                             rendererScope.submit('new');
                         });
 
-                        it('new image url is set', function () {
-                            expect($ctrl.imageSrc).toEqual('new');
+                        it('renderer is closed', function () {
+                            expect(renderer.close).toHaveBeenCalled();
                         });
                     });
                 });

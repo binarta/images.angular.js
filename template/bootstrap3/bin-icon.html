@@ -1,8 +1,10 @@
 <a ng-href="{{$ctrl.link}}" target="{{$ctrl.linkTarget}}" ng-if="$ctrl.link">
-    <img ng-if="$ctrl.iconValue == 'image'" class="bin-icon" ng-src="{{$ctrl.imageSrc}}">
+    <img bin-image="icons{{::$ctrl.code}}" read-only height="{{::$ctrl.height}}" class="bin-icon"
+         ng-if="$ctrl.iconValue == 'image'">
     <i ng-if="$ctrl.iconValue != 'image'" class="bin-icon fa fa-fw" ng-class="$ctrl.iconValue"></i>
 </a>
 <span ng-if="!$ctrl.link">
-    <img ng-if="$ctrl.iconValue == 'image'" class="bin-icon" ng-src="{{$ctrl.imageSrc}}">
+    <img bin-image="icons{{::$ctrl.code}}" read-only height="{{::$ctrl.height}}" class="bin-icon"
+         ng-if="$ctrl.iconValue == 'image'">
     <i ng-if="$ctrl.iconValue != 'image'" class="bin-icon fa fa-fw" ng-class="$ctrl.iconValue"></i>
 </span>
