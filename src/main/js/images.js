@@ -187,10 +187,13 @@ function BinImageDirectiveFactory(imageManagement, binarta) {
 
             scope.setDefaultImageSrc = function () {
                 function loadImg() {
-                    element[0].src = imageManagement.getImageUrl({
-                        code: scope.code,
-                        width: parseInt(attrs.width) || getBoxWidth()
-                    });
+                    var args = {code: scope.code};
+                    if (attrs.height) {
+                        args.height = parseInt(attrs.height);
+                        if (attrs.width) args.width = parseInt(attrs.width);
+                    }
+                    else args.width = parseInt(attrs.width) || getBoxWidth();
+                    element[0].src = imageManagement.getImageUrl(args);
                 }
 
                 var listener = {

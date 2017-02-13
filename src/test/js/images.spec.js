@@ -357,12 +357,10 @@ describe('image-management', function () {
     });
 
     describe('binImage directive', function () {
-        var scope, element, event, directive, imageManagement, addedClass, removedClass;
+        var element, event, directive, imageManagement, addedClass, removedClass;
         var imagePath = 'image/path.jpg';
 
-        beforeEach(inject(function ($rootScope, $q) {
-            scope = $rootScope.$new();
-
+        beforeEach(function () {
             scope.bindImageEvents = jasmine.createSpy('bindImageEvents');
             scope.bindClickEvent = jasmine.createSpy('bindClickEvent');
 
@@ -414,7 +412,7 @@ describe('image-management', function () {
             };
 
             directive = BinImageDirectiveFactory(imageManagement, binarta);
-        }));
+        });
 
         it('restrict', function () {
             expect(directive.restrict).toEqual('A');
@@ -465,6 +463,28 @@ describe('image-management', function () {
 
                 it('get image path', function () {
                     expect(imageManagement.getImagePathSpy).toEqual({code: 'test.img', width: 200});
+                });
+            });
+
+            describe('with height attribute on image', function () {
+                beforeEach(function () {
+                    directive.link(scope, element, {binImage: 'test.img', height: '200'});
+                    scope.$digest();
+                });
+
+                it('get image path', function () {
+                    expect(imageManagement.getImagePathSpy).toEqual({code: 'test.img', height: 200});
+                });
+            });
+
+            describe('with width and height attributes on image', function () {
+                beforeEach(function () {
+                    directive.link(scope, element, {binImage: 'test.img', width: '200', height: '100'});
+                    scope.$digest();
+                });
+
+                it('get image path', function () {
+                    expect(imageManagement.getImagePathSpy).toEqual({code: 'test.img', width: 200, height: 100});
                 });
             });
         });
