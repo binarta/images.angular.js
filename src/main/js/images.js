@@ -454,7 +454,7 @@ function BinImageUploader() {
                         imageType: 'foreground'
                     }).then(function () {
                         $ctrl.imageSrc = getImageSrc();
-                        if ($ctrl.onUpload) $ctrl.onUpload($ctrl.imageSrc);
+                        if ($ctrl.onUpload) $ctrl.onUpload({src: $ctrl.imageSrc});
                     }, function (reason) {
                         $ctrl.violations = [reason];
                     }).finally(function () {
@@ -536,8 +536,8 @@ function BinIconComponent() {
                 rendererScope.cancel = editModeRenderer.close;
                 rendererScope.state = isImage() && isUploadPermitted() ? new ImageState() : new IconState();
 
-                rendererScope.submit = function () {
-                    rendererScope.state.submit();
+                rendererScope.submit = function (src) {
+                    rendererScope.state.submit(src);
                 };
 
                 rendererScope.changeView = function () {
@@ -569,11 +569,11 @@ function BinIconComponent() {
                     var state = this;
                     this.name = 'image';
 
-                    this.submit = function () {
+                    this.submit = function (src) {
                         updateConfig({
                             value: 'image',
                             success: function () {
-                                $ctrl.imageSrc = getImageSrc();
+                                $ctrl.imageSrc = src || getImageSrc();
                                 rendererScope.cancel();
                             }
                         });

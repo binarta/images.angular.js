@@ -1230,7 +1230,7 @@ describe('image-management', function () {
                         });
 
                         it('on upload handler is called', function () {
-                            expect(onUploadSpy).toHaveBeenCalledWith(newImageSrc);
+                            expect(onUploadSpy).toHaveBeenCalledWith({src: newImageSrc});
                         });
                     });
                 });
@@ -1566,8 +1566,7 @@ describe('image-management', function () {
 
                     describe('on submit', function () {
                         beforeEach(function () {
-                            imageManagement.getImageUrl.and.returnValue('new');
-                            rendererScope.submit();
+                            rendererScope.submit('new');
                         });
 
                         it('new image url is set', function () {
