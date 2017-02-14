@@ -533,9 +533,8 @@ describe('image-management', function () {
             };
             element[0] = {};
 
-            getImagePathDeferred = $q.defer();
             imageManagement = {
-                getImagePath: jasmine.createSpy('getImagePath').and.returnValue(getImagePathDeferred.promise),
+                getImageUrl: jasmine.createSpy('getImageUrl').and.returnValue(imagePath),
                 getImageUrl: jasmine.createSpy('getImageUrl').and.returnValue('img-url')
             };
 
@@ -579,46 +578,19 @@ describe('image-management', function () {
                 expect(imageManagement.getImageUrl.calls.count()).toEqual(2);
             });
 
-            it('get image path stops listening to profile events when scope is destroyed', function () {
+            it('get image url stops listening to profile events when scope is destroyed', function () {
                 scope.$destroy();
                 binarta.checkpoint.profile.refresh();
                 expect(imageManagement.getImageUrl.calls.count()).toEqual(1);
             });
 
-            describe('on get image path success', function () {
-                beforeEach(function () {
-                    getImagePathDeferred.resolve(imagePath);
-                    scope.$digest();
-                });
-
-                it('bind image events', function () {
-                    expect(scope.bindImageEvents).toHaveBeenCalledWith({
-                        bindOn: jasmine.any(Object)
-                    });
-                });
-
-                describe('on success', function () {
-                    beforeEach(function () {
-                        bindImageEventsDeferred.resolve();
-                        scope.$digest();
-                    });
-
-                    it('set background image', function () {
-                        expect(cssSpy).toEqual({
-                            key: 'background-image',
-                            value: 'url("img-url")'
-                        });
-                    });
-                });
+            it('background image is set on element', function () {
+                expect(cssSpy).toEqual({key: 'background-image', value: 'url("img-url")'});
             });
 
             it('update image src', function () {
                 scope.setImageSrc('test');
-
-                expect(cssSpy).toEqual({
-                    key: 'background-image',
-                    value: 'url(test)'
-                });
+                expect(cssSpy).toEqual({key: 'background-image', value: 'url(test)'});
             });
         });
 
@@ -730,7 +702,7 @@ describe('image-management', function () {
                 }
             };
 
-            BinImageController(scope, element, $q, imageManagement, editModeRenderer, binarta, ngRegisterTopicHandler, $window);
+            BinImageController(scope, element, imageManagement, editModeRenderer, binarta, ngRegisterTopicHandler, $window);
         }));
 
         it('is in working state', function () {
@@ -739,14 +711,8 @@ describe('image-management', function () {
 
         describe('bind image events', function () {
             describe('and no args given', function () {
-                var resolved, rejected;
-
                 beforeEach(function () {
-                    scope.bindImageEvents().then(function () {
-                        resolved = true;
-                    }, function () {
-                        rejected = true;
-                    });
+                    scope.bindImageEvents();
                     scope.$digest();
                 });
 
@@ -756,19 +722,11 @@ describe('image-management', function () {
                     });
 
                     it('put not-found class on element', function () {
-                        expect(addedClass[1]).toEqual('not-found');
-                    });
-
-                    it('remove working class from element', function () {
-                        expect(removedClass[0]).toEqual('working');
+                        expect(addedClass[0]).toEqual('not-found');
                     });
 
                     it('set state on scope', function () {
                         expect(scope.state).toEqual('not-found');
-                    });
-
-                    it('promise is rejected', function () {
-                        expect(rejected).toBeTruthy();
                     });
                 });
 
@@ -778,19 +736,11 @@ describe('image-management', function () {
                     });
 
                     it('put not-found class on element', function () {
-                        expect(addedClass[1]).toEqual('not-found');
-                    });
-
-                    it('remove working class from element', function () {
-                        expect(removedClass[0]).toEqual('working');
+                        expect(addedClass[0]).toEqual('not-found');
                     });
 
                     it('set state on scope', function () {
                         expect(scope.state).toEqual('not-found');
-                    });
-
-                    it('promise is rejected', function () {
-                        expect(rejected).toBeTruthy();
                     });
                 });
 
@@ -803,16 +753,8 @@ describe('image-management', function () {
                         expect(removedClass[0]).toEqual('not-found');
                     });
 
-                    it('remove working class from element', function () {
-                        expect(removedClass[1]).toEqual('working');
-                    });
-
                     it('set state on scope', function () {
                         expect(scope.state).toEqual('loaded');
-                    });
-
-                    it('promise is rejected', function () {
-                        expect(resolved).toBeTruthy();
                     });
                 });
             });

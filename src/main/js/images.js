@@ -5,7 +5,7 @@ angular.module('image-management', ['config', 'image.rest', 'notifications', 'to
     .component('binImageEnlarged', new BinImageEnlargedComponent())
     .component('binImageUploader', new BinImageUploader)
     .component('binIcon', new BinIconComponent())
-    .controller('binImageController', ['$scope', '$element', '$q', 'imageManagement', 'editModeRenderer', 'binarta', 'ngRegisterTopicHandler', '$window', BinImageController]);
+    .controller('binImageController', ['$scope', '$element', 'imageManagement', 'editModeRenderer', 'binarta', 'ngRegisterTopicHandler', '$window', BinImageController]);
 
 function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
     var self = this, uploadCallbacks = [];
@@ -237,15 +237,7 @@ function BinBackgroundImageDirectiveFactory(imageManagement, binarta) {
             scope.setDefaultImageSrc = function () {
                 function loadImg() {
                     var path = imageManagement.getImageUrl({code: scope.code, width: element.width()});
-                    var bindElement = angular.element('<img>').attr('src', path);
-
-                    scope.bindImageEvents({
-                        bindOn: bindElement
-                    }).then(function () {
-                        element.css('background-image', 'url("' + path + '")');
-                    }).finally(function () {
-                        bindElement.remove();
-                    });
+                    element.css('background-image', 'url("' + path + '")');
                 }
 
                 var listener = {
@@ -267,14 +259,12 @@ function BinBackgroundImageDirectiveFactory(imageManagement, binarta) {
     }
 }
 
-function BinImageController($scope, $element, $q, imageManagement, editModeRenderer, binarta, ngRegisterTopicHandler, $window) {
+function BinImageController($scope, $element, imageManagement, editModeRenderer, binarta, ngRegisterTopicHandler, $window) {
     $scope.state = 'working';
 
     $scope.bindImageEvents = function (args) {
-        var deferred = $q.defer();
         var element = args && args.bindOn ? args.bindOn : $element;
 
-        $element.addClass('working');
         element.bind('load', function () {
             imageLoaded();
         });
@@ -287,18 +277,12 @@ function BinImageController($scope, $element, $q, imageManagement, editModeRende
         function imageLoaded() {
             $scope.state = 'loaded';
             $element.removeClass('not-found');
-            $element.removeClass('working');
-            deferred.resolve();
         }
 
         function imageNotFound() {
             $scope.state = 'not-found';
             $element.addClass('not-found');
-            $element.removeClass('working');
-            deferred.reject();
         }
-
-        return deferred.promise;
     };
 
     $scope.bindClickEvent = function () {
