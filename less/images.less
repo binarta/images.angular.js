@@ -1,67 +1,37 @@
+@import "../../binarta.style.guide/less/variables";
 @import (less) "bower_components/magnific-popup/dist/magnific-popup.css";
 
 img {
   max-width: 100%;
 }
 
-[bin-image],
-[bin-background-image] {
-  outline: rgba(91, 183, 91, 0) solid 2px;
-  opacity: 1;
-  transition: opacity 0.3s ease-out, outline 0.3s ease-out;
-}
-
-[bin-image] {
-  &.working,
-  &.not-found {
-    height: 0;
-    width: 0;
-    opacity: 0;
-    visibility: hidden;
-  }
+[bin-image].not-found {
+  height: 0;
+  width: 0;
+  opacity: 0;
+  visibility: hidden;
 }
 
 [editmode="true"] {
+  [bin-image], [bin-background-image] {
+    opacity: 1;
+    transition: opacity 0.3s ease-out;
+  }
+
   [bin-image].not-found {
     height: inherit;
     width: 100%;
-    opacity: 1;
     visibility: visible;
-    background: lightgray;
-    border: 4px dashed darkgray;
-    color: darkgray;
+    background: rgba(0,0,0,0.05);
+    border: 4px dashed rgba(0,0,0,0.2);
+    padding: 30px 40%;
   }
-  [bin-background-image].not-found {
-    background: lightgray;
-  }
+
   [bin-image]:not([read-only]):hover,
   [bin-image]:not([read-only]).uploading,
   [bin-background-image]:not([read-only]):hover,
   [bin-background-image]:not([read-only]).uploading {
-    outline: #5bb75b solid 2px;
     cursor: pointer;
     opacity: 0.7;
-  }
-}
-
-#bin-menu {
-  bin-image-uploader {
-    img {
-      max-width: 200px;
-      max-height: 100px;
-      margin: 0 15px 15px 0;
-    }
-  }
-}
-
-bin-icon {
-  display: inline-block;
-
-  .bin-icon {
-    float: right;
-    height: 60px;
-    font-size: 60px;
-    max-height: 100%;
-    max-width: 100%;
   }
 }

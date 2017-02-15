@@ -451,8 +451,12 @@ describe('image-management', function () {
 
             it('update image src', function () {
                 scope.setImageSrc('test');
-
                 expect(element[0].src).toEqual('test');
+            });
+
+            it('image src is on scope', function () {
+                scope.setImageSrc('test');
+                expect(scope.src).toEqual('test');
             });
 
             describe('with width attribute on image', function () {
@@ -590,7 +594,12 @@ describe('image-management', function () {
 
             it('update image src', function () {
                 scope.setImageSrc('test');
-                expect(cssSpy).toEqual({key: 'background-image', value: 'url(test)'});
+                expect(cssSpy).toEqual({key: 'background-image', value: 'url("test")'});
+            });
+
+            it('image src is on scope', function () {
+                scope.setImageSrc('test');
+                expect(scope.src).toEqual('test');
             });
         });
 
@@ -616,9 +625,11 @@ describe('image-management', function () {
 
     describe('binImageController', function () {
         var element, event, editModeRenderer, editModeRendererSpy, imageManagement, addedClass, removedClass,
-            registry, $window, unsubscribeOnUploadedSpy;
+            registry, $window, unsubscribeOnUploadedSpy, fallbackSrc;
 
         beforeEach(inject(function (ngRegisterTopicHandler, topicRegistryMock, _$window_) {
+            fallbackSrc = '//cdn.binarta.com/image/icons/camera-faded.svg';
+
             scope.setImageSrc = function (src) {
                 scope.setImageSrcSpy = src;
             };
@@ -727,6 +738,21 @@ describe('image-management', function () {
 
                     it('set state on scope', function () {
                         expect(scope.state).toEqual('not-found');
+                    });
+
+                    it('set image src to fallback image', function () {
+                        expect(scope.setImageSrcSpy).toEqual(fallbackSrc);
+                    });
+
+                    describe('and fallback image is loaded', function () {
+                        beforeEach(function () {
+                            scope.src = fallbackSrc;
+                            event['load']();
+                        });
+
+                        it('state is still not-found', function () {
+                            expect(scope.state).toEqual('not-found');
+                        });
                     });
                 });
 

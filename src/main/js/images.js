@@ -185,6 +185,11 @@ function BinImageDirectiveFactory(imageManagement, binarta) {
             scope.bindImageEvents();
             if (attrs.readOnly == undefined) scope.bindClickEvent();
 
+            scope.setImageSrc = function (src) {
+                scope.src = src;
+                element[0].src = src;
+            };
+
             scope.setDefaultImageSrc = function () {
                 function loadImg() {
                     var args = {code: scope.code};
@@ -193,7 +198,7 @@ function BinImageDirectiveFactory(imageManagement, binarta) {
                         if (attrs.width) args.width = parseInt(attrs.width);
                     }
                     else args.width = parseInt(attrs.width) || getBoxWidth();
-                    element[0].src = imageManagement.getImageUrl(args);
+                    scope.setImageSrc(imageManagement.getImageUrl(args));
                 }
 
                 var listener = {
@@ -207,10 +212,6 @@ function BinImageDirectiveFactory(imageManagement, binarta) {
                 });
             };
             scope.setDefaultImageSrc();
-
-            scope.setImageSrc = function (src) {
-                element[0].src = src;
-            };
 
             function getBoxWidth() {
                 var width = 0;
@@ -234,10 +235,15 @@ function BinBackgroundImageDirectiveFactory(imageManagement, binarta) {
             scope.code = attrs.binBackgroundImage.replace(/^\/+/, '');
             if (attrs.readOnly == undefined) scope.bindClickEvent();
 
+            scope.setImageSrc = function (src) {
+                scope.src = src;
+                element.css('background-image', 'url("' + src + '")');
+            };
+
             scope.setDefaultImageSrc = function () {
                 function loadImg() {
                     var path = imageManagement.getImageUrl({code: scope.code, width: element.width()});
-                    element.css('background-image', 'url("' + path + '")');
+                    scope.setImageSrc(path);
                 }
 
                 var listener = {
@@ -251,22 +257,19 @@ function BinBackgroundImageDirectiveFactory(imageManagement, binarta) {
                 });
             };
             scope.setDefaultImageSrc();
-
-            scope.setImageSrc = function (src) {
-                element.css('background-image', 'url(' + src + ')');
-            };
         }
     }
 }
 
 function BinImageController($scope, $element, imageManagement, editModeRenderer, binarta, ngRegisterTopicHandler, $window) {
+    var fallbackSrc = '//cdn.binarta.com/image/icons/camera-faded.svg';
     $scope.state = 'working';
 
     $scope.bindImageEvents = function (args) {
         var element = args && args.bindOn ? args.bindOn : $element;
 
         element.bind('load', function () {
-            imageLoaded();
+            if ($scope.src != fallbackSrc) imageLoaded();
         });
         element.bind('error', function () {
             imageNotFound();
@@ -282,6 +285,7 @@ function BinImageController($scope, $element, imageManagement, editModeRenderer,
         function imageNotFound() {
             $scope.state = 'not-found';
             $element.addClass('not-found');
+            $scope.setImageSrc(fallbackSrc);
         }
     };
 

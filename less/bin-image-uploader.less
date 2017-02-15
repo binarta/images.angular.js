@@ -1,0 +1,19 @@
+bin-image-uploader {
+  .image-preview, .image-controls {
+    display: inline-block;
+    vertical-align: top;
+  }
+
+  .image-preview {
+    max-width: 120px;
+    margin: 0 15px 15px 0;
+
+    [bin-image] {
+      cursor: pointer;
+
+      &.not-found {
+        padding: 30%;
+      }
+    }
+  }
+}
