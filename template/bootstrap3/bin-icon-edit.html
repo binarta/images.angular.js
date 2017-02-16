@@ -1,5 +1,8 @@
 <form ng-submit="submit()" class="ng-pristine ng-valid ng-scope">
     <div class="bin-menu-edit-body" ng-switch="state.name">
+        <bin-violations class="bin-icon-violations" src="$ctrl.violations" fade-after="7000"
+                        code-prefix="bin.icon"></bin-violations>
+
         <div ng-switch-when="image">
             <bin-image-uploader image-code="{{'icons' + $ctrl.code}}"
                                 image-height="{{::$ctrl.height}}"
@@ -9,9 +12,6 @@
         </div>
 
         <div ng-switch-default>
-            <bin-violations class="bin-icon-violations" src="state.violations" fade-after="7000"
-                            code-prefix="bin.icon"></bin-violations>
-
             <div class="icons-list">
                 <button type="submit" ng-click="state.icon='fa-' + i" title="{{::i}}"
                         ng-class="{'active':state.icon == 'fa-' + i}"

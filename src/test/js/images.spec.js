@@ -261,7 +261,8 @@ describe('image-management', function () {
                     rejectedSpy = jasmine.createSpy('spy');
 
                     promise = imageManagement.upload({file: file, code: code, imageType: imageType})
-                        .then(function () {}, rejectedSpy);
+                        .then(function () {
+                        }, rejectedSpy);
                     scope.$digest();
                 });
 
@@ -1277,73 +1278,298 @@ describe('image-management', function () {
     describe('binIcon component', function () {
         var $ctrl, editMode, renderer, imageManagement, configWriter, configWriterDeferred;
         var element = angular.element('<div></div>');
-        var bindings;
+        var bindings, permission;
 
         beforeEach(inject(function ($rootScope, _editMode_, _editModeRenderer_, _configWriter_, _imageManagement_) {
             bindings = {iconCode: 'test.icon', code: '/test.code', default: 'default'};
-            $ctrl = $componentController('binIcon', {$element: element, $scope: scope}, bindings);
             editMode = _editMode_;
             renderer = _editModeRenderer_;
             imageManagement = _imageManagement_;
             configWriter = _configWriter_;
             configWriterDeferred = $q.defer();
             configWriter.and.returnValue(configWriterDeferred.promise);
+            binarta.application.gateway.clear();
+            permission = 'video.config.update';
         }));
 
         function triggerBinartaSchedule() {
             binarta.application.adhesiveReading.read('-');
         }
 
-        it('edit mode event is bound', function () {
-            expect(editMode.bindEvent).toHaveBeenCalledWith({
-                scope: scope,
-                element: element,
-                permission: 'edit.mode',
-                onClick: jasmine.any(Function)
-            });
-        });
-
-        describe('when public config does not contain any value', function () {
+        describe('when value is given without an update callback', function () {
             beforeEach(function () {
-                triggerBinartaSchedule();
+                bindings.value = 'value';
+                $ctrl = $componentController('binIcon', {$element: element, $scope: scope}, bindings);
+                $ctrl.$onInit();
             });
 
-            it('default icon value is used', function () {
-                expect($ctrl.iconValue).toEqual('default');
-            });
-        });
-
-        describe('correct media is rendered according to type', function () {
-            describe('when image is active', function () {
+            describe('and public config does not contain any value', function () {
                 beforeEach(function () {
-                    binarta.application.gateway.addPublicConfig({id: 'icons/test.code', value: 'image'});
                     triggerBinartaSchedule();
                 });
 
-                it('iconValue is set to image', function () {
-                    expect($ctrl.iconValue).toEqual('image');
+                it('default icon value is used', function () {
+                    expect($ctrl.iconValue).toEqual('default');
                 });
             });
 
-            describe('when icon is active', function () {
+            describe('and public config contains a value', function () {
                 beforeEach(function () {
-                    binarta.application.gateway.addPublicConfig({id: 'icons/test.code', value: 'fa-bike'});
+                    binarta.application.gateway.addPublicConfig({id: 'icons/test.code', value: 'test'});
                     triggerBinartaSchedule();
                 });
 
-                it('icon value is available on ctrl', function () {
-                    expect($ctrl.iconValue).toEqual('fa-bike');
+                it('value is set', function () {
+                    expect($ctrl.iconValue).toEqual('test');
                 });
             });
         });
 
-        describe('when user is in edit mode', function () {
-            describe('on click', function () {
-                var rendererScope, permission;
+        describe('when value is given but empty and update callback is set', function () {
+            beforeEach(function () {
+                bindings.value = '';
+                bindings.onUpdate = function () {
+                };
+                $ctrl = $componentController('binIcon', {$element: element, $scope: scope}, bindings);
+                $ctrl.$onInit();
+            });
 
+            describe('and public config does not contain any value', function () {
                 beforeEach(function () {
-                    permission = 'video.config.update';
+                    triggerBinartaSchedule();
                 });
+
+                it('default icon value is used', function () {
+                    expect($ctrl.iconValue).toEqual('default');
+                });
+            });
+
+            describe('and public config contains a value', function () {
+                beforeEach(function () {
+                    binarta.application.gateway.addPublicConfig({id: 'icons/test.code', value: 'test'});
+                    triggerBinartaSchedule();
+                });
+
+                it('value is set', function () {
+                    expect($ctrl.iconValue).toEqual('test');
+                });
+            });
+        });
+
+        describe('when value and update callback are given', function () {
+            var onUpdateSpy;
+
+            beforeEach(function () {
+                onUpdateSpy = jasmine.createSpy('spy');
+                bindings.value = 'value';
+                bindings.onUpdate = onUpdateSpy;
+                $ctrl = $componentController('binIcon', {$element: element, $scope: scope}, bindings);
+                $ctrl.$onInit();
+            });
+
+            describe('and public config does not contain any value', function () {
+                beforeEach(function () {
+                    triggerBinartaSchedule();
+                });
+
+                it('value is not overridden', function () {
+                    expect($ctrl.iconValue).toEqual('value');
+                });
+            });
+
+            describe('and public config contains a value', function () {
+                beforeEach(function () {
+                    binarta.application.gateway.addPublicConfig({id: 'icons/test.code', value: 'test'});
+                    triggerBinartaSchedule();
+                });
+
+                it('value is not overridden', function () {
+                    expect($ctrl.iconValue).toEqual('value');
+                });
+            });
+
+            describe('when user is in edit mode', function () {
+                var rendererScope;
+
+                describe('when setting an icon', function () {
+                    beforeEach(function () {
+                        editMode.bindEvent.calls.mostRecent().args[0].onClick();
+                        rendererScope = renderer.open.calls.first().args[0].scope;
+                    });
+
+                    describe('on submit', function () {
+                        beforeEach(function () {
+                            rendererScope.state.icon = 'fa-pencil';
+                            rendererScope.submit();
+                        });
+
+                        it('on update callback is executed', function () {
+                            expect($ctrl.onUpdate).toHaveBeenCalledWith({
+                                request: {
+                                    key: 'icon',
+                                    value: 'fa-pencil'
+                                },
+                                response: {
+                                    success: jasmine.any(Function),
+                                    error: jasmine.any(Function)
+                                }
+                            });
+                        });
+
+                        describe('on success', function () {
+                            beforeEach(function () {
+                                $ctrl.onUpdate.calls.mostRecent().args[0].response.success();
+                            });
+
+                            it('new icon code is used', function () {
+                                expect($ctrl.iconValue).toEqual('fa-pencil');
+                            });
+
+                            it('renderer is closed', function () {
+                                expect(renderer.close).toHaveBeenCalled();
+                            });
+                        });
+
+                        describe('on error', function () {
+                            beforeEach(function () {
+                                $ctrl.onUpdate.calls.mostRecent().args[0].response.error();
+                            });
+
+                            it('new icon code is not used', function () {
+                                expect($ctrl.iconValue).toEqual('value');
+                            });
+
+                            it('violations are set on scope', function () {
+                                expect($ctrl.violations).toEqual(['update.failed']);
+                            });
+
+                            it('renderer is not closed', function () {
+                                expect(renderer.close).not.toHaveBeenCalled();
+                            });
+                        });
+                    });
+                });
+
+                describe('when setting an image', function () {
+                    beforeEach(function () {
+                        binarta.checkpoint.gateway.addPermission(permission);
+                        binarta.checkpoint.profile.refresh();
+                        binarta.application.gateway.addPublicConfig({id: 'icons/test.code', value: 'f'});
+                        triggerBinartaSchedule();
+                        editMode.bindEvent.calls.mostRecent().args[0].onClick();
+                        rendererScope = renderer.open.calls.first().args[0].scope;
+                        rendererScope.changeView();
+                    });
+
+                    it('state is set to image', function () {
+                        expect(rendererScope.state.name).toEqual('image');
+                    });
+
+                    describe('on submit', function () {
+                        beforeEach(function () {
+                            rendererScope.submit();
+                        });
+
+                        it('on update callback is executed', function () {
+                            expect($ctrl.onUpdate).toHaveBeenCalledWith({
+                                request: {
+                                    key: 'icon',
+                                    value: 'image'
+                                },
+                                response: {
+                                    success: jasmine.any(Function),
+                                    error: jasmine.any(Function)
+                                }
+                            });
+                        });
+
+                        describe('on success', function () {
+                            beforeEach(function () {
+                                $ctrl.onUpdate.calls.mostRecent().args[0].response.success();
+                            });
+
+                            it('value is set', function () {
+                                expect($ctrl.iconValue).toEqual('image');
+                            });
+
+                            it('renderer is closed', function () {
+                                expect(renderer.close).toHaveBeenCalled();
+                            });
+                        });
+
+                        describe('on error', function () {
+                            beforeEach(function () {
+                                $ctrl.onUpdate.calls.mostRecent().args[0].response.error();
+                            });
+
+                            it('value is not set', function () {
+                                expect($ctrl.iconValue).toEqual('value');
+                            });
+
+                            it('violations are set on scope', function () {
+                                expect($ctrl.violations).toEqual(['update.failed']);
+                            });
+
+                            it('renderer is not closed', function () {
+                                expect(renderer.close).not.toHaveBeenCalled();
+                            });
+                        });
+                    });
+                });
+            });
+        });
+
+        describe('when value is not given', function () {
+            beforeEach(function () {
+                $ctrl = $componentController('binIcon', {$element: element, $scope: scope}, bindings);
+                $ctrl.$onInit();
+            });
+
+            it('edit mode event is bound', function () {
+                expect(editMode.bindEvent).toHaveBeenCalledWith({
+                    scope: scope,
+                    element: element,
+                    permission: 'edit.mode',
+                    onClick: jasmine.any(Function)
+                });
+            });
+
+            describe('when public config does not contain any value', function () {
+                beforeEach(function () {
+                    triggerBinartaSchedule();
+                });
+
+                it('default icon value is used', function () {
+                    expect($ctrl.iconValue).toEqual('default');
+                });
+            });
+
+            describe('correct media is rendered according to type', function () {
+                describe('when image is active', function () {
+                    beforeEach(function () {
+                        binarta.application.gateway.addPublicConfig({id: 'icons/test.code', value: 'image'});
+                        triggerBinartaSchedule();
+                    });
+
+                    it('value is set to image', function () {
+                        expect($ctrl.iconValue).toEqual('image');
+                    });
+                });
+
+                describe('when icon is active', function () {
+                    beforeEach(function () {
+                        binarta.application.gateway.addPublicConfig({id: 'icons/test.code', value: 'fa-bike'});
+                        triggerBinartaSchedule();
+                    });
+
+                    it('value is available on ctrl', function () {
+                        expect($ctrl.iconValue).toEqual('fa-bike');
+                    });
+                });
+            });
+
+            describe('when user is in edit mode', function () {
+                var rendererScope;
 
                 describe('when an icon was displayed on a page', function () {
                     beforeEach(function () {
@@ -1357,6 +1583,10 @@ describe('image-management', function () {
                             scope: rendererScope,
                             templateUrl: 'bin-icon-edit.html'
                         });
+                    });
+
+                    it('$ctrl is available trough rendererScope', function () {
+                        expect(rendererScope.$ctrl).toBe($ctrl);
                     });
 
                     it('is in icon state', function () {
@@ -1531,14 +1761,13 @@ describe('image-management', function () {
                             });
 
                             it('violations are set on scope', function () {
-                                expect(rendererScope.state.violations).toEqual(['update.failed']);
+                                expect($ctrl.violations).toEqual(['update.failed']);
                             });
 
                             it('renderer is not closed', function () {
                                 expect(renderer.close).not.toHaveBeenCalled();
                             });
                         });
-
                     });
                 });
 
@@ -1546,10 +1775,11 @@ describe('image-management', function () {
                     beforeEach(function () {
                         binarta.checkpoint.gateway.addPermission(permission);
                         binarta.checkpoint.profile.refresh();
-                        binarta.application.gateway.addPublicConfig({id: 'icons/test.code', value: 'image'});
+                        binarta.application.gateway.addPublicConfig({id: 'icons/test.code', value: 'f'});
                         triggerBinartaSchedule();
                         editMode.bindEvent.calls.mostRecent().args[0].onClick();
                         rendererScope = renderer.open.calls.first().args[0].scope;
+                        rendererScope.changeView();
                     });
 
                     it('state is set to image', function () {
@@ -1558,12 +1788,49 @@ describe('image-management', function () {
 
                     describe('on submit', function () {
                         beforeEach(function () {
-                            renderer.close.calls.reset();
-                            rendererScope.submit('new');
+                            rendererScope.submit();
                         });
 
-                        it('renderer is closed', function () {
-                            expect(renderer.close).toHaveBeenCalled();
+                        it('config is updated with the new icon value', function () {
+                            expect(configWriter).toHaveBeenCalledWith({
+                                scope: 'public',
+                                key: 'icons/test.code',
+                                value: 'image'
+                            });
+                        });
+
+                        describe('on config updated', function () {
+                            beforeEach(function () {
+                                configWriterDeferred.resolve();
+                                scope.$digest();
+                            });
+
+                            it('value is set', function () {
+                                expect($ctrl.iconValue).toEqual('image');
+                            });
+
+                            it('renderer is closed', function () {
+                                expect(renderer.close).toHaveBeenCalled();
+                            });
+                        });
+
+                        describe('on config update failure', function () {
+                            beforeEach(function () {
+                                configWriterDeferred.reject();
+                                scope.$digest();
+                            });
+
+                            it('value is not set', function () {
+                                expect($ctrl.iconValue).toEqual('f');
+                            });
+
+                            it('violations are set on scope', function () {
+                                expect($ctrl.violations).toEqual(['update.failed']);
+                            });
+
+                            it('renderer is not closed', function () {
+                                expect(renderer.close).not.toHaveBeenCalled();
+                            });
                         });
                     });
                 });

@@ -413,7 +413,7 @@ function BinImageController($scope, $element, imageManagement, editModeRenderer,
     }
 
     $scope.$on('$destroy', function () {
-       unsubscribeOnUploadedListener();
+        unsubscribeOnUploadedListener();
     });
 }
 
@@ -476,32 +476,43 @@ function BinImageUploader() {
 function BinIconComponent() {
     this.bindings = {
         code: '@',
+        value: '@',
         default: '@',
         height: '@',
         link: '<?',
-        linkTarget: '<?'
+        linkTarget: '<?',
+        onUpdate: '&?'
     };
 
     this.templateUrl = 'bin-icon.html';
 
-    this.controller = ['editMode', 'editModeRenderer', '$scope', '$element', 'binarta', 'configWriter', 'imageManagement',
-        function (editMode, editModeRenderer, $scope, $element, binarta, configWriter, imageManagement) {
-            var $ctrl = this;
-            var code = 'icons' + $ctrl.code;
+    this.controller = ['editMode', 'editModeRenderer', '$scope', '$element', 'binarta', 'configWriter',
+        function (editMode, editModeRenderer, $scope, $element, binarta, configWriter) {
+            var $ctrl = this, code;
 
-            editMode.bindEvent({
-                scope: $scope,
-                element: $element,
-                permission: 'edit.mode',
-                onClick: onEdit
-            });
+            $ctrl.$onInit = function () {
+                code = 'icons' + $ctrl.code;
 
-            binarta.schedule(function () {
-                binarta.application.config.findPublic(code, function (configValue) {
-                    if (!configValue) setDefaultIconValue();
-                    else $ctrl.iconValue = configValue;
+                editMode.bindEvent({
+                    scope: $scope,
+                    element: $element,
+                    permission: 'edit.mode',
+                    onClick: onEdit
                 });
-            });
+
+                if (shouldUsePublicConfig()) {
+                    binarta.schedule(function () {
+                        binarta.application.config.findPublic(code, function (configValue) {
+                            if (!configValue) setDefaultIconValue();
+                            else $ctrl.iconValue = configValue;
+                        });
+                    });
+                } else $ctrl.iconValue = $ctrl.value;
+            };
+
+            function shouldUsePublicConfig() {
+                return angular.isUndefined($ctrl.value) || $ctrl.value == '' || !$ctrl.onUpdate;
+            }
 
             function isImage() {
                 return $ctrl.iconValue == 'image';
@@ -511,23 +522,25 @@ function BinIconComponent() {
                 $ctrl.iconValue = $ctrl.default;
             }
 
-            function updateConfig(args) {
+            function updateValue(args) {
                 if ($ctrl.iconValue == args.value) onSuccess();
                 else {
-                    configWriter({
-                        scope: 'public',
-                        key: code,
-                        value: args.value
-                    }).then(function () {
-                        $ctrl.iconValue = args.value;
-                        onSuccess();
-                    }, function () {
-                        if (args.error) args.error();
-                    });
+                    if ($ctrl.onUpdate)
+                        $ctrl.onUpdate({
+                            request: {key: 'icon', value: args.value},
+                            response: {success: onSuccess, error: onError}
+                        });
+                    else
+                        configWriter({scope: 'public', key: code, value: args.value}).then(onSuccess, onError);
                 }
 
                 function onSuccess() {
+                    $ctrl.iconValue = args.value;
                     if (args.success) args.success();
+                }
+
+                function onError() {
+                    $ctrl.violations = ['update.failed'];
                 }
             }
 
@@ -551,13 +564,7 @@ function BinIconComponent() {
                     this.isUploadPermitted = isUploadPermitted();
 
                     this.submit = function () {
-                        updateConfig({
-                            value: this.icon,
-                            success: rendererScope.cancel,
-                            error: function () {
-                                state.violations = ['update.failed'];
-                            }
-                        });
+                        updateValue({value: this.icon, success: rendererScope.cancel});
                     };
 
                     this.changeView = function () {
@@ -569,7 +576,7 @@ function BinIconComponent() {
                     this.name = 'image';
 
                     this.submit = function () {
-                        updateConfig({value: 'image', success: rendererScope.cancel});
+                        updateValue({value: 'image', success: rendererScope.cancel});
                     };
 
                     this.changeView = function () {
