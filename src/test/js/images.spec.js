@@ -701,10 +701,6 @@ describe('image-management', function () {
             BinImageController(scope, element, imageManagement, editModeRenderer, binarta, ngRegisterTopicHandler, $window);
         }));
 
-        it('is in working state', function () {
-            expect(scope.state).toEqual('working');
-        });
-
         describe('bind image events', function () {
             describe('and no args given', function () {
                 beforeEach(function () {
@@ -721,10 +717,6 @@ describe('image-management', function () {
                         expect(addedClass[0]).toEqual('not-found');
                     });
 
-                    it('set state on scope', function () {
-                        expect(scope.state).toEqual('not-found');
-                    });
-
                     it('set image src to fallback image', function () {
                         expect(scope.setImageSrcSpy).toEqual(fallbackSrc);
                     });
@@ -735,8 +727,8 @@ describe('image-management', function () {
                             event['load']();
                         });
 
-                        it('state is still not-found', function () {
-                            expect(scope.state).toEqual('not-found');
+                        it('not-found class is still on element', function () {
+                            expect(addedClass[0]).toEqual('not-found');
                         });
                     });
                 });
@@ -749,10 +741,6 @@ describe('image-management', function () {
                     it('put not-found class on element', function () {
                         expect(addedClass[0]).toEqual('not-found');
                     });
-
-                    it('set state on scope', function () {
-                        expect(scope.state).toEqual('not-found');
-                    });
                 });
 
                 describe('when image is found', function () {
@@ -762,10 +750,6 @@ describe('image-management', function () {
 
                     it('put not-found class on element', function () {
                         expect(removedClass[0]).toEqual('not-found');
-                    });
-
-                    it('set state on scope', function () {
-                        expect(scope.state).toEqual('loaded');
                     });
                 });
             });
@@ -813,190 +797,142 @@ describe('image-management', function () {
                     describe('and element is clicked', function () {
                         var clickResponse;
 
-                        describe('with overridden edit click event', function () {
-                            beforeEach(function () {
-                                scope.onEdit = jasmine.createSpy('onEdit');
-                            });
-
-                            describe('and image is loaded', function () {
-                                beforeEach(function () {
-                                    scope.state = 'loaded';
-                                    clickResponse = event['click']();
-                                });
-
-                                it('custom event is triggered', function () {
-                                    expect(scope.onEdit).toHaveBeenCalledWith({isFirstImage: false});
-                                });
-                            });
-
-                            describe('and image is not found', function () {
-                                beforeEach(function () {
-                                    scope.state = 'not-found';
-                                    clickResponse = event['click']();
-                                });
-
-                                it('custom event is triggered', function () {
-                                    expect(scope.onEdit).toHaveBeenCalledWith({isFirstImage: true});
-                                });
-                            });
+                        beforeEach(function () {
+                            scope.state = 'loaded';
+                            clickResponse = event['click']();
                         });
 
-                        describe('default', function () {
-                            beforeEach(function () {
-                                scope.state = 'loaded';
-                                clickResponse = event['click']();
-                            });
+                        it('click event returns false to prevent the default action and stop propagation', function () {
+                            expect(clickResponse).toEqual(false);
+                        });
 
-                            it('click event returns false to prevent the default action and stop propagation', function () {
-                                expect(clickResponse).toEqual(false);
-                            });
+                        it('fileupload is executed', function () {
+                            expect(imageManagement.fileUploadSpy).toBeDefined();
+                            expect(imageManagement.fileUploadClicked).toBeTruthy();
+                        });
 
-                            it('fileupload is executed', function () {
-                                expect(imageManagement.fileUploadSpy).toBeDefined();
-                                expect(imageManagement.fileUploadClicked).toBeTruthy();
-                            });
+                        it('with context', function () {
+                            expect(imageManagement.fileUploadSpy.dataType).toEqual('json');
+                            expect(imageManagement.fileUploadSpy.add).toEqual(jasmine.any(Function));
+                        });
 
-                            it('with context', function () {
-                                expect(imageManagement.fileUploadSpy.dataType).toEqual('json');
-                                expect(imageManagement.fileUploadSpy.add).toEqual(jasmine.any(Function));
-                            });
+                        describe('image is added', function () {
+                            describe('with violations', function () {
+                                beforeEach(function () {
+                                    imageManagement.validateReturn = ['violation'];
 
-                            describe('image is added', function () {
-                                describe('with violations', function () {
-                                    beforeEach(function () {
-                                        imageManagement.validateReturn = ['violation'];
-
-                                        imageManagement.fileUploadSpy.add(null, file);
-                                    });
-
-                                    it('put violation on scope', function () {
-                                        expect(scope.violation).toEqual('violation');
-                                    });
-
-                                    it('reset state', function () {
-                                        expect(editModeRendererSpy.open.scope.state).toEqual('');
-                                    });
+                                    imageManagement.fileUploadSpy.add(null, file);
                                 });
 
-                                describe('without violations', function () {
-                                    beforeEach(function () {
-                                        imageManagement.fileUploadSpy.add(null, file);
+                                it('put violation on scope', function () {
+                                    expect(scope.violation).toEqual('violation');
+                                });
+
+                                it('reset state', function () {
+                                    expect(editModeRendererSpy.open.scope.state).toEqual('');
+                                });
+                            });
+
+                            describe('without violations', function () {
+                                beforeEach(function () {
+                                    imageManagement.fileUploadSpy.add(null, file);
+                                });
+
+                                it('editModeRenderer is opened', function () {
+                                    expect(editModeRendererSpy.open.scope.$parent).toEqual(scope);
+                                    expect(editModeRendererSpy.open.template).toEqual(jasmine.any(String));
+                                });
+
+                                it('no violation on scope', function () {
+                                    expect(scope.violation).toBeUndefined();
+                                });
+
+                                describe('when URL is available', function () {
+                                    it('state is set to preview', function () {
+                                        expect(editModeRendererSpy.open.scope.state).toEqual('preview');
                                     });
 
-                                    it('editModeRenderer is opened', function () {
-                                        expect(editModeRendererSpy.open.scope.$parent).toEqual(scope);
-                                        expect(editModeRendererSpy.open.template).toEqual(jasmine.any(String));
+                                    it('get object url from URL', function () {
+                                        expect($window.URL.createObjectURLSpy).toEqual(_file);
                                     });
 
-                                    it('no violation on scope', function () {
-                                        expect(scope.violation).toBeUndefined();
+                                    it('set image source', function () {
+                                        expect(scope.setImageSrcSpy).toEqual('objectUrl');
                                     });
 
-                                    describe('when URL is available', function () {
-                                        it('state is set to preview', function () {
-                                            expect(editModeRendererSpy.open.scope.state).toEqual('preview');
-                                        });
-
-                                        it('get object url from URL', function () {
-                                            expect($window.URL.createObjectURLSpy).toEqual(_file);
-                                        });
-
-                                        it('set image source', function () {
-                                            expect(scope.setImageSrcSpy).toEqual('objectUrl');
-                                        });
-
-                                        describe('new image is added', function () {
-                                            beforeEach(function () {
-                                                imageManagement.fileUploadSpy.add(null, file);
-                                            });
-
-                                            it('previous object url is revoked', function () {
-                                                expect($window.URL.revokeObjectURLSpy).toEqual('objectUrl');
-                                            });
-                                        });
-                                    });
-
-                                    describe('when URL is not available', function () {
+                                    describe('new image is added', function () {
                                         beforeEach(function () {
-                                            $window.URL = undefined;
                                             imageManagement.fileUploadSpy.add(null, file);
                                         });
 
-                                        it('image is submitted', function () {
-                                            expect(imageManagement.uploadSpy.file).toEqual(file);
+                                        it('previous object url is revoked', function () {
+                                            expect($window.URL.revokeObjectURLSpy).toEqual('objectUrl');
                                         });
                                     });
+                                });
 
-                                    describe('on submit without image type', function () {
-                                        var matchOn;
-
-                                        beforeEach(function () {
-                                            element.is = function (m) {
-                                                matchOn = m;
-                                                return true;
-                                            };
-
-                                            editModeRendererSpy.open.scope.submit();
-                                        });
-
-                                        it('check if img', function () {
-                                            expect(matchOn).toEqual('img');
-                                        });
-
-                                        it('test', function () {
-                                            expect(imageManagement.uploadSpy.imageType).toEqual('foreground');
-                                        });
+                                describe('when URL is not available', function () {
+                                    beforeEach(function () {
+                                        $window.URL = undefined;
+                                        imageManagement.fileUploadSpy.add(null, file);
                                     });
 
-                                    describe('on submit', function () {
-                                        beforeEach(function () {
-                                            element.is = function () {
-                                                return false;
-                                            };
+                                    it('image is submitted', function () {
+                                        expect(imageManagement.uploadSpy.file).toEqual(file);
+                                    });
+                                });
 
-                                            editModeRendererSpy.open.scope.submit();
-                                        });
+                                describe('on submit without image type', function () {
+                                    var matchOn;
 
-                                        it('add uploading class', function () {
-                                            expect(addedClass[0]).toEqual('uploading');
-                                        });
+                                    beforeEach(function () {
+                                        element.is = function (m) {
+                                            matchOn = m;
+                                            return true;
+                                        };
 
-                                        it('upload', function () {
-                                            expect(imageManagement.uploadSpy.file).toEqual(file);
-                                            expect(imageManagement.uploadSpy.code).toEqual('test.img');
-                                            expect(imageManagement.uploadSpy.imageType).toEqual('background');
-                                        });
-
-                                        describe('upload success', function () {
-                                            beforeEach(function () {
-                                                scope.$digest();
-                                            });
-
-                                            it('reset state', function () {
-                                                expect(editModeRendererSpy.open.scope.state).toEqual('');
-                                            });
-
-                                            it('remove uploading class', function () {
-                                                expect(removedClass[0]).toEqual('uploading');
-                                            });
-
-                                            it('set image path', function () {
-                                                expect(scope.setDefaultImageSrcCalled).toBeTruthy();
-                                            });
-
-                                            it('close editModeRenderer', function () {
-                                                expect(editModeRendererSpy.close).toBeTruthy();
-                                            });
-
-                                            it('preview image object url is revoked', function () {
-                                                expect($window.URL.revokeObjectURLSpy).toEqual('objectUrl');
-                                            });
-                                        });
+                                        editModeRendererSpy.open.scope.submit();
                                     });
 
-                                    describe('on close', function () {
+                                    it('check if img', function () {
+                                        expect(matchOn).toEqual('img');
+                                    });
+
+                                    it('test', function () {
+                                        expect(imageManagement.uploadSpy.imageType).toEqual('foreground');
+                                    });
+                                });
+
+                                describe('on submit', function () {
+                                    beforeEach(function () {
+                                        element.is = function () {
+                                            return false;
+                                        };
+
+                                        editModeRendererSpy.open.scope.submit();
+                                    });
+
+                                    it('add uploading class', function () {
+                                        expect(addedClass[0]).toEqual('uploading');
+                                    });
+
+                                    it('upload', function () {
+                                        expect(imageManagement.uploadSpy.file).toEqual(file);
+                                        expect(imageManagement.uploadSpy.code).toEqual('test.img');
+                                        expect(imageManagement.uploadSpy.imageType).toEqual('background');
+                                    });
+
+                                    describe('upload success', function () {
                                         beforeEach(function () {
-                                            editModeRendererSpy.open.scope.close();
+                                            scope.$digest();
+                                        });
+
+                                        it('reset state', function () {
+                                            expect(editModeRendererSpy.open.scope.state).toEqual('');
+                                        });
+
+                                        it('remove uploading class', function () {
+                                            expect(removedClass[0]).toEqual('uploading');
                                         });
 
                                         it('set image path', function () {
@@ -1010,6 +946,24 @@ describe('image-management', function () {
                                         it('preview image object url is revoked', function () {
                                             expect($window.URL.revokeObjectURLSpy).toEqual('objectUrl');
                                         });
+                                    });
+                                });
+
+                                describe('on close', function () {
+                                    beforeEach(function () {
+                                        editModeRendererSpy.open.scope.close();
+                                    });
+
+                                    it('set image path', function () {
+                                        expect(scope.setDefaultImageSrcCalled).toBeTruthy();
+                                    });
+
+                                    it('close editModeRenderer', function () {
+                                        expect(editModeRendererSpy.close).toBeTruthy();
+                                    });
+
+                                    it('preview image object url is revoked', function () {
+                                        expect($window.URL.revokeObjectURLSpy).toEqual('objectUrl');
                                     });
                                 });
                             });

@@ -239,27 +239,19 @@ function BinBackgroundImageDirectiveFactory(imageManagement) {
 
 function BinImageController($scope, $element, imageManagement, editModeRenderer, binarta, ngRegisterTopicHandler, $window) {
     var fallbackSrc = '//cdn.binarta.com/image/icons/camera-faded.svg';
-    $scope.state = 'working';
 
     $scope.bindImageEvents = function (args) {
         var element = args && args.bindOn ? args.bindOn : $element;
 
-        element.bind('load', function () {
-            if ($scope.src != fallbackSrc) imageLoaded();
-        });
-        element.bind('error', function () {
-            imageNotFound();
-        });
-        element.bind('abort', function () {
-            imageNotFound();
-        });
+        element.bind('load', imageLoaded);
+        element.bind('error', imageNotFound);
+        element.bind('abort', imageNotFound);
+
         function imageLoaded() {
-            $scope.state = 'loaded';
-            $element.removeClass('not-found');
+            if ($scope.src != fallbackSrc) $element.removeClass('not-found');
         }
 
         function imageNotFound() {
-            $scope.state = 'not-found';
             $element.addClass('not-found');
             $scope.setImageSrc(fallbackSrc);
         }
@@ -295,9 +287,7 @@ function BinImageController($scope, $element, imageManagement, editModeRenderer,
     function bindClickEvent(editMode) {
         if (editMode) {
             $element.bind("click", function () {
-                if ($scope.state != 'working') {
-                    $scope.onEdit ? $scope.onEdit({isFirstImage: $scope.state == 'not-found'}) : open();
-                }
+                open();
                 return false;
             });
         } else {
