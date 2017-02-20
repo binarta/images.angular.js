@@ -1,7 +1,7 @@
 angular.module('image-management', ['config', 'image.rest', 'notifications', 'toggle.edit.mode', 'binarta-checkpointjs-angular1', 'image-management.templates'])
     .service('imageManagement', ['$q', 'config', 'uploader', '$timeout', 'binarta', '$log', ImageManagementService])
-    .directive('binImage', ['imageManagement', 'binarta', BinImageDirectiveFactory])
-    .directive('binBackgroundImage', ['imageManagement', 'binarta', BinBackgroundImageDirectiveFactory])
+    .directive('binImage', ['imageManagement', BinImageDirectiveFactory])
+    .directive('binBackgroundImage', ['imageManagement', BinBackgroundImageDirectiveFactory])
     .component('binImageEnlarged', new BinImageEnlargedComponent())
     .component('binImageUploader', new BinImageUploader)
     .component('binIcon', new BinIconComponent())
@@ -175,7 +175,7 @@ function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
     }
 }
 
-function BinImageDirectiveFactory(imageManagement, binarta) {
+function BinImageDirectiveFactory(imageManagement) {
     return {
         restrict: 'A',
         scope: true,
@@ -191,25 +191,13 @@ function BinImageDirectiveFactory(imageManagement, binarta) {
             };
 
             scope.setDefaultImageSrc = function () {
-                function loadImg() {
-                    var args = {code: scope.code};
-                    if (attrs.height) {
-                        args.height = parseInt(attrs.height);
-                        if (attrs.width) args.width = parseInt(attrs.width);
-                    }
-                    else args.width = parseInt(attrs.width) || getBoxWidth();
-                    scope.setImageSrc(imageManagement.getImageUrl(args));
+                var args = {code: scope.code};
+                if (attrs.height) {
+                    args.height = parseInt(attrs.height);
+                    if (attrs.width) args.width = parseInt(attrs.width);
                 }
-
-                var listener = {
-                    signedin: loadImg,
-                    signedout: loadImg
-                };
-                loadImg();
-                binarta.checkpoint.profile.eventRegistry.add(listener);
-                scope.$on('$destroy', function () {
-                    binarta.checkpoint.profile.eventRegistry.remove(listener);
-                });
+                else args.width = parseInt(attrs.width) || getBoxWidth();
+                scope.setImageSrc(imageManagement.getImageUrl(args));
             };
             scope.setDefaultImageSrc();
 
@@ -226,7 +214,7 @@ function BinImageDirectiveFactory(imageManagement, binarta) {
     }
 }
 
-function BinBackgroundImageDirectiveFactory(imageManagement, binarta) {
+function BinBackgroundImageDirectiveFactory(imageManagement) {
     return {
         restrict: 'A',
         scope: true,
@@ -241,20 +229,8 @@ function BinBackgroundImageDirectiveFactory(imageManagement, binarta) {
             };
 
             scope.setDefaultImageSrc = function () {
-                function loadImg() {
-                    var path = imageManagement.getImageUrl({code: scope.code, width: element.width()});
-                    scope.setImageSrc(path);
-                }
-
-                var listener = {
-                    signedin: loadImg,
-                    signedout: loadImg
-                };
-                loadImg();
-                binarta.checkpoint.profile.eventRegistry.add(listener);
-                scope.$on('$destroy', function () {
-                    binarta.checkpoint.profile.eventRegistry.remove(listener);
-                });
+                var path = imageManagement.getImageUrl({code: scope.code, width: element.width()});
+                scope.setImageSrc(path);
             };
             scope.setDefaultImageSrc();
         }

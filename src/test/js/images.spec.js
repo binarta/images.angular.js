@@ -412,7 +412,7 @@ describe('image-management', function () {
                 }
             };
 
-            directive = BinImageDirectiveFactory(imageManagement, binarta);
+            directive = BinImageDirectiveFactory(imageManagement);
         });
 
         it('restrict', function () {
@@ -543,7 +543,7 @@ describe('image-management', function () {
                 getImageUrl: jasmine.createSpy('getImageUrl').and.returnValue('img-url')
             };
 
-            directive = BinBackgroundImageDirectiveFactory(imageManagement, binarta);
+            directive = BinBackgroundImageDirectiveFactory(imageManagement);
         }));
 
         it('restrict', function () {
@@ -570,22 +570,6 @@ describe('image-management', function () {
 
             it('get image path', function () {
                 expect(imageManagement.getImageUrl).toHaveBeenCalledWith({code: 'test.img', width: 100});
-                expect(imageManagement.getImageUrl.calls.count()).toEqual(1);
-            });
-
-            it('get image path refreshes on signin', function () {
-                binarta.checkpoint.profile.refresh();
-                expect(imageManagement.getImageUrl.calls.count()).toEqual(2);
-            });
-
-            it('get image path refreshes on signout', function () {
-                binarta.checkpoint.profile.signout();
-                expect(imageManagement.getImageUrl.calls.count()).toEqual(2);
-            });
-
-            it('get image url stops listening to profile events when scope is destroyed', function () {
-                scope.$destroy();
-                binarta.checkpoint.profile.refresh();
                 expect(imageManagement.getImageUrl.calls.count()).toEqual(1);
             });
 
