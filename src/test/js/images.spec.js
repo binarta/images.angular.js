@@ -362,6 +362,8 @@ describe('image-management', function () {
         var imagePath = 'image/path.jpg';
 
         beforeEach(function () {
+            var minWidth = 60;
+
             scope.bindImageEvents = jasmine.createSpy('bindImageEvents');
             scope.bindClickEvent = jasmine.createSpy('bindClickEvent');
 
@@ -372,7 +374,7 @@ describe('image-management', function () {
                 parent: function () {
                     return {
                         width: function () {
-                            return 0;
+                            return --minWidth;
                         },
                         parent: function () {
                             return {
@@ -399,6 +401,9 @@ describe('image-management', function () {
             element[0] = {};
 
             imageManagement = {
+                image: {
+                    minWidth: minWidth
+                },
                 getImagePathSpy: {},
                 getImageUrl: function (args) {
                     imageManagement.getImagePathSpy = args;

@@ -12,7 +12,8 @@ function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
 
     this.image = {
         uploaded: [],
-        defaultTimeStamp: new Date().getTime()
+        defaultTimeStamp: new Date().getTime(),
+        minWidth: 60
     };
 
     this.getLowerbound = function () {
@@ -119,7 +120,7 @@ function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
     function convertToRangedWidth(width) {
         var w;
         [
-            {lowerbound: 0, upperbound: 60, actual: 60},
+            {lowerbound: 0, upperbound: 60, actual: self.image.minWidth},
             {lowerbound: 61, upperbound: 160, actual: 160},
             {lowerbound: 161, upperbound: 320, actual: 320},
             {lowerbound: 321, upperbound: 480, actual: 480},
@@ -204,9 +205,11 @@ function BinImageDirectiveFactory(imageManagement) {
             function getBoxWidth() {
                 var width = 0;
                 var el = element;
-                while (width == 0) {
-                    el = el.parent();
-                    width = el.width();
+                while (width < imageManagement.image.minWidth) {
+                    if (el.parent) {
+                        el = el.parent();
+                        width = el.width();
+                    } else width = imageManagement.image.minWidth;
                 }
                 return width;
             }
