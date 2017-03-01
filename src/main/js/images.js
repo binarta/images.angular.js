@@ -554,8 +554,7 @@ function BinIconComponent() {
                 }
 
                 function isUploadPermitted() {
-                    //TODO: update to icon.upload when this permission becomes available
-                    return binarta.checkpoint.profile.hasPermission('video.config.update');
+                    return binarta.checkpoint.profile.hasPermission('icon.upload');
                 }
 
                 editModeRenderer.open({

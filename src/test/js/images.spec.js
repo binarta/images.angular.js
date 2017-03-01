@@ -1232,7 +1232,7 @@ describe('image-management', function () {
             configWriterDeferred = $q.defer();
             configWriter.and.returnValue(configWriterDeferred.promise);
             binarta.application.gateway.clear();
-            permission = 'video.config.update';
+            permission = 'icon.upload';
         }));
 
         function triggerBinartaSchedule() {
