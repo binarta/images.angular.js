@@ -1,7 +1,7 @@
 angular.module('image-management', ['config', 'image.rest', 'notifications', 'toggle.edit.mode', 'binarta-checkpointjs-angular1', 'image-management.templates'])
     .service('imageManagement', ['$q', 'config', 'uploader', '$timeout', 'binarta', '$log', ImageManagementService])
-    .directive('binImage', ['imageManagement', BinImageDirectiveFactory])
-    .directive('binBackgroundImage', ['imageManagement', BinBackgroundImageDirectiveFactory])
+    .directive('binImage', ['$timeout', 'imageManagement', BinImageDirectiveFactory])
+    .directive('binBackgroundImage', ['$timeout', 'imageManagement', BinBackgroundImageDirectiveFactory])
     .component('binImageEnlarged', new BinImageEnlargedComponent())
     .component('binImageUploader', new BinImageUploader)
     .component('binIcon', new BinIconComponent())
@@ -176,7 +176,7 @@ function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
     }
 }
 
-function BinImageDirectiveFactory(imageManagement) {
+function BinImageDirectiveFactory($timeout, imageManagement) {
     return {
         restrict: 'A',
         scope: true,
@@ -200,7 +200,10 @@ function BinImageDirectiveFactory(imageManagement) {
                 else args.width = parseInt(attrs.width) || getBoxWidth();
                 scope.setImageSrc(imageManagement.getImageUrl(args));
             };
-            scope.setDefaultImageSrc();
+
+            $timeout(function () {
+                scope.setDefaultImageSrc();
+            });
 
             function getBoxWidth() {
                 var width = 0;
@@ -217,7 +220,7 @@ function BinImageDirectiveFactory(imageManagement) {
     }
 }
 
-function BinBackgroundImageDirectiveFactory(imageManagement) {
+function BinBackgroundImageDirectiveFactory($timeout, imageManagement) {
     return {
         restrict: 'A',
         scope: true,
@@ -235,7 +238,10 @@ function BinBackgroundImageDirectiveFactory(imageManagement) {
                 var path = imageManagement.getImageUrl({code: scope.code, width: element.width()});
                 scope.setImageSrc(path);
             };
-            scope.setDefaultImageSrc();
+
+            $timeout(function () {
+                scope.setDefaultImageSrc();
+            });
         }
     }
 }

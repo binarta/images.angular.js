@@ -8,7 +8,7 @@ angular.module('toggle.edit.mode', [])
 
 describe('image-management', function () {
     var binarta, scope, ctrl, directive, notifications, config;
-    var $httpBackend, $componentController, $q;
+    var $httpBackend, $componentController, $q, $timeout;
     var uploader;
     var _file;
     var file;
@@ -22,10 +22,11 @@ describe('image-management', function () {
     beforeEach(module('uploader.mock'));
     beforeEach(module('i18n.mock'));
     beforeEach(module('config'));
-    beforeEach(inject(function ($injector, $rootScope, _binarta_, _$componentController_, _$q_) {
+    beforeEach(inject(function ($injector, $rootScope, _binarta_, _$componentController_, _$q_, _$timeout_) {
         binarta = _binarta_;
         $componentController = _$componentController_;
         $q = _$q_;
+        $timeout = _$timeout_;
         scope = $rootScope.$new();
         $httpBackend = $injector.get('$httpBackend');
         _file = {
@@ -417,7 +418,7 @@ describe('image-management', function () {
                 }
             };
 
-            directive = BinImageDirectiveFactory(imageManagement);
+            directive = BinImageDirectiveFactory($timeout, imageManagement);
         });
 
         it('restrict', function () {
@@ -435,7 +436,7 @@ describe('image-management', function () {
         describe('on link', function () {
             beforeEach(function () {
                 directive.link(scope, element, {binImage: 'test.img'});
-                scope.$digest();
+                $timeout.flush();
             });
 
             it('put code on scope', function () {
@@ -468,7 +469,7 @@ describe('image-management', function () {
             describe('with width attribute on image', function () {
                 beforeEach(function () {
                     directive.link(scope, element, {binImage: 'test.img', width: '200'});
-                    scope.$digest();
+                    $timeout.flush();
                 });
 
                 it('get image path', function () {
@@ -479,7 +480,7 @@ describe('image-management', function () {
             describe('with height attribute on image', function () {
                 beforeEach(function () {
                     directive.link(scope, element, {binImage: 'test.img', height: '200'});
-                    scope.$digest();
+                    $timeout.flush();
                 });
 
                 it('get image path', function () {
@@ -490,7 +491,7 @@ describe('image-management', function () {
             describe('with width and height attributes on image', function () {
                 beforeEach(function () {
                     directive.link(scope, element, {binImage: 'test.img', width: '200', height: '100'});
-                    scope.$digest();
+                    $timeout.flush();
                 });
 
                 it('get image path', function () {
@@ -548,7 +549,7 @@ describe('image-management', function () {
                 getImageUrl: jasmine.createSpy('getImageUrl').and.returnValue('img-url')
             };
 
-            directive = BinBackgroundImageDirectiveFactory(imageManagement);
+            directive = BinBackgroundImageDirectiveFactory($timeout, imageManagement);
         }));
 
         it('restrict', function () {
@@ -567,6 +568,7 @@ describe('image-management', function () {
             beforeEach(function () {
                 directive.link(scope, element, {binBackgroundImage: 'test.img'});
                 scope.$digest();
+                $timeout.flush();
             });
 
             it('put code on scope', function () {
