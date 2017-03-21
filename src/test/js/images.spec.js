@@ -500,6 +500,25 @@ describe('image-management', function () {
             });
         });
 
+        describe('when element has no parent anymore', function () {
+            beforeEach(function () {
+                element.parent = function () {
+                    return {
+                        width: function () {
+                            return null;
+                        }
+                    }
+                };
+                imageManagement.getImageUrl = jasmine.createSpy('spy');
+                directive.link(scope, element, {binImage: 'test.img'});
+                $timeout.flush();
+            });
+
+            it('do not get image path', function () {
+               expect(imageManagement.getImageUrl).not.toHaveBeenCalled();
+            });
+        });
+
         describe('when image is read-only', function () {
             beforeEach(function () {
                 directive.link(scope, element, {binImage: 'test.img', readOnly: ''});

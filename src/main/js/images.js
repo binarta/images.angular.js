@@ -197,7 +197,10 @@ function BinImageDirectiveFactory($timeout, imageManagement) {
                     args.height = parseInt(attrs.height);
                     if (attrs.width) args.width = parseInt(attrs.width);
                 }
-                else args.width = parseInt(attrs.width) || getBoxWidth();
+                else {
+                    args.width = parseInt(attrs.width) || getBoxWidth();
+                    if (args.width == 0) return;
+                }
                 scope.setImageSrc(imageManagement.getImageUrl(args));
             };
 
@@ -208,13 +211,17 @@ function BinImageDirectiveFactory($timeout, imageManagement) {
             function getBoxWidth() {
                 var width = 0;
                 var el = element;
-                while (width < imageManagement.image.minWidth) {
+                while (width < imageManagement.image.minWidth && isInteger(width)) {
                     if (el.parent) {
                         el = el.parent();
                         width = el.width();
                     } else width = imageManagement.image.minWidth;
                 }
-                return width;
+                return width || 0;
+            }
+
+            function isInteger(value) {
+                return typeof value === 'number' && isFinite(value) && Math.floor(value) === value;
             }
         }
     }
