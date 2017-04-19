@@ -586,7 +586,6 @@ describe('image-management', function () {
         describe('on link', function () {
             beforeEach(function () {
                 directive.link(scope, element, {binBackgroundImage: 'test.img'});
-                scope.$digest();
                 $timeout.flush();
             });
 
@@ -622,6 +621,17 @@ describe('image-management', function () {
 
             it('bind click event is not called', function () {
                 expect(scope.bindClickEvent).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('when width is defined on attributes', function () {
+            beforeEach(function () {
+                directive.link(scope, element, {binBackgroundImage: 'test.img', width: '200'});
+                $timeout.flush();
+            });
+
+            it('get image path', function () {
+                expect(imageManagement.getImageUrl).toHaveBeenCalledWith({code: 'test.img', width: 200});
             });
         });
 

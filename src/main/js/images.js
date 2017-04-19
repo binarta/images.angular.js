@@ -242,13 +242,17 @@ function BinBackgroundImageDirectiveFactory($timeout, imageManagement) {
             };
 
             scope.setDefaultImageSrc = function () {
-                var path = imageManagement.getImageUrl({code: scope.code, width: element.width()});
+                var path = imageManagement.getImageUrl({code: scope.code, width: getWidth()});
                 scope.setImageSrc(path);
             };
 
             $timeout(function () {
                 scope.setDefaultImageSrc();
             });
+
+            function getWidth() {
+                return attrs.width ? parseInt(attrs.width) : element.width();
+            }
         }
     }
 }
