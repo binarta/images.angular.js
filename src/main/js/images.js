@@ -327,6 +327,7 @@ function BinImageController($scope, $element, imageManagement, editModeRenderer,
         imageManagement.fileUpload({
             dataType: 'json',
             add: function (e, d) {
+                $scope.violation = undefined;
                 var rendererScope = angular.extend($scope.$new(), {
                     submit: function () {
                         $element.addClass('uploading');
@@ -376,19 +377,7 @@ function BinImageController($scope, $element, imageManagement, editModeRenderer,
 
                 function openEditModeMenu() {
                     editModeRenderer.open({
-                        template: "<div id='bin-image-file-upload-dialog'>" +
-                        "<form class='bin-menu-edit-body'>" +
-                        "<p class='text-warning' ng-if='violation'>" +
-                        "<i class='fa fa-times-circle fa-fw'></i>" +
-                        "<span i18n code='upload.image.{{violation}}' default='{{violation}}' read-only>{{var}}</span>" +
-                        "</p>" +
-                        "<p ng-if='state == \"uploading\"' i18n code=\"upload.image.uploading\" default=\"Bezig met uploaden...\" read-only><i class='fa fa-spinner fa-spin fa-fw'></i> {{var}}</p>" +
-                        "<p ng-if='state == \"preview\"' class='bin-image-preview' i18n code=\"upload.image.preview\" default=\"PREVIEW\" read-only><img ng-src=\"{{previewImageUrl}}\"><span>{{var}}</span></p>" +
-                        "</form>" +
-                        "<div class='bin-menu-edit-actions'>" +
-                        "<button type='submit' class='btn btn-success' ng-click='submit()' ng-if='state == \"preview\"' i18n code='upload.image.save.button' default='Opslaan' read-only>{{var}}</button>" +
-                        "<button type='reset' class='btn btn-default' ng-click='close()' i18n code='upload.image.cancel.button' default='Annuleren' read-only>{{var}}</button>" +
-                        "</div></div>",
+                        templateUrl: "bin-image-edit.html",
                         scope: rendererScope
                     });
                 }

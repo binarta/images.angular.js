@@ -876,7 +876,7 @@ describe('image-management', function () {
 
                                 it('editModeRenderer is opened', function () {
                                     expect(editModeRendererSpy.open.scope.$parent).toEqual(scope);
-                                    expect(editModeRendererSpy.open.template).toEqual(jasmine.any(String));
+                                    expect(editModeRendererSpy.open.templateUrl).toEqual(jasmine.any(String));
                                 });
 
                                 it('no violation on scope', function () {

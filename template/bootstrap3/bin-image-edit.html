@@ -1,0 +1,22 @@
+<div id="bin-image-file-upload-dialog">
+    <form class="bin-menu-edit-body">
+        <p class="text-warning" ng-if="violation">
+            <i class="fa fa-times-circle fa-fw"></i>
+            <span i18n code="upload.image.{{violation}}" default="{{violation}}" read-only ng-bind="var"></span>
+        </p>
+        <p ng-if="state == 'uploading'" i18n code="upload.image.uploading" read-only>
+            <i class="fa fa-spinner fa-spin fa-fw"></i> <span ng-bind="::var"></span>
+        </p>
+        <p ng-if="state == 'preview'" class="bin-image-preview">
+            <img ng-src="{{previewImageUrl}}">
+        </p>
+    </form>
+    <div class="bin-menu-edit-actions">
+        <button type="submit" class="btn btn-success" ng-click="submit()" ng-if="state == 'preview'"
+                i18n code="upload.image.save.button" read-only ng-bind="::var">
+        </button>
+        <button type="reset" class="btn btn-default" ng-click="close()"
+                i18n code="upload.image.cancel.button" read-only ng-bind="::var">
+        </button>
+    </div>
+</div>
