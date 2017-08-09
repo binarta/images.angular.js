@@ -63,39 +63,7 @@ describe('image-management', function () {
         describe('getImageUrl', function () {
             function assertImagePathIsTimestamped() {
                 var path = imageManagement.getImageUrl({code: code, width: boxWidth});
-                expect(path).toMatch(/http:\/\/aws\/path\/test.img\?width=160&\d+/);
-            }
-
-            function assertPathWithRangedWidth(timestamp) {
-                [
-                    {actual: 0, expected: 60},
-                    {actual: 1, expected: 60},
-                    {actual: 60, expected: 60},
-                    {actual: 61, expected: 160},
-                    {actual: 160, expected: 160},
-                    {actual: 161, expected: 320},
-                    {actual: 320, expected: 320},
-                    {actual: 321, expected: 480},
-                    {actual: 480, expected: 480},
-                    {actual: 481, expected: 768},
-                    {actual: 768, expected: 768},
-                    {actual: 769, expected: 992},
-                    {actual: 992, expected: 992},
-                    {actual: 993, expected: 1200},
-                    {actual: 1200, expected: 1200},
-                    {actual: 1201, expected: 1920},
-                    {actual: 1920, expected: 1920},
-                    {actual: 1921, expected: 4096},
-                    {actual: 4096, expected: 4096}
-                ].forEach(function (value) {
-                    describe('and parent width ' + value.actual + ' is given', function () {
-                        it('then width ' + value.expected + ' is appended', function () {
-                            var path = imageManagement.getImageUrl({code: code, width: value.actual});
-                            var ts = timestamp ? '&' + timestamp : '';
-                            expect(path).toEqual(config.awsPath + code + '?width=' + value.expected + ts);
-                        });
-                    });
-                });
+                expect(path).toMatch(/http:\/\/aws\/path\/test.img\?width=100&\d+/);
             }
 
             function assertPathWithHeight(timestamp) {
@@ -115,8 +83,6 @@ describe('image-management', function () {
                     config.image = {cache: true};
                 });
 
-                assertPathWithRangedWidth();
-
                 it('when height is given', function () {
                     assertPathWithHeight();
                 });
@@ -132,8 +98,6 @@ describe('image-management', function () {
                         imageManagement.image.uploaded[code] = timestamp;
                     });
 
-                    assertPathWithRangedWidth(timestamp);
-
                     it('when height is given', function () {
                         assertPathWithHeight(timestamp);
                     });
@@ -146,7 +110,7 @@ describe('image-management', function () {
                 describe('and user has no permission', function () {
                     it('image path is not timestamped', function () {
                         var path = imageManagement.getImageUrl({code: code, width: boxWidth});
-                        expect(path).toEqual('http://aws/path/test.img?width=160');
+                        expect(path).toEqual('http://aws/path/test.img?width=100');
                     });
                 });
 
@@ -174,8 +138,6 @@ describe('image-management', function () {
                         imageManagement.image.defaultTimeStamp = timestamp;
                     });
 
-                    assertPathWithRangedWidth(timestamp);
-
                     it('when height is given', function () {
                         assertPathWithHeight(timestamp);
                     });
@@ -191,8 +153,6 @@ describe('image-management', function () {
                     beforeEach(function () {
                         imageManagement.image.uploaded[code] = timestamp;
                     });
-
-                    assertPathWithRangedWidth(timestamp);
 
                     it('when height is given', function () {
                         assertPathWithHeight(timestamp);

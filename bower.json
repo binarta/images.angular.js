@@ -13,6 +13,7 @@
     "binarta.angularx": "0.*.*",
     "node-uuid": "1.4.3",
     "binarta.config.angular": "0.*.*",
+    "binarta.web.storage.angular": "0.*.*",
     "binarta.notifications.angular": "1.*.*",
     "binarta.toggle.edit.mode.angular": "1.*.*",
     "binarta.rest.client.angular": "0.*.*",
@@ -20,7 +21,7 @@
     "magnific-popup": "1.1.*"
   },
   "devDependencies": {
-    "angular-mocks": "1.*.*",
+    "angular-mocks": "1.5.*",
     "thk-cache-control-mock": "0.*.*",
     "thk-notifications-mock": "0.*.*",
     "thk-config-mock": "0.*.*",
