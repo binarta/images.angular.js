@@ -91,6 +91,18 @@ describe('image-management', function () {
                     assertPathWithWidthAndHeight();
                 });
 
+                it('round decimals on width', function () {
+                    var actual = imageManagement.getImageUrl({code: code, width: 33.3});
+                    var expected = config.awsPath + code + '?width=33';
+                    expect(actual).toEqual(expected);
+                });
+
+                it('round decimals on height', function () {
+                    var actual = imageManagement.getImageUrl({code: code, height: 33.3});
+                    var expected = config.awsPath + code + '?height=33';
+                    expect(actual).toEqual(expected);
+                });
+
                 describe('and image was uploaded then image timestamp gets appended', function () {
                     var timestamp = 'T';
 
@@ -475,7 +487,7 @@ describe('image-management', function () {
             });
 
             it('do not get image path', function () {
-               expect(imageManagement.getImageUrl).not.toHaveBeenCalled();
+                expect(imageManagement.getImageUrl).not.toHaveBeenCalled();
             });
         });
 

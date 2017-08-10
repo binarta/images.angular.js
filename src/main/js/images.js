@@ -94,13 +94,13 @@ function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
     function getImagePath(args) {
         var path = args.code;
         if (args.width != undefined) {
-            var width = args.height != undefined ? args.width : args.width;
+            var width = Math.floor(args.height != undefined ? args.width : args.width);
             path += getSeparator(path);
             path += getWidthQueryString(width);
         }
         if (args.height != undefined) {
             path += getSeparator(path);
-            path += getHeightQueryString(args.height);
+            path += getHeightQueryString(Math.floor(args.height));
         }
         if (requiresTimestampedUrl(args.code)) {
             path += getSeparator(path);
