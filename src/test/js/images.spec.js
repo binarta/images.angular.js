@@ -47,6 +47,9 @@ describe('image-management', function () {
     afterEach(function () {
         binarta.checkpoint.gateway.removePermission('image.upload');
     });
+    afterEach(function () {
+        binarta.sessionStorage.removeItem('binartaImageTimestamp');
+    });
 
     describe('imageManagement service', function () {
         var imageManagement, config, code, boxWidth;
@@ -59,135 +62,6 @@ describe('image-management', function () {
             imageType = 'image-type';
             boxWidth = '100';
         }));
-
-        describe('getImageUrl', function () {
-            function assertImagePathIsTimestamped() {
-                var path = imageManagement.getImageUrl({code: code, width: boxWidth});
-                expect(path).toMatch(/http:\/\/aws\/path\/test.img\?width=100&\d+/);
-            }
-
-            function assertPathWithHeight(timestamp) {
-                var path = imageManagement.getImageUrl({code: code, height: 100});
-                var ts = timestamp ? '&' + timestamp : '';
-                expect(path).toEqual(config.awsPath + code + '?height=100' + ts);
-            }
-
-            function assertPathWithWidthAndHeight(timestamp) {
-                var path = imageManagement.getImageUrl({code: code, width: 200, height: 100});
-                var ts = timestamp ? '&' + timestamp : '';
-                expect(path).toEqual(config.awsPath + code + '?width=200&height=100' + ts);
-            }
-
-            describe('with caching enabled', function () {
-                beforeEach(function () {
-                    config.image = {cache: true};
-                });
-
-                it('when height is given', function () {
-                    assertPathWithHeight();
-                });
-
-                it('when width and height is given, width is not altered', function () {
-                    assertPathWithWidthAndHeight();
-                });
-
-                it('round decimals on width', function () {
-                    var actual = imageManagement.getImageUrl({code: code, width: 33.3});
-                    var expected = config.awsPath + code + '?width=33';
-                    expect(actual).toEqual(expected);
-                });
-
-                it('round decimals on height', function () {
-                    var actual = imageManagement.getImageUrl({code: code, height: 33.3});
-                    var expected = config.awsPath + code + '?height=33';
-                    expect(actual).toEqual(expected);
-                });
-
-                describe('and image was uploaded then image timestamp gets appended', function () {
-                    var timestamp = 'T';
-
-                    beforeEach(function () {
-                        imageManagement.image.uploaded[code] = timestamp;
-                    });
-
-                    it('when height is given', function () {
-                        assertPathWithHeight(timestamp);
-                    });
-
-                    it('when width and height is given, width is not altered', function () {
-                        assertPathWithWidthAndHeight(timestamp);
-                    });
-                });
-
-                describe('and user has no permission', function () {
-                    it('image path is not timestamped', function () {
-                        var path = imageManagement.getImageUrl({code: code, width: boxWidth});
-                        expect(path).toEqual('http://aws/path/test.img?width=100');
-                    });
-                });
-
-                describe('and user has permission', function () {
-                    beforeEach(function () {
-                        binarta.checkpoint.gateway.addPermission('image.upload');
-                        binarta.checkpoint.profile.refresh();
-                    });
-
-                    it('image path is timestamped', function () {
-                        assertImagePathIsTimestamped();
-                    });
-                });
-            });
-
-            describe('with caching disabled', function () {
-                beforeEach(function () {
-                    config.image = {cache: false};
-                });
-
-                describe('and no image uploaded then use default timestamp', function () {
-                    var timestamp = 'D';
-
-                    beforeEach(function () {
-                        imageManagement.image.defaultTimeStamp = timestamp;
-                    });
-
-                    it('when height is given', function () {
-                        assertPathWithHeight(timestamp);
-                    });
-
-                    it('when width and height is given, width is not altered', function () {
-                        assertPathWithWidthAndHeight(timestamp);
-                    });
-                });
-
-                describe('and image uploaded then use image timestamp', function () {
-                    var timestamp = 'TT';
-
-                    beforeEach(function () {
-                        imageManagement.image.uploaded[code] = timestamp;
-                    });
-
-                    it('when height is given', function () {
-                        assertPathWithHeight(timestamp);
-                    });
-
-                    it('when width and height is given, width is not altered', function () {
-                        assertPathWithWidthAndHeight(timestamp);
-                    });
-                });
-
-                describe('and user has no permission', function () {
-                    it('image path is timestamped', function () {
-                        assertImagePathIsTimestamped();
-                    });
-                });
-
-                describe('and user has permission', function () {
-                    it('image path is timestamped', function () {
-                        assertImagePathIsTimestamped();
-                    });
-                });
-            });
-        });
 
         describe('validate', function () {
             it('under the size limit', function () {
@@ -272,10 +146,6 @@ describe('image-management', function () {
 
                     it('is resolved', function () {
                         expect(successSpy).toHaveBeenCalledWith('ok');
-                    });
-
-                    it('update timestamp of uploaded image', function () {
-                        expect(imageManagement.image.uploaded[code]).toMatch(/\d+/);
                     });
                 });
 

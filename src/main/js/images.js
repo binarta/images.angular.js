@@ -1,4 +1,4 @@
-angular.module('image-management', ['config', 'image.rest', 'notifications', 'toggle.edit.mode', 'binarta-checkpointjs-angular1', 'image-management.templates'])
+angular.module('image-management', ['config', 'image.rest', 'notifications', 'toggle.edit.mode', 'binarta-mediajs-angular1', 'image-management.templates'])
     .service('imageManagement', ['$q', 'config', 'uploader', '$timeout', 'binarta', '$log', ImageManagementService])
     .directive('binImage', ['$timeout', 'imageManagement', BinImageDirectiveFactory])
     .directive('binBackgroundImage', ['$timeout', 'imageManagement', BinBackgroundImageDirectiveFactory])
@@ -29,7 +29,6 @@ function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
     };
 
     this.getImagePath = function (args) {
-        $log.warn('@deprecated ImageManagementService.getImagePath - use getImageUrl instead!');
         var deferred = $q.defer();
         deferred.resolve(self.getImageUrl(args));
         return deferred.promise;
@@ -55,7 +54,7 @@ function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
 
             uploader.upload({
                 success: function (payload) {
-                    self.image.uploaded[args.code] = new Date().getTime();
+                    binarta.media.images.resetTimestamp();
                     executeUploadCallbacks(args.code);
                     deferred.resolve(payload);
                 },
@@ -92,57 +91,17 @@ function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
     }
 
     function getImagePath(args) {
-        var path = args.code;
-        if (args.width != undefined) {
-            var width = Math.floor(args.height != undefined ? args.width : args.width);
-            path += getSeparator(path);
-            path += getWidthQueryString(width);
-        }
-        if (args.height != undefined) {
-            path += getSeparator(path);
-            path += getHeightQueryString(Math.floor(args.height));
-        }
-        if (requiresTimestampedUrl(args.code)) {
-            path += getSeparator(path);
-            path += getTimeStamp(args.code);
-        }
-        return path;
-    }
-
-    function getWidthQueryString(width) {
-        return 'width=' + width;
-    }
-
-    function getHeightQueryString(height) {
-        return 'height=' + height;
-    }
-
-    function requiresTimestampedUrl(code) {
-        return !isCacheEnabled() || hasImageBeenUploaded(code);
-    }
-
-    function getSeparator(path) {
-        return pathDoesNotContainQueryString(path) ? '?' : '&';
-    }
-
-    function pathDoesNotContainQueryString(path) {
-        return path.indexOf('?') == -1;
-    }
-
-    function isCacheEnabled() {
-        return isUploadPermitted() ? false : config.image && config.image.cache;
+        $log.warn('@deprecated ImageManagementService.getImageUrl - use binarta.media.images.toURL() instead!');
+        var params = {path:args.code};
+        if(args.width != undefined)
+            params.width = args.width;
+        if(args.height != undefined)
+            params.height = args.height;
+        return binarta.media.images.toURL(params);
     }
 
     function isUploadPermitted() {
         return binarta.checkpoint.profile.hasPermission('image.upload');
-    }
-
-    function hasImageBeenUploaded(code) {
-        return self.image.uploaded[code];
-    }
-
-    function getTimeStamp(code) {
-        return self.image.uploaded[code] || self.image.defaultTimeStamp;
     }
 
     function getFileUploadElement() {
