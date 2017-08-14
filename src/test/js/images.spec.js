@@ -241,7 +241,7 @@ describe('image-management', function () {
                     event[e] = undefined;
                 }
             };
-            element[0] = {};
+            element[0] = {style:{}};
 
             imageManagement = {
                 image: {
@@ -296,6 +296,7 @@ describe('image-management', function () {
             it('get image path', function () {
                 expect(imageManagement.getImagePathSpy).toEqual({code: 'test.img', width: 100});
                 expect(element[0].src).toEqual(imagePath);
+                expect(element[0].style.width).toEqual('100px');
             });
 
             it('update image src', function () {
@@ -327,6 +328,7 @@ describe('image-management', function () {
 
                 it('get image path', function () {
                     expect(imageManagement.getImagePathSpy).toEqual({code: 'test.img', height: 200});
+                    expect(element[0].style.height).toEqual('200px');
                 });
             });
 
@@ -338,6 +340,8 @@ describe('image-management', function () {
 
                 it('get image path', function () {
                     expect(imageManagement.getImagePathSpy).toEqual({code: 'test.img', width: 200, height: 100});
+                    expect(element[0].style.width).toEqual('200px');
+                    expect(element[0].style.height).toEqual('100px');
                 });
             });
         });

@@ -140,6 +140,8 @@ function BinImageDirectiveFactory($timeout, imageManagement) {
                     args.width = parseInt(attrs.width) || getBoxWidth();
                     if (args.width == 0) return;
                 }
+                if(args.width) element[0].style.width = '' + args.width + 'px';
+                if(args.height) element[0].style.height = '' + args.height + 'px';
                 scope.setImageSrc(imageManagement.getImageUrl(args));
             };
 
