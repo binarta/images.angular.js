@@ -5,11 +5,15 @@ img {
   max-width: 100%;
 }
 
-[bin-image].not-found {
-  height: 0;
-  width: 0;
-  opacity: 0;
-  visibility: hidden;
+[bin-image] {
+  width: 100%;
+
+  &.not-found {
+    height: 0;
+    width: 0;
+    opacity: 0;
+    visibility: hidden;
+  }
 }
 
 [editmode="true"] {
