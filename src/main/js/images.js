@@ -1,7 +1,7 @@
 angular.module('image-management', ['config', 'image.rest', 'notifications', 'toggle.edit.mode', 'binarta-mediajs-angular1', 'image-management.templates'])
     .service('imageManagement', ['$q', 'config', 'uploader', '$timeout', 'binarta', '$log', ImageManagementService])
-    .directive('binImage', ['$timeout', 'imageManagement', BinImageDirectiveFactory])
-    .directive('binBackgroundImage', ['$timeout', 'imageManagement', BinBackgroundImageDirectiveFactory])
+    .directive('binImage', ['$timeout', 'imageManagement', 'binarta', BinImageDirectiveFactory])
+    .directive('binBackgroundImage', ['$timeout', 'imageManagement', 'binarta', BinBackgroundImageDirectiveFactory])
     .component('binImageEnlarged', new BinImageEnlargedComponent())
     .component('binImageUploader', new BinImageUploader)
     .component('binIcon', new BinIconComponent())
@@ -115,7 +115,7 @@ function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
     }
 }
 
-function BinImageDirectiveFactory($timeout, imageManagement) {
+function BinImageDirectiveFactory($timeout, imageManagement, binarta) {
     return {
         restrict: 'A',
         scope: true,
@@ -144,7 +144,7 @@ function BinImageDirectiveFactory($timeout, imageManagement) {
             };
 
             $timeout(function () {
-                scope.setDefaultImageSrc();
+                binarta.schedule(scope.setDefaultImageSrc);
             });
 
             function getBoxWidth() {
@@ -166,7 +166,7 @@ function BinImageDirectiveFactory($timeout, imageManagement) {
     }
 }
 
-function BinBackgroundImageDirectiveFactory($timeout, imageManagement) {
+function BinBackgroundImageDirectiveFactory($timeout, imageManagement, binarta) {
     return {
         restrict: 'A',
         scope: true,
@@ -186,7 +186,7 @@ function BinBackgroundImageDirectiveFactory($timeout, imageManagement) {
             };
 
             $timeout(function () {
-                scope.setDefaultImageSrc();
+                binarta.schedule(scope.setDefaultImageSrc);
             });
 
             function getWidth() {
@@ -336,14 +336,17 @@ function BinImageEnlargedComponent() {
     this.bindings = {
         code: '@'
     };
-    this.controller = ['imageManagement', '$element', function (imageManagement, $element) {
-        this.url = imageManagement.getImageUrl({code: this.code});
-        $element.find('a').magnificPopup({
-            type: 'image',
-            closeOnContentClick: true,
-            image: {
-                verticalFit: true
-            }
+    this.controller = ['imageManagement', '$element', 'binarta', function (imageManagement, $element, binarta) {
+        var self = this;
+        binarta.schedule(function() {
+            self.url = imageManagement.getImageUrl({code: self.code});
+            $element.find('a').magnificPopup({
+                type: 'image',
+                closeOnContentClick: true,
+                image: {
+                    verticalFit: true
+                }
+            });
         });
     }];
 }

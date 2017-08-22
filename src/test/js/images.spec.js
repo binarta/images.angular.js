@@ -51,6 +51,10 @@ describe('image-management', function () {
         binarta.sessionStorage.removeItem('binartaImageTimestamp');
     });
 
+    function triggerBinartaSchedule() {
+        binarta.application.adhesiveReading.read('-');
+    }
+
     describe('imageManagement service', function () {
         var imageManagement, config, code, boxWidth;
 
@@ -260,7 +264,7 @@ describe('image-management', function () {
                 }
             };
 
-            directive = BinImageDirectiveFactory($timeout, imageManagement);
+            directive = BinImageDirectiveFactory($timeout, imageManagement, binarta);
         });
 
         it('restrict', function () {
@@ -294,6 +298,7 @@ describe('image-management', function () {
             });
 
             it('get image path', function () {
+                triggerBinartaSchedule();
                 expect(imageManagement.getImagePathSpy).toEqual({code: 'test.img', width: 100});
                 expect(element[0].src).toEqual(imagePath);
             });
@@ -315,6 +320,7 @@ describe('image-management', function () {
                 });
 
                 it('get image path', function () {
+                    triggerBinartaSchedule();
                     expect(imageManagement.getImagePathSpy).toEqual({code: 'test.img', width: 200});
                 });
             });
@@ -326,6 +332,7 @@ describe('image-management', function () {
                 });
 
                 it('get image path', function () {
+                    triggerBinartaSchedule();
                     expect(imageManagement.getImagePathSpy).toEqual({code: 'test.img', height: 200});
                 });
             });
@@ -337,6 +344,7 @@ describe('image-management', function () {
                 });
 
                 it('get image path', function () {
+                    triggerBinartaSchedule();
                     expect(imageManagement.getImagePathSpy).toEqual({code: 'test.img', width: 200, height: 100});
                 });
             });
@@ -410,7 +418,7 @@ describe('image-management', function () {
                 getImageUrl: jasmine.createSpy('getImageUrl').and.returnValue('img-url')
             };
 
-            directive = BinBackgroundImageDirectiveFactory($timeout, imageManagement);
+            directive = BinBackgroundImageDirectiveFactory($timeout, imageManagement, binarta);
         }));
 
         it('restrict', function () {
@@ -427,6 +435,7 @@ describe('image-management', function () {
 
         describe('on link', function () {
             beforeEach(function () {
+                triggerBinartaSchedule();
                 directive.link(scope, element, {binBackgroundImage: 'test.img'});
                 $timeout.flush();
             });
@@ -468,6 +477,7 @@ describe('image-management', function () {
 
         describe('when width is defined on attributes', function () {
             beforeEach(function () {
+                triggerBinartaSchedule();
                 directive.link(scope, element, {binBackgroundImage: 'test.img', width: '200'});
                 $timeout.flush();
             });
@@ -925,6 +935,7 @@ describe('image-management', function () {
                     }
                 }
             };
+            triggerBinartaSchedule();
             ctrl = $componentController('binImageEnlarged', {
                 imageManagement: imageSpy,
                 $element: elementMock
@@ -1107,10 +1118,6 @@ describe('image-management', function () {
             binarta.application.gateway.clear();
             permission = 'icon.upload';
         }));
-
-        function triggerBinartaSchedule() {
-            binarta.application.adhesiveReading.read('-');
-        }
 
         describe('when value is given without an update callback', function () {
             beforeEach(function () {
