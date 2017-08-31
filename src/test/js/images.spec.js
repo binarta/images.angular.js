@@ -261,6 +261,9 @@ describe('image-management', function () {
                     var deferred = $q.defer();
                     deferred.resolve(imagePath);
                     return deferred.promise;
+                },
+                schedule: function (it) {
+                    it();
                 }
             };
 
@@ -415,7 +418,10 @@ describe('image-management', function () {
 
             imageManagement = {
                 getImageUrl: jasmine.createSpy('getImageUrl').and.returnValue(imagePath),
-                getImageUrl: jasmine.createSpy('getImageUrl').and.returnValue('img-url')
+                getImageUrl: jasmine.createSpy('getImageUrl').and.returnValue('img-url'),
+                schedule: function (it) {
+                    it();
+                }
             };
 
             directive = BinBackgroundImageDirectiveFactory($timeout, imageManagement, binarta);
@@ -922,7 +928,10 @@ describe('image-management', function () {
 
         beforeEach(inject(function ($componentController) {
             imageSpy = {
-                getImageUrl: jasmine.createSpy('getImageUrl').and.returnValue('img-url')
+                getImageUrl: jasmine.createSpy('getImageUrl').and.returnValue('img-url'),
+                schedule: function (it) {
+                    it();
+                }
             };
 
             var elementMock = {

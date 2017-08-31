@@ -9,6 +9,8 @@ angular.module('image-management', ['config', 'image.rest', 'notifications', 'to
 
 function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
     var self = this, uploadCallbacks = [];
+    var adhesiveReadingListener = new AdhesiveReadingListener();
+    binarta.application.adhesiveReading.eventRegistry.add(adhesiveReadingListener);
 
     this.image = {
         uploaded: [],
@@ -84,6 +86,8 @@ function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
         };
     };
 
+    this.schedule = adhesiveReadingListener.schedule;
+
     function executeUploadCallbacks(code) {
         angular.forEach(uploadCallbacks, function (cb) {
             cb(code);
@@ -112,6 +116,32 @@ function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
             input = body.find('#bin-image-file-upload');
         }
         return input;
+    }
+
+    function AdhesiveReadingListener() {
+        var self = this;
+
+        var jobs = [];
+        var started;
+
+        self.start = function () {
+            started = true;
+        };
+
+        self.stop = function () {
+            started = false;
+            jobs.forEach(function (it) {
+                it();
+            });
+            jobs = [];
+        };
+
+        self.schedule = function (job) {
+            if (!started)
+                job();
+            else
+                jobs.push(job);
+        }
     }
 }
 
@@ -144,7 +174,9 @@ function BinImageDirectiveFactory($timeout, imageManagement, binarta) {
             };
 
             $timeout(function () {
-                binarta.schedule(scope.setDefaultImageSrc);
+                binarta.schedule(function() {
+                    imageManagement.schedule(scope.setDefaultImageSrc);
+                });
             });
 
             function getBoxWidth() {
@@ -186,7 +218,9 @@ function BinBackgroundImageDirectiveFactory($timeout, imageManagement, binarta) 
             };
 
             $timeout(function () {
-                binarta.schedule(scope.setDefaultImageSrc);
+                binarta.schedule(function() {
+                    imageManagement.schedule(scope.setDefaultImageSrc);
+                });
             });
 
             function getWidth() {
@@ -339,13 +373,15 @@ function BinImageEnlargedComponent() {
     this.controller = ['imageManagement', '$element', 'binarta', function (imageManagement, $element, binarta) {
         var self = this;
         binarta.schedule(function() {
-            self.url = imageManagement.getImageUrl({code: self.code});
-            $element.find('a').magnificPopup({
-                type: 'image',
-                closeOnContentClick: true,
-                image: {
-                    verticalFit: true
-                }
+            imageManagement.schedule(function() {
+                self.url = imageManagement.getImageUrl({code: self.code});
+                $element.find('a').magnificPopup({
+                    type: 'image',
+                    closeOnContentClick: true,
+                    image: {
+                        verticalFit: true
+                    }
+                });
             });
         });
     }];
