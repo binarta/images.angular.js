@@ -6,7 +6,9 @@ img {
 }
 
 [bin-image] {
-  width: 100%;
+  &:not([height]) {
+    width: 100%;
+  }
 
   &.not-found {
     height: 0;
