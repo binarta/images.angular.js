@@ -3,6 +3,7 @@ module.exports = function(config) {
         basePath:'.',
         frameworks:['jasmine'],
         files:[
+            {pattern:'bower_components/moment/moment.js'},
             {pattern:'bower_components/angular/angular.js'},
             {pattern:'bower_components/angular-route/angular-route.js'},
             {pattern:'bower_components/angular-mocks/angular-mocks.js'},
