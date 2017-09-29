@@ -243,7 +243,8 @@ describe('image-management', function () {
                 },
                 unbind: function (e) {
                     event[e] = undefined;
-                }
+                },
+                css: jasmine.createSpy('css')
             };
             element[0] = {};
 
@@ -338,6 +339,11 @@ describe('image-management', function () {
                     triggerBinartaSchedule();
                     expect(imageManagement.getImagePathSpy).toEqual({code: 'test.img', height: 200});
                 });
+
+                it('set the maxHeight css property', function () {
+                    triggerBinartaSchedule();
+                    expect(element.css).toHaveBeenCalledWith({maxHeight: '200px'});
+                });
             });
 
             describe('with width and height attributes on image', function () {
@@ -349,6 +355,11 @@ describe('image-management', function () {
                 it('get image path', function () {
                     triggerBinartaSchedule();
                     expect(imageManagement.getImagePathSpy).toEqual({code: 'test.img', width: 200, height: 100});
+                });
+
+                it('set the maxHeight css property', function () {
+                    triggerBinartaSchedule();
+                    expect(element.css).toHaveBeenCalledWith({maxHeight: '100px'});
                 });
             });
         });

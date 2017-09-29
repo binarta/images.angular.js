@@ -163,6 +163,7 @@ function BinImageDirectiveFactory($timeout, imageManagement, binarta) {
             scope.setDefaultImageSrc = function () {
                 var args = {code: scope.code};
                 if (attrs.height) {
+                    element.css({maxHeight: attrs.height + 'px'});
                     args.height = parseInt(attrs.height);
                     if (attrs.width) args.width = parseInt(attrs.width);
                 }
