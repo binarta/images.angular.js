@@ -2,6 +2,7 @@ angular.module('image-management', ['config', 'image.rest', 'notifications', 'to
     .service('imageManagement', ['$q', 'config', 'uploader', '$timeout', 'binarta', '$log', ImageManagementService])
     .directive('binImage', ['$timeout', 'imageManagement', 'binarta', BinImageDirectiveFactory])
     .directive('binBackgroundImage', ['$timeout', 'imageManagement', 'binarta', BinBackgroundImageDirectiveFactory])
+    .directive('binImagePopup', ['binarta', 'imageManagement', BinImagePopupDirective])
     .component('binImageEnlarged', new BinImageEnlargedComponent())
     .component('binImageUploader', new BinImageUploader)
     .component('binIcon', new BinIconComponent())
@@ -364,6 +365,27 @@ function BinImageController($scope, $element, imageManagement, editModeRenderer,
     $scope.$on('$destroy', function () {
         unsubscribeOnUploadedListener();
     });
+}
+
+function BinImagePopupDirective(binarta, imageManagement) {
+    return {
+        restrict: 'A',
+        link: function (scope, el, attrs) {
+            if (el[0].nodeName === 'A') {
+                binarta.schedule(function() {
+                    el[0].href = imageManagement.getImageUrl({code: attrs.binImagePopup});
+
+                    el.magnificPopup({
+                        type: 'image',
+                        closeOnContentClick: true,
+                        image: {
+                            verticalFit: true
+                        }
+                    });
+                });
+            }
+        }
+    };
 }
 
 function BinImageEnlargedComponent() {

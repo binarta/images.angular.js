@@ -934,6 +934,53 @@ describe('image-management', function () {
         });
     });
 
+    describe('binImagePopup directive', function () {
+        var element;
+
+        beforeEach(inject(function ($rootScope, $compile) {
+            element = angular.element('<a bin-image-popup="my-code"></div>');
+            $compile(element)($rootScope);
+            $.fn.magnificPopup = jasmine.createSpy('popup');
+        }));
+
+        describe('after binarta schedule', function () {
+            beforeEach(function () {
+                triggerBinartaSchedule();
+            });
+
+            it('href is set on element', function () {
+                expect(element[0].href).toEqual('http://aws/path/my-code');
+            });
+
+            it('magnific popup plugin is configured', function () {
+                expect(element.magnificPopup).toHaveBeenCalledWith({
+                    type: 'image',
+                    closeOnContentClick: true,
+                    image: {
+                        verticalFit: true
+                    }
+                });
+            });
+        });
+
+        describe('when element is not a link', function () {
+            beforeEach(inject(function ($rootScope, $compile) {
+                element = angular.element('<div bin-image-popup="my-code"></div>');
+                $compile(element)($rootScope);
+            }));
+
+            describe('after binarta schedule', function () {
+                beforeEach(function () {
+                    triggerBinartaSchedule();
+                });
+
+                it('href is not set on element', function () {
+                    expect(element[0].href).toBeUndefined();
+                });
+            });
+        });
+    });
+
     describe('BinImageEnlargedController', function () {
         var ctrl, findArgs, magnificPopupArgs, imageSpy;
 
