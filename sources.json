@@ -1,12 +1,20 @@
 {
-  "default": {
-    "images": "bower_components/binarta.images.angular/src/main/js/images.js",
-    "image.rest": "bower_components/binarta.images.angular/src/main/js/image.rest.js",
-    "image-management.templates": "bower_components/binarta.images.angular/src/main/js/images-tpls-bootstrap3.js",
-    "uuid": "bower_components/node-uuid/uuid.js",
-    "jquery.ui.widget": "bower_components/jquery-file-upload/js/vendor/jquery.ui.widget.js",
-    "jquery.fileupload": "bower_components/jquery-file-upload/js/jquery.fileupload.js",
-    "magnific": "bower_components/magnific-popup/dist/jquery.magnific-popup.js"
-
+  "jsSources": {
+    "default": {
+      "images": "bower_components/binarta.images.angular/src/main/js/images.js",
+      "image.rest": "bower_components/binarta.images.angular/src/main/js/image.rest.js",
+      "image-management.templates": "bower_components/binarta.images.angular/src/main/js/images-tpls-bootstrap3.js",
+      "uuid": "bower_components/node-uuid/uuid.js",
+      "jquery.ui.widget": "bower_components/jquery-file-upload/js/vendor/jquery.ui.widget.js",
+      "jquery.fileupload": "bower_components/jquery-file-upload/js/jquery.fileupload.js",
+      "magnific": "bower_components/magnific-popup/dist/jquery.magnific-popup.js"
+    }
+  },
+  "styleSources": {
+    "libs": {
+      "sources": [
+        "bower_components/magnific-popup/dist/magnific-popup.css"
+      ]
+    }
   }
 }
