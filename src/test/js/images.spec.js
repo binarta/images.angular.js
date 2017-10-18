@@ -238,6 +238,7 @@ describe('image-management', function () {
                 removeClass: function (c) {
                     removedClass.push(c);
                 },
+                hasClass: jasmine.createSpy('hasClass').and.returnValue(false),
                 bind: function (e, f) {
                     event[e] = f;
                 },
@@ -360,6 +361,51 @@ describe('image-management', function () {
                 it('set the maxHeight css property', function () {
                     triggerBinartaSchedule();
                     expect(element.css).toHaveBeenCalledWith({maxHeight: '100px'});
+                });
+            });
+
+            describe('when image should be rendered as a cover image', function () {
+                beforeEach(function () {
+                    window.CSS = {
+                        supports: jasmine.createSpy('supports')
+                    };
+                    element.hasClass.and.returnValue(true);
+                });
+
+                describe('and object-fit is not supported', function () {
+                    beforeEach(function () {
+                        window.CSS.supports.and.returnValue(false);
+                        directive.link(scope, element, {binImage: 'test.img', width: '100'});
+                        $timeout.flush();
+                        triggerBinartaSchedule();
+                    });
+
+                    it('assert check for rendering as cover image', function () {
+                        expect(element.hasClass).toHaveBeenCalledWith('cover');
+                    });
+
+                    it('assert supports feature check', function () {
+                        expect(window.CSS.supports).toHaveBeenCalledWith('object-fit', 'cover');
+                    });
+
+                    it('set image as background-image', function () {
+                        expect(element.css).toHaveBeenCalledWith('background-image', 'url("' + imagePath + '")');
+                        expect(element[0].src).toBeUndefined();
+                    });
+                });
+
+                describe('and object-fit is supported', function () {
+                    beforeEach(function () {
+                        window.CSS.supports.and.returnValue(true);
+                        directive.link(scope, element, {binImage: 'test.img', width: '100'});
+                        $timeout.flush();
+                        triggerBinartaSchedule();
+                    });
+
+                    it('set image with src', function () {
+                        expect(element.css).not.toHaveBeenCalled();
+                        expect(element[0].src).toEqual(imagePath);
+                    });
                 });
             });
         });

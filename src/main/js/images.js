@@ -148,9 +148,25 @@ function BinImageDirectiveFactory($timeout, imageManagement, binarta) {
 
             scope.setImageSrc = function (src, src2x) {
                 scope.src = src;
-                element[0].src = src;
-                if (src2x) element[0].srcset = src2x + ' 2x';
+                if (shouldRenderAsCover() && !isObjectFitCoverSupported()) {
+                    element.css('background-image', 'url("' + src + '")');
+                } else {
+                    element[0].src = src;
+                    if (src2x) element[0].srcset = src2x + ' 2x';
+                }
             };
+
+            function shouldRenderAsCover() {
+                return element.hasClass('cover');
+            }
+
+            function isObjectFitCoverSupported() {
+                if (!window.CSS) window.CSS = {};
+                if (!window.CSS.supports) window.CSS.supports = function () {
+                    return false;
+                };
+                return window.CSS.supports('object-fit', 'cover');
+            }
 
             scope.setDefaultImageSrc = function () {
                 var args = {code: scope.code};
