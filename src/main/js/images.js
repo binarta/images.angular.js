@@ -145,6 +145,7 @@ function BinImageDirectiveFactory($timeout, imageManagement, binarta) {
             scope.code = attrs.binImage.replace(/^\/+/, '');
             scope.bindImageEvents();
             if (attrs.readOnly == undefined) scope.bindClickEvent();
+            element[0].src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
             scope.setImageSrc = function (src, src2x) {
                 scope.src = src;

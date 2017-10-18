@@ -390,7 +390,10 @@ describe('image-management', function () {
 
                     it('set image as background-image', function () {
                         expect(element.css).toHaveBeenCalledWith('background-image', 'url("' + imagePath + '")');
-                        expect(element[0].src).toBeUndefined();
+                    });
+
+                    it('use a placeholder image in src to prevent image borders', function () {
+                        expect(element[0].src).toEqual('data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7');
                     });
                 });
 
