@@ -28,7 +28,7 @@ function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
     };
 
     this.getImageUrl = function (args) {
-        return config.awsPath + getImagePath({code: args.code, width: args.width, height: args.height});
+        return config.awsPath + binarta.media.images.toURL({path: args.code, width: args.width, height: args.height});
     };
 
     this.getImagePath = function (args) {
@@ -93,16 +93,6 @@ function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
         angular.forEach(uploadCallbacks, function (cb) {
             cb(code);
         });
-    }
-
-    function getImagePath(args) {
-        $log.warn('@deprecated ImageManagementService.getImageUrl - use binarta.media.images.toURL() instead!');
-        var params = {path:args.code};
-        if(args.width != undefined)
-            params.width = args.width;
-        if(args.height != undefined)
-            params.height = args.height;
-        return binarta.media.images.toURL(params);
     }
 
     function isUploadPermitted() {
