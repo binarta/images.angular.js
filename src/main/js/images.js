@@ -146,9 +146,10 @@ function BinImageDirectiveFactory($timeout, imageManagement, binarta) {
             scope.bindImageEvents();
             if (attrs.readOnly == undefined) scope.bindClickEvent();
 
-            scope.setImageSrc = function (src) {
+            scope.setImageSrc = function (src, src2x) {
                 scope.src = src;
                 element[0].src = src;
+                if (src2x) element[0].srcset = src2x + ' 2x';
             };
 
             scope.setDefaultImageSrc = function () {
@@ -162,7 +163,11 @@ function BinImageDirectiveFactory($timeout, imageManagement, binarta) {
                     args.width = parseInt(attrs.width) || getBoxWidth();
                     if (args.width == 0) return;
                 }
-                scope.setImageSrc(imageManagement.getImageUrl(args));
+
+                var args2x = {code: args.code};
+                if (args.height) args2x.height = parseInt(args.height * 2);
+                if (args.width) args2x.width = parseInt(args.width * 2);
+                scope.setImageSrc(imageManagement.getImageUrl(args), imageManagement.getImageUrl(args2x));
             };
 
             $timeout(function () {

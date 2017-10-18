@@ -253,10 +253,7 @@ describe('image-management', function () {
                     minWidth: minWidth
                 },
                 getImagePathSpy: {},
-                getImageUrl: function (args) {
-                    imageManagement.getImagePathSpy = args;
-                    return imagePath;
-                },
+                getImageUrl: jasmine.createSpy('getImageUrl').and.returnValue(imagePath),
                 getImagePath: function (args) {
                     imageManagement.getImagePathSpy = args;
                     var deferred = $q.defer();
@@ -285,6 +282,7 @@ describe('image-management', function () {
 
         describe('on link', function () {
             beforeEach(function () {
+                imageManagement.getImageUrl.calls.reset();
                 directive.link(scope, element, {binImage: 'test.img'});
                 $timeout.flush();
             });
@@ -301,10 +299,12 @@ describe('image-management', function () {
                 expect(scope.bindClickEvent).toHaveBeenCalled();
             });
 
-            it('get image path', function () {
+            it('get image url', function () {
                 triggerBinartaSchedule();
-                expect(imageManagement.getImagePathSpy).toEqual({code: 'test.img', width: 100});
+                expect(imageManagement.getImageUrl).toHaveBeenCalledWith({code: 'test.img', width: 100});
+                expect(imageManagement.getImageUrl).toHaveBeenCalledWith({code: 'test.img', width: 200});
                 expect(element[0].src).toEqual(imagePath);
+                expect(element[0].srcset).toEqual(imagePath + ' 2x');
             });
 
             it('update image src', function () {
@@ -323,9 +323,9 @@ describe('image-management', function () {
                     $timeout.flush();
                 });
 
-                it('get image path', function () {
+                it('get image url', function () {
                     triggerBinartaSchedule();
-                    expect(imageManagement.getImagePathSpy).toEqual({code: 'test.img', width: 200});
+                    expect(imageManagement.getImageUrl).toHaveBeenCalledWith({code: 'test.img', width: 200});
                 });
             });
 
@@ -335,9 +335,9 @@ describe('image-management', function () {
                     $timeout.flush();
                 });
 
-                it('get image path', function () {
+                it('get image url', function () {
                     triggerBinartaSchedule();
-                    expect(imageManagement.getImagePathSpy).toEqual({code: 'test.img', height: 200});
+                    expect(imageManagement.getImageUrl).toHaveBeenCalledWith({code: 'test.img', height: 200});
                 });
 
                 it('set the maxHeight css property', function () {
@@ -352,9 +352,9 @@ describe('image-management', function () {
                     $timeout.flush();
                 });
 
-                it('get image path', function () {
+                it('get image url', function () {
                     triggerBinartaSchedule();
-                    expect(imageManagement.getImagePathSpy).toEqual({code: 'test.img', width: 200, height: 100});
+                    expect(imageManagement.getImageUrl).toHaveBeenCalledWith({code: 'test.img', width: 200, height: 100});
                 });
 
                 it('set the maxHeight css property', function () {
@@ -373,7 +373,6 @@ describe('image-management', function () {
                         }
                     }
                 };
-                imageManagement.getImageUrl = jasmine.createSpy('spy');
                 directive.link(scope, element, {binImage: 'test.img'});
                 $timeout.flush();
             });
