@@ -318,6 +318,13 @@ describe('image-management', function () {
                 expect(scope.src).toEqual('test');
             });
 
+            it('when image src is set without 2x version', function () {
+                triggerBinartaSchedule();
+                scope.setImageSrc('src');
+                expect(element[0].src).toEqual('src');
+                expect(element[0].srcset).toEqual('');
+            });
+
             describe('with width attribute on image', function () {
                 beforeEach(function () {
                     directive.link(scope, element, {binImage: 'test.img', width: '200'});
