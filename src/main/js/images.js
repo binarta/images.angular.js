@@ -153,7 +153,8 @@ function BinImageDirectiveFactory($timeout, imageManagement, binarta) {
                     element.css('background-image', 'url("' + src + '")');
                 } else {
                     element[0].src = src;
-                    element[0].srcset = src2x ? src2x + ' 2x' : '';
+                    if (src2x) element[0].srcset = src2x + ' 2x';
+                    else element[0].removeAttribute('srcset');
                 }
             };
 

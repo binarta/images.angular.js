@@ -247,7 +247,9 @@ describe('image-management', function () {
                 },
                 css: jasmine.createSpy('css')
             };
-            element[0] = {};
+            element[0] = {
+                removeAttribute: jasmine.createSpy('spy')
+            };
 
             imageManagement = {
                 image: {
@@ -322,7 +324,7 @@ describe('image-management', function () {
                 triggerBinartaSchedule();
                 scope.setImageSrc('src');
                 expect(element[0].src).toEqual('src');
-                expect(element[0].srcset).toEqual('');
+                expect(element[0].removeAttribute).toHaveBeenCalledWith('srcset');
             });
 
             describe('with width attribute on image', function () {
