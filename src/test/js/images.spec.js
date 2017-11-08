@@ -1006,7 +1006,7 @@ describe('image-management', function () {
             });
 
             it('href is set on element', function () {
-                expect(element[0].href).toEqual('http://aws/path/my-code');
+                expect(element[0].href).toContain('image/namespace/my-code');
             });
 
             it('magnific popup plugin is configured', function () {

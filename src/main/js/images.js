@@ -28,7 +28,7 @@ function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
     };
 
     this.getImageUrl = function (args) {
-        return config.awsPath + binarta.media.images.toURL({path: args.code, width: args.width, height: args.height});
+        return binarta.media.images.toRelativeURL({path: args.code, width: args.width, height: args.height});
     };
 
     this.getImagePath = function (args) {
