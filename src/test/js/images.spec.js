@@ -945,6 +945,29 @@ describe('image-management', function () {
                         expect(event['click']).toBeUndefined();
                     });
                 });
+
+                describe('when image is part of a carousel', function () {
+                    var carouselCtrl;
+
+                    beforeEach(function () {
+                        carouselCtrl = {
+                            edit: jasmine.createSpy('edit')
+                        };
+
+                        scope.bindClickEvent(carouselCtrl);
+                        registry['edit.mode'](true);
+                    });
+
+                    describe('and image is clicked', function () {
+                        beforeEach(function () {
+                            event['click']();
+                        });
+
+                        it('edit from carousel is triggered', function () {
+                            expect(carouselCtrl.edit).toHaveBeenCalled();
+                        });
+                    });
+                });
             });
 
             describe('when user has no permission', function () {

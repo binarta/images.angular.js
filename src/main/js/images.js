@@ -141,10 +141,11 @@ function BinImageDirectiveFactory($timeout, imageManagement, binarta) {
         restrict: 'A',
         scope: true,
         controller: 'binImageController',
-        link: function (scope, element, attrs) {
+        require: '?^^binImageCarousel',
+        link: function (scope, element, attrs, carouselCtrl) {
             scope.code = attrs.binImage.replace(/^\/+/, '');
             scope.bindImageEvents();
-            if (attrs.readOnly == undefined) scope.bindClickEvent();
+            if (attrs.readOnly == undefined) scope.bindClickEvent(carouselCtrl);
             element[0].src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
             scope.setImageSrc = function (src, src2x) {
@@ -218,9 +219,10 @@ function BinBackgroundImageDirectiveFactory($timeout, imageManagement, binarta) 
         restrict: 'A',
         scope: true,
         controller: 'binImageController',
-        link: function (scope, element, attrs) {
+        require: '?^^binImageCarousel',
+        link: function (scope, element, attrs, carouselCtrl) {
             scope.code = attrs.binBackgroundImage.replace(/^\/+/, '');
-            if (attrs.readOnly == undefined) scope.bindClickEvent();
+            if (attrs.readOnly == undefined) scope.bindClickEvent(carouselCtrl);
 
             scope.setImageSrc = function (src) {
                 scope.src = src;
@@ -265,7 +267,7 @@ function BinImageController($scope, $element, imageManagement, editModeRenderer,
         }
     };
 
-    $scope.bindClickEvent = function () {
+    $scope.bindClickEvent = function (carouselCtrl) {
         var listeningToEditModeEvents = false;
         var listener = {
             signedin: function () {
@@ -286,22 +288,22 @@ function BinImageController($scope, $element, imageManagement, editModeRenderer,
         $scope.$on('$destroy', function () {
             binarta.checkpoint.profile.eventRegistry.remove(listener);
         });
+
+        function bindClickEvent(editMode) {
+            if (editMode) {
+                $element.bind("click", function () {
+                    carouselCtrl && carouselCtrl.edit ? $scope.$apply(carouselCtrl.edit()) : open();
+                    return false;
+                });
+            } else {
+                $element.unbind("click");
+            }
+        }
     };
 
     var unsubscribeOnUploadedListener = imageManagement.onUploaded(function (code) {
         if (code == $scope.code) $scope.setDefaultImageSrc();
     });
-
-    function bindClickEvent(editMode) {
-        if (editMode) {
-            $element.bind("click", function () {
-                open();
-                return false;
-            });
-        } else {
-            $element.unbind("click");
-        }
-    }
 
     function isImgElement() {
         return $element.is('img');
