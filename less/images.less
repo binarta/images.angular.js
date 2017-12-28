@@ -28,8 +28,8 @@ img {
 
 [editmode="true"] {
   [bin-image], [bin-background-image] {
-    opacity: 1;
-    transition: opacity 0.3s ease-out;
+    filter: brightness(100%);
+    transition: filter 0.3s ease-out;
   }
 
   [bin-image].not-found {
@@ -46,7 +46,7 @@ img {
   [bin-background-image]:not([read-only]):hover,
   [bin-background-image]:not([read-only]).uploading {
     cursor: pointer;
-    opacity: 0.7;
+    filter: brightness(115%);
   }
 }
 
