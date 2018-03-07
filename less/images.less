@@ -29,12 +29,13 @@ img {
 [editmode="true"] {
   [bin-image], [bin-background-image] {
     filter: brightness(100%);
-    transition: filter 0.3s ease-out;
+    transition: filter 0.3s ease-out, opacity ease-out 0.3s;
   }
 
   [bin-image].not-found {
     height: inherit;
     width: 100%;
+    opacity: 1;
     visibility: visible;
     background: rgba(0,0,0,0.05);
     border: 4px dashed rgba(0,0,0,0.2);
