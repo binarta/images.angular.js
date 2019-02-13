@@ -404,9 +404,15 @@ function BinImagePopupDirective(binarta, imageManagement) {
 }
 
 function BinImageEnlargedComponent() {
-    this.template = '<a ng-href="{{::$ctrl.url}}"><img bin-image="{{::$ctrl.code}}"/></a>';
+    this.template = '<a ng-class="{\'maintain-aspect-ratio\': $ctrl.aspectRatio}" ' +
+        'ng-style="{\'padding-bottom\': $ctrl.aspectRatio ? \'calc((100% * \' + $ctrl.aspectRatio.height + \')/\'+$ctrl.aspectRatio.width+\')\' : \'0\'}" ' +
+        'ng-href="{{::$ctrl.url}}">' +
+        '<img bin-image="{{::$ctrl.code}}" ng-class="{\'cover\': $ctrl.fittingRule == \'cover\', \'contain\': $ctrl.fittingRule == \'contain\'}"/>' +
+        '</a>';
     this.bindings = {
-        code: '@'
+        code: '@',
+        aspectRatio: '=',
+        fittingRule: '='
     };
     this.controller = ['imageManagement', '$element', 'binarta', function (imageManagement, $element, binarta) {
         var self = this;
