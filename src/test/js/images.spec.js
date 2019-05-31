@@ -275,8 +275,10 @@ describe('image-management', function () {
             expect(directive.restrict).toEqual('A');
         });
 
-        it('uses child scope', function () {
-            expect(directive.scope).toEqual(true);
+        it('uses isolate scope', function () {
+            expect(directive.scope).toEqual({
+                onNotFound: '&binImageOnNotFound'
+            });
         });
 
         it('controller', function () {
@@ -666,6 +668,7 @@ describe('image-management', function () {
         describe('bind image events', function () {
             describe('and no args given', function () {
                 beforeEach(function () {
+                    scope.onNotFound = jasmine.createSpy('onNotFound');
                     scope.bindImageEvents();
                     scope.$digest();
                 });
@@ -681,6 +684,10 @@ describe('image-management', function () {
 
                     it('set image src to fallback image', function () {
                         expect(scope.setImageSrcSpy).toEqual(fallbackSrc);
+                    });
+
+                    it('invokes the on not found handler', function() {
+                        expect(scope.onNotFound).toHaveBeenCalled();
                     });
 
                     describe('and fallback image is loaded', function () {
@@ -710,7 +717,7 @@ describe('image-management', function () {
                         event['load']();
                     });
 
-                    it('put not-found class on element', function () {
+                    it('remove not-found class from element', function () {
                         expect(removedClass[0]).toEqual('not-found');
                     });
                 });

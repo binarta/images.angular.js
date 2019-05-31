@@ -10,6 +10,8 @@
         'binarta-applicationjs-angular1', 'binarta-applicationjs-gateways-angular1'
     ]);
 
+    angular.module('binarta-alljs-tpls-angular1', []);
+
     function proxy(gateway) {
         return gateway;
     }

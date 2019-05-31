@@ -139,7 +139,9 @@ function ImageManagementService($q, config, uploader, $timeout, binarta, $log) {
 function BinImageDirectiveFactory($timeout, imageManagement, binarta) {
     return {
         restrict: 'A',
-        scope: true,
+        scope: {
+            onNotFound: '&binImageOnNotFound'
+        },
         controller: 'binImageController',
         require: '?^^binImageCarousel',
         link: function (scope, element, attrs, carouselCtrl) {
@@ -264,6 +266,8 @@ function BinImageController($scope, $element, imageManagement, editModeRenderer,
         function imageNotFound() {
             $element.addClass('not-found');
             $scope.setImageSrc(fallbackSrc);
+            if ($scope.onNotFound !== undefined) 
+                $scope.onNotFound();
         }
     };
 
