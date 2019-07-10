@@ -152,25 +152,77 @@ function BinImageDirectiveFactory($timeout, imageManagement, binarta) {
 
             scope.setImageSrc = function (src, src2x) {
                 scope.src = src;
-                if (shouldRenderAsCover() && !isObjectFitCoverSupported()) {
+
+                function setBackgroundImage() {
                     element.css('background-image', 'url("' + src + '")');
-                } else {
-                    element[0].src = src;
-                    if (src2x) element[0].srcset = src2x + ' 2x';
-                    else element[0].removeAttribute('srcset');
                 }
+
+                function disableRepeatBackground() {
+                    element.css('background-repeat', 'no-repeat');
+                }
+
+                function centerBackground() {
+                    element.css('background-position', 'center');
+                }
+
+                [
+                    {
+                        predicate: function () {
+                            return shouldRenderAsCover() && !isObjectFitCoverSupported()
+                        },
+                        render: function () {
+                            setBackgroundImage();
+                        }
+                    },
+                    {
+                        predicate: function () {
+                            return shouldRenderAsContain() && !isObjectFitContainSupported()
+                        },
+                        render: function () {
+                            setBackgroundImage();
+                            disableRepeatBackground();
+                            centerBackground();
+                        }
+                    }
+                ].reduce(function (p, c) {
+                    if (!p.renderer && c.predicate())
+                        p.renderer = c;
+                    return p;
+                }, new function () {
+                    this.render = function () {
+                        if (this.renderer)
+                            this.renderer.render();
+                        else {
+                            element[0].src = src;
+                            if (src2x) element[0].srcset = src2x + ' 2x';
+                            else element[0].removeAttribute('srcset');
+                        }
+                    }
+                }).render();
             };
 
             function shouldRenderAsCover() {
                 return element.hasClass('cover');
             }
 
+            function shouldRenderAsContain() {
+                return element.hasClass('contain');
+            }
+
             function isObjectFitCoverSupported() {
+                return isObjectFitSupportedFor('cover');
+            }
+
+            function isObjectFitContainSupported() {
+                return isObjectFitSupportedFor('contain');
+            }
+
+            function isObjectFitSupportedFor(it) {
                 if (!window.CSS) window.CSS = {};
                 if (!window.CSS.supports) window.CSS.supports = function () {
                     return false;
                 };
-                return window.CSS.supports('object-fit', 'cover');
+                return window.CSS.supports('object-fit', it);
             }
 
             scope.setDefaultImageSrc = function () {
@@ -192,7 +244,7 @@ function BinImageDirectiveFactory($timeout, imageManagement, binarta) {
             };
 
             $timeout(function () {
-                binarta.schedule(function() {
+                binarta.schedule(function () {
                     imageManagement.schedule(scope.setDefaultImageSrc);
                 });
             });
@@ -237,7 +289,7 @@ function BinBackgroundImageDirectiveFactory($timeout, imageManagement, binarta) 
             };
 
             $timeout(function () {
-                binarta.schedule(function() {
+                binarta.schedule(function () {
                     imageManagement.schedule(scope.setDefaultImageSrc);
                 });
             });
@@ -266,7 +318,7 @@ function BinImageController($scope, $element, imageManagement, editModeRenderer,
         function imageNotFound() {
             $element.addClass('not-found');
             $scope.setImageSrc(fallbackSrc);
-            if ($scope.onNotFound !== undefined) 
+            if ($scope.onNotFound !== undefined)
                 $scope.onNotFound();
         }
     };
@@ -391,7 +443,7 @@ function BinImagePopupDirective(binarta, imageManagement) {
         restrict: 'A',
         link: function (scope, el, attrs) {
             if (el[0].nodeName === 'A') {
-                binarta.schedule(function() {
+                binarta.schedule(function () {
                     el[0].href = imageManagement.getImageUrl({code: attrs.binImagePopup});
 
                     el.magnificPopup({
@@ -420,8 +472,8 @@ function BinImageEnlargedComponent() {
     };
     this.controller = ['imageManagement', '$element', 'binarta', function (imageManagement, $element, binarta) {
         var self = this;
-        binarta.schedule(function() {
-            imageManagement.schedule(function() {
+        binarta.schedule(function () {
+            imageManagement.schedule(function () {
                 self.url = imageManagement.getImageUrl({code: self.code});
                 $element.find('a').magnificPopup({
                     type: 'image',

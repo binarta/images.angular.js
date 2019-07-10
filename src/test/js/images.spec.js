@@ -380,7 +380,9 @@ describe('image-management', function () {
                     window.CSS = {
                         supports: jasmine.createSpy('supports')
                     };
-                    element.hasClass.and.returnValue(true);
+                    element.hasClass.and.callFake(function(it) {
+                        return it == 'cover';
+                    });
                 });
 
                 describe('and object-fit is not supported', function () {
@@ -403,6 +405,14 @@ describe('image-management', function () {
                         expect(element.css).toHaveBeenCalledWith('background-image', 'url("' + imagePath + '")');
                     });
 
+                    it('background is not set to not repeat', function () {
+                        expect(element.css).not.toHaveBeenCalledWith('background-repeat', 'no-repeat');
+                    });
+
+                    it('background position is not set to center', function () {
+                        expect(element.css).not.toHaveBeenCalledWith('background-position', 'center');
+                    });
+
                     it('use a placeholder image in src to prevent image borders', function () {
                         expect(element[0].src).toEqual('data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7');
                     });
@@ -422,6 +432,64 @@ describe('image-management', function () {
                     });
                 });
             });
+
+            describe('when image should be rendered as a contained image', function () {
+                beforeEach(function () {
+                    window.CSS = {
+                        supports: jasmine.createSpy('supports')
+                    };
+                    element.hasClass.and.callFake(function(it) {
+                        return it == 'contain';
+                    });
+                });
+
+                describe('and object-fit is not supported', function () {
+                    beforeEach(function () {
+                        window.CSS.supports.and.returnValue(false);
+                        directive.link(scope, element, {binImage: 'test.img', width: '100'});
+                        $timeout.flush();
+                        triggerBinartaSchedule();
+                    });
+
+                    it('assert check for rendering as contained image', function () {
+                        expect(element.hasClass).toHaveBeenCalledWith('contain');
+                    });
+
+                    it('assert supports feature check', function () {
+                        expect(window.CSS.supports).toHaveBeenCalledWith('object-fit', 'contain');
+                    });
+
+                    it('set image as background-image', function () {
+                        expect(element.css).toHaveBeenCalledWith('background-image', 'url("' + imagePath + '")');
+                    });
+
+                    it('set background to not repeat', function () {
+                        expect(element.css).toHaveBeenCalledWith('background-repeat', 'no-repeat');
+                    });
+
+                    it('center background position', function () {
+                        expect(element.css).toHaveBeenCalledWith('background-position', 'center');
+                    });
+
+                    it('use a placeholder image in src to prevent image borders', function () {
+                        expect(element[0].src).toEqual('data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7');
+                    });
+                });
+
+                describe('and object-fit is supported', function () {
+                    beforeEach(function () {
+                        window.CSS.supports.and.returnValue(true);
+                        directive.link(scope, element, {binImage: 'test.img', width: '100'});
+                        $timeout.flush();
+                        triggerBinartaSchedule();
+                    });
+
+                    it('set image with src', function () {
+                        expect(element.css).not.toHaveBeenCalled();
+                        expect(element[0].src).toEqual(imagePath);
+                    });
+                });
+            })
         });
 
         describe('when element has no parent anymore', function () {
